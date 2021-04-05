@@ -1,0 +1,12 @@
+name: "Publish Release"
+description: "Publish the release"
+inputs:
+  branch-prefix:
+    description: "Branch Prefix"
+    required: true
+    default: "release-v"
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: ${{ github.action_path }}/run.sh ${{ inputs.branch-prefix }}
