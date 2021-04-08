@@ -9,4 +9,4 @@ runs:
   using: "composite"
   steps:
     - shell: bash
-      run: ${{ github.action_path }}/run.sh ${{ inputs.branch-prefix }}
+      run: ${{ github.action_path }}/run.sh ${{ inputs.branch-prefix }} ${{ github.action_path }}
