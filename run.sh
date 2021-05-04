@@ -6,4 +6,4 @@ hub release create \
     --message "Version ${NEW_VERSION}" \
     --message "${RELEASE_BODY}" \
     --commitish "$GITHUB_SHA" \
-    "${NEW_VERSION}"
+    "v${NEW_VERSION}"
