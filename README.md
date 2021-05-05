@@ -14,13 +14,13 @@ on:
     types: [closed]
 
 jobs:
-  releases_merge:
-    if: github.event.pull_request.merged == true
+  release_merge:
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release-v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
