@@ -1,0 +1,23 @@
+name: Build, Lint, and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-lint-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: yarn install --frozen-lockfile --ignore-scripts
+      - run: yarn build
+      - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
+      - run: yarn lint
+      - run: yarn test
+
+  all-tests-pass:
+    runs-on: ubuntu-20.04
+    needs: build-lint-test
+    steps:
+      - run: echo "Great success"

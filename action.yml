@@ -1,12 +1,20 @@
-name: "Publish Release"
-description: "Publish the release"
+name: 'Publish Release'
+description: 'Publish the release'
 inputs:
   branch-prefix:
-    description: "Branch Prefix"
+    description: 'Branch Prefix'
     required: true
-    default: "release-v"
+    default: 'release-v'
+
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - shell: bash
-      run: ${{ github.action_path }}/run.sh ${{ inputs.branch-prefix }} ${{ github.action_path }}
+    - id: get-release-notes
+      shell: bash
+      run: node ${{ github.action_path }}/dist/index.js
+    - id: create-github-release
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/create-github-release.sh \
+          ${{ inputs.branch-prefix }} \
+          ${{ steps.get-release-notes.outputs.RELEASE_NOTES }}
