@@ -9,12 +9,19 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - id: get-release-version
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/get-release-version.sh \
+          ${{ inputs.branch-prefix }}
     - id: get-release-notes
       shell: bash
       run: node ${{ github.action_path }}/dist/index.js
+      env:
+        RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
     - id: create-github-release
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh \
-          ${{ inputs.branch-prefix }} \
+          ${{ steps.get-release-version.outputs.RELEASE_VERSION }} \
           ${{ steps.get-release-notes.outputs.RELEASE_NOTES }}

@@ -5,11 +5,11 @@ set -e
 set -u
 set -o pipefail
 
-RELEASE_BRANCH_PREFIX="${1}"
+RELEASE_VERSION="${1}"
 RELEASE_NOTES="${2}"
 
-if [[ -z $RELEASE_BRANCH_PREFIX ]]; then
-  echo "Error: No release branch prefix specified."
+if [[ -z $RELEASE_VERSION ]]; then
+  echo "Error: No release version specified."
   exit 1
 fi
 
@@ -18,9 +18,7 @@ if [[ -z $RELEASE_NOTES ]]; then
   exit 1
 fi
 
-NEW_VERSION="${GITHUB_HEAD_REF#$RELEASE_BRANCH_PREFIX}"
-
 gh release create \
-  --title "$NEW_VERSION" \
+  --title "$RELEASE_VERSION" \
   --notes "$RELEASE_NOTES" \
-  "$NEW_VERSION"
+  "v$RELEASE_VERSION"

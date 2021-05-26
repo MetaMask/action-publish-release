@@ -39,6 +39,7 @@
   "homepage": "https://github.com/MetaMask/action-publish-release#readme",
   "dependencies": {
     "@actions/core": "^1.2.7",
+    "@metamask/action-utils": "^0.0.2",
     "@metamask/auto-changelog": "^2.1.0",
     "execa": "^4.1.0"
   },

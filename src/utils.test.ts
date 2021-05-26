@@ -1,47 +1,77 @@
-import { isTruthyString, tabs } from './utils';
+import { parseEnvironmentVariables } from './utils';
 
-jest.mock('fs', () => ({
-  promises: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-  },
-}));
-
-describe('isTruthyString', () => {
-  it('returns true for truthy strings', () => {
-    expect(isTruthyString('foo')).toStrictEqual(true);
-    expect(isTruthyString('a')).toStrictEqual(true);
-    expect(isTruthyString('很高兴认识您！')).toStrictEqual(true);
+describe('parseEnvironmentVariables', () => {
+  it('successfully parses valid environment variables', () => {
+    expect(
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        GITHUB_REPOSITORY: 'Org/Name',
+        RELEASE_VERSION: '1.0.0',
+      }),
+    ).toStrictEqual({
+      releaseVersion: '1.0.0',
+      repoUrl: 'https://github.com/Org/Name',
+      workspaceRoot: 'foo',
+    });
   });
 
-  it('returns false for falsy strings', () => {
-    expect(isTruthyString('')).toStrictEqual(false);
+  it('throws if GITHUB_WORKSPACE is invalid', () => {
+    const errorMessage = 'process.env.GITHUB_WORKSPACE must be set.';
+
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: '',
+        GITHUB_REPOSITORY: 'Org/Name',
+        RELEASE_VERSION: '1.0.0',
+      }),
+    ).toThrow(errorMessage);
+    expect(() => parseEnvironmentVariables()).toThrow(errorMessage);
   });
 
-  it('returns false for non-strings', () => {
-    expect(isTruthyString(true)).toStrictEqual(false);
-    expect(isTruthyString(false)).toStrictEqual(false);
-    expect(isTruthyString({ foo: 'bar' })).toStrictEqual(false);
-    expect(isTruthyString([])).toStrictEqual(false);
-    expect(isTruthyString(['baz'])).toStrictEqual(false);
+  it('throws if GITHUB_REPOSITORY is invalid', () => {
+    const errorMessage =
+      'process.env.GITHUB_REPOSITORY must be a valid GitHub repository identifier.';
+
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        GITHUB_REPOSITORY: '',
+        RELEASE_VERSION: '1.0.0',
+      }),
+    ).toThrow(errorMessage);
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        GITHUB_REPOSITORY: 'Org/',
+        RELEASE_VERSION: '1.0.0',
+      }),
+    ).toThrow(errorMessage);
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        GITHUB_REPOSITORY: '/Name',
+        RELEASE_VERSION: '1.0.0',
+      }),
+    ).toThrow(errorMessage);
   });
-});
 
-describe('tabs', () => {
-  const TAB = '  ';
+  it('throws if RELEASE_VERSION is invalid', () => {
+    const errorMessage =
+      'process.env.RELEASE_VERSION must be a valid SemVer version.';
 
-  it('throws on invalid inputs', () => {
-    expect(() => tabs(0)).toThrow('Expected positive integer.');
-    expect(() => tabs(-1)).toThrow('Expected positive integer.');
-  });
-
-  it('returns the specified number of tabs', () => {
-    expect(tabs(1)).toStrictEqual(TAB);
-    expect(tabs(5)).toStrictEqual(`${TAB}${TAB}${TAB}${TAB}${TAB}`);
-  });
-
-  it('prepends a prefix to the entire string', () => {
-    expect(tabs(1, 'foo')).toStrictEqual(`foo${TAB}`);
-    expect(tabs(5, 'foo')).toStrictEqual(`foo${TAB}${TAB}${TAB}${TAB}${TAB}`);
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        GITHUB_REPOSITORY: 'Org/Name',
+        RELEASE_VERSION: '',
+      }),
+    ).toThrow(errorMessage);
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        GITHUB_REPOSITORY: 'Org/Name',
+        RELEASE_VERSION: 'kaplar',
+      }),
+    ).toThrow(errorMessage);
   });
 });
