@@ -22,7 +22,10 @@
     "test:watch": "jest --watch",
     "prepublishOnly": "yarn build && yarn lint && yarn test"
   },
-  "repository": "git@github.com:MetaMask/action-publish-release.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MetaMask/action-publish-release.git"
+  },
   "keywords": [
     "GitHub",
     "Actions",
