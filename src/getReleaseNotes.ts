@@ -138,5 +138,14 @@ async function getPackageReleaseNotes(
     repoUrl,
   });
 
-  return changelog.getStringifiedRelease(releaseVersion);
+  // Return the stringified release without the first line, which is a markdown
+  // header with the release version, e.g. "## 1.0.0\n".
+  return (
+    changelog
+      .getStringifiedRelease(releaseVersion)
+      // Strip the release markdown header.
+      .split('\n')
+      .slice(1)
+      .join('\n')
+  );
 }
