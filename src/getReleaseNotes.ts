@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
-import { setOutput as setActionOutput } from '@actions/core';
+import { exportVariable as exportActionVariable } from '@actions/core';
 import {
   getPackageManifest,
   getWorkspaceLocations,
@@ -58,7 +58,7 @@ export async function getReleaseNotes() {
   if (!releaseNotes) {
     throw new Error('The computed release notes are empty.');
   }
-  setActionOutput('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+  exportActionVariable('RELEASE_NOTES', releaseNotes.concat('\n\n'));
 }
 
 /**
