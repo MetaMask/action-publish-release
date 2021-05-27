@@ -15,7 +15,7 @@ jest.mock('fs', () => {
 
 jest.mock('@actions/core', () => {
   return {
-    setOutput: jest.fn(),
+    exportVariable: jest.fn(),
   };
 });
 
@@ -46,7 +46,7 @@ describe('getReleaseNotes', () => {
   let getWorkspaceLocationsMock: jest.SpyInstance;
   let readFileMock: jest.SpyInstance;
   let parseChangelogMock: jest.SpyInstance;
-  let setActionOutputMock: jest.SpyInstance;
+  let exportActionVariableMock: jest.SpyInstance;
 
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -58,7 +58,7 @@ describe('getReleaseNotes', () => {
     );
     readFileMock = jest.spyOn(fs.promises, 'readFile');
     parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
-    setActionOutputMock = jest.spyOn(actionsCore, 'setOutput');
+    exportActionVariableMock = jest.spyOn(actionsCore, 'exportVariable');
   });
 
   it('should get the release notes for polyrepos', async () => {
@@ -105,9 +105,9 @@ describe('getReleaseNotes', () => {
     expect(getStringifiedReleaseMock).toHaveBeenCalledTimes(1);
     expect(getStringifiedReleaseMock).toHaveBeenCalledWith(mockVersion);
 
-    // Finally, the Action output
-    expect(setActionOutputMock).toHaveBeenCalledTimes(1);
-    expect(setActionOutputMock).toHaveBeenCalledWith(
+    // Finally, the Action output, as an environment variable
+    expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
+    expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
       `${mockRelease}\n\n`,
     );
@@ -207,9 +207,9 @@ describe('getReleaseNotes', () => {
       repoUrl: mockRepoUrl,
     });
 
-    // Finally, the Action output
-    expect(setActionOutputMock).toHaveBeenCalledTimes(1);
-    expect(setActionOutputMock).toHaveBeenCalledWith(
+    // Finally, the Action output, as an environment variable
+    expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
+    expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
       `## a\n\nrelease 1.0.0 for a\n\n## c\n\nrelease 1.0.0 for c\n\n`,
     );

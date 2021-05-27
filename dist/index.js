@@ -7962,7 +7962,7 @@ async function getReleaseNotes() {
     if (!releaseNotes) {
         throw new Error('The computed release notes are empty.');
     }
-    (0,core.setOutput)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+    (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
 }
 /**
  * Gets the combined release notes for all packages in the monorepo that are
