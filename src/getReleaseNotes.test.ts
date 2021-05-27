@@ -67,6 +67,8 @@ describe('getReleaseNotes', () => {
     const mockVersion = '1.0.0';
     const mockChangelog = 'a changelog';
     const mockReleaseBody = 'a mock release';
+    // getStringifiedRelease returns a string whose first line is a markdown
+    // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
     const mockRelease = `## Header\n${mockReleaseBody}`;
 
     parseEnvVariablesMock.mockImplementationOnce(() => {
@@ -163,8 +165,8 @@ describe('getReleaseNotes', () => {
     );
 
     const getStringifiedReleaseMockFactory = (workspace: string) => {
-      // getStringifiedRelease returns a header of the form "## <SemVer>\n",
-      // which we remove.
+      // getStringifiedRelease returns a string whose first line is a markdown
+      // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
       return (version: string) =>
         `## Header\nrelease ${version} for ${workspace}`;
     };

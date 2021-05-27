@@ -138,8 +138,8 @@ async function getPackageReleaseNotes(
     repoUrl,
   });
 
-  // Return the stringified release, without the release header.
-  // The header is of the form "## <SemVer>\n", e.g. "## 1.0.0\n".
+  // Return the stringified release without the first line, which is a markdown
+  // header with the release version, e.g. "## 1.0.0\n".
   return (
     changelog
       .getStringifiedRelease(releaseVersion)
