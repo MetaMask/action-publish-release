@@ -1,6 +1,6 @@
 {
   "name": "action-publish-release",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A GitHub Action for automatically creating a GitHub Release. Monorepo-compatible.",
   "files": [
     "lib/"
@@ -22,7 +22,10 @@
     "test:watch": "jest --watch",
     "prepublishOnly": "yarn build && yarn lint && yarn test"
   },
-  "repository": "git@github.com:MetaMask/action-publish-release.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MetaMask/action-publish-release.git"
+  },
   "keywords": [
     "GitHub",
     "Actions",
