@@ -39,7 +39,7 @@
   "dependencies": {
     "@actions/core": "^1.2.7",
     "@metamask/action-utils": "^0.0.2",
-    "@metamask/auto-changelog": "^2.1.0"
+    "@metamask/auto-changelog": "^2.2.0"
   },
   "devDependencies": {
     "@metamask/eslint-config": "^6.0.0",

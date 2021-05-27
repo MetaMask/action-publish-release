@@ -879,13 +879,16 @@ function getTagUrl(repoUrl, tag) {
     return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
 }
 function stringifyLinkReferenceDefinitions(repoUrl, releases) {
-    const releasesOrderedByVersion = releases
+    // A list of release versions in descending SemVer order
+    const descendingSemverVersions = releases
         .map(({ version }) => version)
         .sort((a, b) => {
         return semver_1.default.gt(a, b) ? -1 : 1;
     });
-    const orderedReleases = releases.map(({ version }) => version);
-    const hasReleases = orderedReleases.length > 0;
+    const latestSemverVersion = descendingSemverVersions[0];
+    // A list of release versions in chronological order
+    const chronologicalVersions = releases.map(({ version }) => version);
+    const hasReleases = chronologicalVersions.length > 0;
     // The "Unreleased" section represents all changes made since the *highest*
     // release, not the most recent release. This is to accomodate patch releases
     // of older versions that don't represent the latest set of changes.
@@ -897,7 +900,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
     // If there have not been any releases yet, the repo URL is used directly as
     // the link definition.
     const unreleasedLinkReferenceDefinition = `[${constants_1.unreleased}]: ${hasReleases
-        ? getCompareUrl(repoUrl, `v${releasesOrderedByVersion[0]}`, 'HEAD')
+        ? getCompareUrl(repoUrl, `v${latestSemverVersion}`, 'HEAD')
         : withTrailingSlash(repoUrl)}`;
     // The "previous" release that should be used for comparison is not always
     // the most recent release chronologically. The _highest_ version that is
@@ -905,16 +908,22 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
     // patch releases on older releases can be accomodated.
     const releaseLinkReferenceDefinitions = releases
         .map(({ version }) => {
-        if (version === orderedReleases[orderedReleases.length - 1]) {
-            return `[${version}]: ${getTagUrl(repoUrl, `v${version}`)}`;
+        let diffUrl;
+        if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
+            diffUrl = getTagUrl(repoUrl, `v${version}`);
         }
-        const versionIndex = orderedReleases.indexOf(version);
-        const previousVersion = orderedReleases
-            .slice(versionIndex)
-            .find((releaseVersion) => {
-            return semver_1.default.gt(version, releaseVersion);
-        });
-        return `[${version}]: ${getCompareUrl(repoUrl, `v${previousVersion}`, `v${version}`)}`;
+        else {
+            const versionIndex = chronologicalVersions.indexOf(version);
+            const previousVersion = chronologicalVersions
+                .slice(versionIndex)
+                .find((releaseVersion) => {
+                return semver_1.default.gt(version, releaseVersion);
+            });
+            diffUrl = previousVersion
+                ? getCompareUrl(repoUrl, `v${previousVersion}`, `v${version}`)
+                : getTagUrl(repoUrl, `v${version}`);
+        }
+        return `[${version}]: ${diffUrl}`;
     })
         .join('\n');
     return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${releases.length > 0 ? '\n' : ''}`;
