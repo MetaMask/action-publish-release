@@ -8006,7 +8006,14 @@ async function getPackageReleaseNotes(releaseVersion, repoUrl, packagePath) {
         changelogContent,
         repoUrl,
     });
-    return changelog.getStringifiedRelease(releaseVersion);
+    // Return the stringified release, without the release header.
+    // The header is of the form "## <SemVer>\n", e.g. "## 1.0.0\n".
+    return (changelog
+        .getStringifiedRelease(releaseVersion)
+        // Strip the release markdown header.
+        .split('\n')
+        .slice(1)
+        .join('\n'));
 }
 //# sourceMappingURL=getReleaseNotes.js.map
 ;// CONCATENATED MODULE: ./lib/index.js
