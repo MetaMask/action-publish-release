@@ -1,6 +1,26 @@
 import { parseEnvironmentVariables } from './utils';
 
 describe('parseEnvironmentVariables', () => {
+  let originalGithubWorkspace: string | undefined,
+    originalGithubRepository: string | undefined;
+
+  // In CI, some of these are set.
+  beforeAll(() => {
+    originalGithubWorkspace = process.env.GITHUB_WORKSPACE;
+    originalGithubRepository = process.env.GITHUB_REPOSITORY;
+    delete process.env.GITHUB_WORKSPACE;
+    delete process.env.GITHUB_REPOSITORY;
+  });
+
+  afterAll(() => {
+    if ('GITHUB_WORKSPACE' in process.env) {
+      process.env.GITHUB_WORKSPACE = originalGithubWorkspace;
+    }
+    if ('GITHUB_REPOSITORY' in process.env) {
+      process.env.GITHUB_REPOSITORY = originalGithubRepository;
+    }
+  });
+
   it('successfully parses valid environment variables', () => {
     expect(
       parseEnvironmentVariables({
