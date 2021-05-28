@@ -4,7 +4,7 @@ inputs:
   branch-prefix:
     description: 'Branch Prefix'
     required: true
-    default: 'release-v'
+    default: 'release/'
 
 runs:
   using: 'composite'
