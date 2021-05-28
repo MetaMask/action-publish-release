@@ -16,7 +16,7 @@ jobs:
   release_merge:
     if: |
       github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/')
+      startsWith(github.event.pull_request.head.ref, 'automation_release-')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
