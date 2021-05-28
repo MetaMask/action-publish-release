@@ -1,10 +1,10 @@
 name: 'Publish Release'
 description: 'Publish the release'
 inputs:
-  branch-prefix:
-    description: 'Branch Prefix'
-    required: true
+  release-branch-prefix:
+    description: 'The prefix used for branches of release PRs.'
     default: 'automation_release-'
+    required: true
 
 runs:
   using: 'composite'
@@ -13,7 +13,7 @@ runs:
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/get-release-version.sh \
-          ${{ inputs.branch-prefix }}
+          ${{ inputs.release-branch-prefix }}
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
