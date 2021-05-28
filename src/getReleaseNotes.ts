@@ -10,7 +10,7 @@ import {
   validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
 } from '@metamask/action-utils';
-import { parseChangelog } from '@metamask/auto-changelog/dist/parse-changelog';
+import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 
 /**

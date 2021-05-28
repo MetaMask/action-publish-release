@@ -1,6 +1,6 @@
 import fs from 'fs';
 import * as actionsCore from '@actions/core';
-import * as autoChangelog from '@metamask/auto-changelog/dist/parse-changelog';
+import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
 import * as localUtils from './utils';
 import { getReleaseNotes } from './getReleaseNotes';
@@ -28,7 +28,7 @@ jest.mock('@metamask/action-utils', () => {
   };
 });
 
-jest.mock('@metamask/auto-changelog/dist/parse-changelog', () => {
+jest.mock('@metamask/auto-changelog', () => {
   return {
     parseChangelog: jest.fn(),
   };
