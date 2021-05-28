@@ -1185,6 +1185,58 @@ exports.unreleased = 'Unreleased';
 
 /***/ }),
 
+/***/ 9272:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateChangelog = exports.ChangelogFormattingError = exports.updateChangelog = exports.parseChangelog = exports.createEmptyChangelog = exports.Changelog = void 0;
+var changelog_1 = __nccwpck_require__(1610);
+Object.defineProperty(exports, "Changelog", ({ enumerable: true, get: function () { return __importDefault(changelog_1).default; } }));
+var init_1 = __nccwpck_require__(3725);
+Object.defineProperty(exports, "createEmptyChangelog", ({ enumerable: true, get: function () { return init_1.createEmptyChangelog; } }));
+var parse_changelog_1 = __nccwpck_require__(7607);
+Object.defineProperty(exports, "parseChangelog", ({ enumerable: true, get: function () { return parse_changelog_1.parseChangelog; } }));
+var update_changelog_1 = __nccwpck_require__(9437);
+Object.defineProperty(exports, "updateChangelog", ({ enumerable: true, get: function () { return update_changelog_1.updateChangelog; } }));
+var validate_changelog_1 = __nccwpck_require__(4933);
+Object.defineProperty(exports, "ChangelogFormattingError", ({ enumerable: true, get: function () { return validate_changelog_1.ChangelogFormattingError; } }));
+Object.defineProperty(exports, "validateChangelog", ({ enumerable: true, get: function () { return validate_changelog_1.validateChangelog; } }));
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 3725:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createEmptyChangelog = void 0;
+const changelog_1 = __importDefault(__nccwpck_require__(1610));
+/**
+ * Creates a new empty changelog.
+ *
+ * @param options
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @returns The initial changelog text.
+ */
+function createEmptyChangelog({ repoUrl }) {
+    const changelog = new changelog_1.default({ repoUrl });
+    return changelog.toString();
+}
+exports.createEmptyChangelog = createEmptyChangelog;
+//# sourceMappingURL=init.js.map
+
+/***/ }),
+
 /***/ 7607:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -1319,6 +1371,376 @@ function parseChangelog({ changelogContent, repoUrl, }) {
 }
 exports.parseChangelog = parseChangelog;
 //# sourceMappingURL=parse-changelog.js.map
+
+/***/ }),
+
+/***/ 5126:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const cross_spawn_1 = __importDefault(__nccwpck_require__(2746));
+/**
+ * Run a command to completion using the system shell.
+ *
+ * This will run a command with the specified arguments, and resolve when the
+ * process has exited. The STDOUT stream is monitored for output, which is
+ * returned after being split into lines. All output is expected to be UTF-8
+ * encoded, and empty lines are removed from the output.
+ *
+ * Anything received on STDERR is assumed to indicate a problem, and is tracked
+ * as an error.
+ *
+ * @param command - The command to run
+ * @param args - The arguments to pass to the command
+ * @returns Lines of output received via STDOUT
+ */
+async function runCommand(command, args) {
+    const output = [];
+    let mostRecentError;
+    let errorSignal;
+    let errorCode;
+    const internalError = new Error('Internal');
+    try {
+        await new Promise((resolve, reject) => {
+            const childProcess = cross_spawn_1.default(command, args);
+            if (!childProcess.stdout || !childProcess.stderr) {
+                throw new Error('Child process is missing stdout and stderr.');
+            }
+            childProcess.stdout.setEncoding('utf8');
+            childProcess.stderr.setEncoding('utf8');
+            childProcess.on('error', (error) => {
+                mostRecentError = error;
+            });
+            childProcess.stdout.on('data', (message) => {
+                const nonEmptyLines = message
+                    .split('\n')
+                    .filter((line) => line !== '');
+                output.push(...nonEmptyLines);
+            });
+            childProcess.stderr.on('data', (message) => {
+                mostRecentError = new Error(message.trim());
+            });
+            childProcess.once('exit', (code, signal) => {
+                if (code === 0) {
+                    return resolve();
+                }
+                errorCode = code;
+                errorSignal = signal;
+                return reject(internalError);
+            });
+        });
+    }
+    catch (error) {
+        /**
+         * The error is re-thrown here in an `async` context to preserve the stack trace. If this was
+         * was thrown inside the Promise constructor, the stack trace would show a few frames of
+         * Node.js internals then end, without indicating where `runCommand` was called.
+         */
+        if (error === internalError) {
+            let errorMessage;
+            if (errorCode !== null && errorSignal !== null) {
+                errorMessage = `Terminated by signal '${errorSignal}'; exited with code '${errorCode}'`;
+            }
+            else if (errorSignal !== null) {
+                errorMessage = `Terminated by signal '${errorSignal}'`;
+            }
+            else if (errorCode === null) {
+                errorMessage = 'Exited with no code or signal';
+            }
+            else {
+                errorMessage = `Exited with code '${errorCode}'`;
+            }
+            const improvedError = new Error(errorMessage);
+            if (mostRecentError) {
+                improvedError.cause = mostRecentError;
+            }
+            throw improvedError;
+        }
+    }
+    return output;
+}
+exports.default = runCommand;
+//# sourceMappingURL=run-command.js.map
+
+/***/ }),
+
+/***/ 9437:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updateChangelog = void 0;
+const assert_1 = __nccwpck_require__(2357);
+const run_command_1 = __importDefault(__nccwpck_require__(5126));
+const parse_changelog_1 = __nccwpck_require__(7607);
+const constants_1 = __nccwpck_require__(1373);
+async function getMostRecentTag() {
+    const revListArgs = ['rev-list', '--tags', '--max-count=1'];
+    const results = await run_command_1.default('git', revListArgs);
+    if (results.length === 0) {
+        return null;
+    }
+    const [mostRecentTagCommitHash] = results;
+    const [mostRecentTag] = await run_command_1.default('git', [
+        'describe',
+        '--tags',
+        mostRecentTagCommitHash,
+    ]);
+    assert_1.strict.equal(mostRecentTag[0], 'v', 'Most recent tag should start with v');
+    return mostRecentTag;
+}
+async function getCommits(commitHashes) {
+    var _a;
+    const commits = [];
+    for (const commitHash of commitHashes) {
+        const [subject] = await run_command_1.default('git', [
+            'show',
+            '-s',
+            '--format=%s',
+            commitHash,
+        ]);
+        let matchResults = subject.match(/\(#(\d+)\)/u);
+        let prNumber;
+        let description = subject;
+        if (matchResults) {
+            // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
+            prNumber = matchResults[1];
+            description = ((_a = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _a === void 0 ? void 0 : _a[1]) || '';
+        }
+        else {
+            // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
+            // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
+            // If no body is found, the description is set to the commit subject
+            matchResults = subject.match(/#(\d+)\sfrom/u);
+            if (matchResults) {
+                prNumber = matchResults[1];
+                const [firstLineOfBody] = await run_command_1.default('git', [
+                    'show',
+                    '-s',
+                    '--format=%b',
+                    commitHash,
+                ]);
+                description = firstLineOfBody || subject;
+            }
+        }
+        // Otherwise:
+        // Normal commits: The commit subject is the description, and the PR ID is omitted.
+        commits.push({ prNumber, description });
+    }
+    return commits;
+}
+function getAllChangeDescriptions(changelog) {
+    const releases = changelog.getReleases();
+    const changeDescriptions = Object.values(changelog.getUnreleasedChanges()).flat();
+    for (const release of releases) {
+        changeDescriptions.push(...Object.values(changelog.getReleaseChanges(release.version)).flat());
+    }
+    return changeDescriptions;
+}
+function getAllLoggedPrNumbers(changelog) {
+    const changeDescriptions = getAllChangeDescriptions(changelog);
+    const prNumbersWithChangelogEntries = [];
+    for (const description of changeDescriptions) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const matchResults = description.matchAll(/\[#(\d+)\]/gu);
+        const prNumbers = Array.from(matchResults, (result) => result[1]);
+        prNumbersWithChangelogEntries.push(...prNumbers);
+    }
+    return prNumbersWithChangelogEntries;
+}
+async function getCommitHashesInRange(commitRange, rootDirectory) {
+    const revListArgs = ['rev-list', commitRange];
+    if (rootDirectory) {
+        revListArgs.push(rootDirectory);
+    }
+    return await run_command_1.default('git', revListArgs);
+}
+/**
+ * Update a changelog with any commits made since the last release. Commits for
+ * PRs that are already included in the changelog are omitted.
+ * @param options
+ * @param options.changelogContent - The current changelog
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.isReleaseCandidate - Denotes whether the current project.
+ * is in the midst of release preparation or not. If this is set, any new
+ * changes are listed under the current release header. Otherwise, they are
+ * listed under the 'Unreleased' section.
+ * @param options.projectRootDirectory - The root project directory, used to
+ * filter results from various git commands. This path is assumed to be either
+ * absolute, or relative to the current directory. Defaults to the root of the
+ * current git repository.
+ * @returns The updated changelog text
+ */
+async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, }) {
+    if (isReleaseCandidate && !currentVersion) {
+        throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
+    }
+    const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    // Ensure we have all tags on remote
+    await run_command_1.default('git', ['fetch', '--tags']);
+    const mostRecentTag = await getMostRecentTag();
+    if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
+        throw new Error(`Current version already has tag, which is unexpected for a release candidate.`);
+    }
+    const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
+    const commitsHashesSinceLastRelease = await getCommitHashesInRange(commitRange, projectRootDirectory);
+    const commits = await getCommits(commitsHashesSinceLastRelease);
+    const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
+    const newCommits = commits.filter(({ prNumber }) => prNumber === undefined || !loggedPrNumbers.includes(prNumber));
+    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+    if (newCommits.length === 0 &&
+        (!isReleaseCandidate || hasUnreleasedChanges)) {
+        return undefined;
+    }
+    // Ensure release header exists, if necessary
+    if (isReleaseCandidate &&
+        !changelog
+            .getReleases()
+            .find((release) => release.version === currentVersion)) {
+        // Typecast: currentVersion will be defined here due to type guard at the
+        // top of this function.
+        changelog.addRelease({ version: currentVersion });
+    }
+    if (isReleaseCandidate && hasUnreleasedChanges) {
+        // Typecast: currentVersion will be defined here due to type guard at the
+        // top of this function.
+        changelog.migrateUnreleasedChangesToRelease(currentVersion);
+    }
+    const newChangeEntries = newCommits.map(({ prNumber, description }) => {
+        if (prNumber) {
+            const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+            return `${description} ${suffix}`;
+        }
+        return description;
+    });
+    for (const description of newChangeEntries.reverse()) {
+        changelog.addChange({
+            version: isReleaseCandidate ? currentVersion : undefined,
+            category: constants_1.ChangeCategory.Uncategorized,
+            description,
+        });
+    }
+    return changelog.toString();
+}
+exports.updateChangelog = updateChangelog;
+//# sourceMappingURL=update-changelog.js.map
+
+/***/ }),
+
+/***/ 4933:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateChangelog = exports.ChangelogFormattingError = exports.MissingCurrentVersionError = exports.UnreleasedChangesError = exports.InvalidChangelogError = void 0;
+const parse_changelog_1 = __nccwpck_require__(7607);
+/**
+ * Indicates that the changelog is invalid.
+ */
+class InvalidChangelogError extends Error {
+}
+exports.InvalidChangelogError = InvalidChangelogError;
+/**
+ * Indicates that unreleased changes are still present in the changelog.
+ */
+class UnreleasedChangesError extends InvalidChangelogError {
+    constructor() {
+        super('Unreleased changes present in the changelog');
+    }
+}
+exports.UnreleasedChangesError = UnreleasedChangesError;
+/**
+ * Indicates that the release header for the current version is missing.
+ */
+class MissingCurrentVersionError extends InvalidChangelogError {
+    /**
+     * @param currentVersion - The current version
+     */
+    constructor(currentVersion) {
+        super(`Current version missing from changelog: '${currentVersion}'`);
+    }
+}
+exports.MissingCurrentVersionError = MissingCurrentVersionError;
+/**
+ * Represents a formatting error in a changelog.
+ */
+class ChangelogFormattingError extends InvalidChangelogError {
+    /**
+     * @param options
+     * @param options.validChangelog - The string contents of the well-formatted
+     * changelog.
+     * @param options.invalidChangelog - The string contents of the malformed
+     * changelog.
+     */
+    constructor({ validChangelog, invalidChangelog, }) {
+        super('Changelog is not well-formatted');
+        this.data = {
+            validChangelog,
+            invalidChangelog,
+        };
+    }
+}
+exports.ChangelogFormattingError = ChangelogFormattingError;
+/**
+ * Validates that a changelog is well-formatted.
+ *
+ * @param options
+ * @param options.changelogContent - The current changelog
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
+ * @param options.repoUrl - The GitHub repository URL for the current
+ * project.
+ * @param options.isReleaseCandidate - Denotes whether the current project is in
+ * the midst of release preparation or not. If this is set, this command will
+ * also ensure the current version is represented in the changelog with a
+ * header, and that there are no unreleased changes present.
+ * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
+ * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog is missing the release header for the current
+ * version.
+ * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog contains unreleased changes.
+ * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
+ */
+function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, }) {
+    const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    if (isReleaseCandidate) {
+        if (!currentVersion) {
+            throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
+        }
+        // Ensure release header exists, if necessary
+        if (!changelog
+            .getReleases()
+            .find((release) => release.version === currentVersion)) {
+            throw new MissingCurrentVersionError(currentVersion);
+        }
+    }
+    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+    if (isReleaseCandidate && hasUnreleasedChanges) {
+        throw new UnreleasedChangesError();
+    }
+    const validChangelog = changelog.toString();
+    if (validChangelog !== changelogContent) {
+        throw new ChangelogFormattingError({
+            validChangelog,
+            invalidChangelog: changelogContent,
+        });
+    }
+}
+exports.validateChangelog = validateChangelog;
+//# sourceMappingURL=validate-changelog.js.map
 
 /***/ }),
 
@@ -1616,6 +2038,387 @@ module.exports = function (xs, fn) {
 var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
+
+
+/***/ }),
+
+/***/ 2746:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const cp = __nccwpck_require__(3129);
+const parse = __nccwpck_require__(6855);
+const enoent = __nccwpck_require__(4101);
+
+function spawn(command, args, options) {
+    // Parse the arguments
+    const parsed = parse(command, args, options);
+
+    // Spawn the child process
+    const spawned = cp.spawn(parsed.command, parsed.args, parsed.options);
+
+    // Hook into child process "exit" event to emit an error if the command
+    // does not exists, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
+    enoent.hookChildProcess(spawned, parsed);
+
+    return spawned;
+}
+
+function spawnSync(command, args, options) {
+    // Parse the arguments
+    const parsed = parse(command, args, options);
+
+    // Spawn the child process
+    const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
+
+    // Analyze if the command does not exist, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
+    result.error = result.error || enoent.verifyENOENTSync(result.status, parsed);
+
+    return result;
+}
+
+module.exports = spawn;
+module.exports.spawn = spawn;
+module.exports.sync = spawnSync;
+
+module.exports._parse = parse;
+module.exports._enoent = enoent;
+
+
+/***/ }),
+
+/***/ 4101:
+/***/ ((module) => {
+
+"use strict";
+
+
+const isWin = process.platform === 'win32';
+
+function notFoundError(original, syscall) {
+    return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {
+        code: 'ENOENT',
+        errno: 'ENOENT',
+        syscall: `${syscall} ${original.command}`,
+        path: original.command,
+        spawnargs: original.args,
+    });
+}
+
+function hookChildProcess(cp, parsed) {
+    if (!isWin) {
+        return;
+    }
+
+    const originalEmit = cp.emit;
+
+    cp.emit = function (name, arg1) {
+        // If emitting "exit" event and exit code is 1, we need to check if
+        // the command exists and emit an "error" instead
+        // See https://github.com/IndigoUnited/node-cross-spawn/issues/16
+        if (name === 'exit') {
+            const err = verifyENOENT(arg1, parsed, 'spawn');
+
+            if (err) {
+                return originalEmit.call(cp, 'error', err);
+            }
+        }
+
+        return originalEmit.apply(cp, arguments); // eslint-disable-line prefer-rest-params
+    };
+}
+
+function verifyENOENT(status, parsed) {
+    if (isWin && status === 1 && !parsed.file) {
+        return notFoundError(parsed.original, 'spawn');
+    }
+
+    return null;
+}
+
+function verifyENOENTSync(status, parsed) {
+    if (isWin && status === 1 && !parsed.file) {
+        return notFoundError(parsed.original, 'spawnSync');
+    }
+
+    return null;
+}
+
+module.exports = {
+    hookChildProcess,
+    verifyENOENT,
+    verifyENOENTSync,
+    notFoundError,
+};
+
+
+/***/ }),
+
+/***/ 6855:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const path = __nccwpck_require__(5622);
+const resolveCommand = __nccwpck_require__(7274);
+const escape = __nccwpck_require__(4274);
+const readShebang = __nccwpck_require__(1252);
+
+const isWin = process.platform === 'win32';
+const isExecutableRegExp = /\.(?:com|exe)$/i;
+const isCmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
+
+function detectShebang(parsed) {
+    parsed.file = resolveCommand(parsed);
+
+    const shebang = parsed.file && readShebang(parsed.file);
+
+    if (shebang) {
+        parsed.args.unshift(parsed.file);
+        parsed.command = shebang;
+
+        return resolveCommand(parsed);
+    }
+
+    return parsed.file;
+}
+
+function parseNonShell(parsed) {
+    if (!isWin) {
+        return parsed;
+    }
+
+    // Detect & add support for shebangs
+    const commandFile = detectShebang(parsed);
+
+    // We don't need a shell if the command filename is an executable
+    const needsShell = !isExecutableRegExp.test(commandFile);
+
+    // If a shell is required, use cmd.exe and take care of escaping everything correctly
+    // Note that `forceShell` is an hidden option used only in tests
+    if (parsed.options.forceShell || needsShell) {
+        // Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
+        // The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
+        // Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
+        // we need to double escape them
+        const needsDoubleEscapeMetaChars = isCmdShimRegExp.test(commandFile);
+
+        // Normalize posix paths into OS compatible paths (e.g.: foo/bar -> foo\bar)
+        // This is necessary otherwise it will always fail with ENOENT in those cases
+        parsed.command = path.normalize(parsed.command);
+
+        // Escape command & arguments
+        parsed.command = escape.command(parsed.command);
+        parsed.args = parsed.args.map((arg) => escape.argument(arg, needsDoubleEscapeMetaChars));
+
+        const shellCommand = [parsed.command].concat(parsed.args).join(' ');
+
+        parsed.args = ['/d', '/s', '/c', `"${shellCommand}"`];
+        parsed.command = process.env.comspec || 'cmd.exe';
+        parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
+    }
+
+    return parsed;
+}
+
+function parse(command, args, options) {
+    // Normalize arguments, similar to nodejs
+    if (args && !Array.isArray(args)) {
+        options = args;
+        args = null;
+    }
+
+    args = args ? args.slice(0) : []; // Clone array to avoid changing the original
+    options = Object.assign({}, options); // Clone object to avoid changing the original
+
+    // Build our parsed object
+    const parsed = {
+        command,
+        args,
+        options,
+        file: undefined,
+        original: {
+            command,
+            args,
+        },
+    };
+
+    // Delegate further parsing to shell or non-shell
+    return options.shell ? parsed : parseNonShell(parsed);
+}
+
+module.exports = parse;
+
+
+/***/ }),
+
+/***/ 4274:
+/***/ ((module) => {
+
+"use strict";
+
+
+// See http://www.robvanderwoude.com/escapechars.php
+const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
+
+function escapeCommand(arg) {
+    // Escape meta chars
+    arg = arg.replace(metaCharsRegExp, '^$1');
+
+    return arg;
+}
+
+function escapeArgument(arg, doubleEscapeMetaChars) {
+    // Convert to string
+    arg = `${arg}`;
+
+    // Algorithm below is based on https://qntm.org/cmd
+
+    // Sequence of backslashes followed by a double quote:
+    // double up all the backslashes and escape the double quote
+    arg = arg.replace(/(\\*)"/g, '$1$1\\"');
+
+    // Sequence of backslashes followed by the end of the string
+    // (which will become a double quote later):
+    // double up all the backslashes
+    arg = arg.replace(/(\\*)$/, '$1$1');
+
+    // All other backslashes occur literally
+
+    // Quote the whole thing:
+    arg = `"${arg}"`;
+
+    // Escape meta chars
+    arg = arg.replace(metaCharsRegExp, '^$1');
+
+    // Double escape meta chars if necessary
+    if (doubleEscapeMetaChars) {
+        arg = arg.replace(metaCharsRegExp, '^$1');
+    }
+
+    return arg;
+}
+
+module.exports.command = escapeCommand;
+module.exports.argument = escapeArgument;
+
+
+/***/ }),
+
+/***/ 1252:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const fs = __nccwpck_require__(5747);
+const shebangCommand = __nccwpck_require__(7032);
+
+function readShebang(command) {
+    // Read the first 150 bytes from the file
+    const size = 150;
+    const buffer = Buffer.alloc(size);
+
+    let fd;
+
+    try {
+        fd = fs.openSync(command, 'r');
+        fs.readSync(fd, buffer, 0, size, 0);
+        fs.closeSync(fd);
+    } catch (e) { /* Empty */ }
+
+    // Attempt to extract shebang (null is returned if not a shebang)
+    return shebangCommand(buffer.toString());
+}
+
+module.exports = readShebang;
+
+
+/***/ }),
+
+/***/ 7274:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const path = __nccwpck_require__(5622);
+const which = __nccwpck_require__(4207);
+const getPathKey = __nccwpck_require__(9060);
+
+function resolveCommandAttempt(parsed, withoutPathExt) {
+    const env = parsed.options.env || process.env;
+    const cwd = process.cwd();
+    const hasCustomCwd = parsed.options.cwd != null;
+    // Worker threads do not have process.chdir()
+    const shouldSwitchCwd = hasCustomCwd && process.chdir !== undefined && !process.chdir.disabled;
+
+    // If a custom `cwd` was specified, we need to change the process cwd
+    // because `which` will do stat calls but does not support a custom cwd
+    if (shouldSwitchCwd) {
+        try {
+            process.chdir(parsed.options.cwd);
+        } catch (err) {
+            /* Empty */
+        }
+    }
+
+    let resolved;
+
+    try {
+        resolved = which.sync(parsed.command, {
+            path: env[getPathKey({ env })],
+            pathExt: withoutPathExt ? path.delimiter : undefined,
+        });
+    } catch (e) {
+        /* Empty */
+    } finally {
+        if (shouldSwitchCwd) {
+            process.chdir(cwd);
+        }
+    }
+
+    // If we successfully resolved, ensure that an absolute path is returned
+    // Note that when a custom `cwd` was used, we need to resolve to an absolute path based on it
+    if (resolved) {
+        resolved = path.resolve(hasCustomCwd ? parsed.options.cwd : '', resolved);
+    }
+
+    return resolved;
+}
+
+function resolveCommand(parsed) {
+    return resolveCommandAttempt(parsed) || resolveCommandAttempt(parsed, true);
+}
+
+module.exports = resolveCommand;
+
+
+/***/ }),
+
+/***/ 9060:
+/***/ ((module) => {
+
+"use strict";
+
+
+const pathKey = (options = {}) => {
+	const environment = options.env || process.env;
+	const platform = options.platform || process.platform;
+
+	if (platform !== 'win32') {
+		return 'PATH';
+	}
+
+	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
+};
+
+module.exports = pathKey;
+// TODO: Remove this for the next major release
+module.exports.default = pathKey;
 
 
 /***/ }),
@@ -3636,6 +4439,167 @@ if (typeof Object.create === 'function') {
       ctor.prototype.constructor = ctor
     }
   }
+}
+
+
+/***/ }),
+
+/***/ 7126:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var fs = __nccwpck_require__(5747)
+var core
+if (process.platform === 'win32' || global.TESTING_WINDOWS) {
+  core = __nccwpck_require__(2001)
+} else {
+  core = __nccwpck_require__(9728)
+}
+
+module.exports = isexe
+isexe.sync = sync
+
+function isexe (path, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = {}
+  }
+
+  if (!cb) {
+    if (typeof Promise !== 'function') {
+      throw new TypeError('callback not provided')
+    }
+
+    return new Promise(function (resolve, reject) {
+      isexe(path, options || {}, function (er, is) {
+        if (er) {
+          reject(er)
+        } else {
+          resolve(is)
+        }
+      })
+    })
+  }
+
+  core(path, options || {}, function (er, is) {
+    // ignore EACCES because that just means we aren't allowed to run it
+    if (er) {
+      if (er.code === 'EACCES' || options && options.ignoreErrors) {
+        er = null
+        is = false
+      }
+    }
+    cb(er, is)
+  })
+}
+
+function sync (path, options) {
+  // my kingdom for a filtered catch
+  try {
+    return core.sync(path, options || {})
+  } catch (er) {
+    if (options && options.ignoreErrors || er.code === 'EACCES') {
+      return false
+    } else {
+      throw er
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 9728:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __nccwpck_require__(5747)
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), options)
+}
+
+function checkStat (stat, options) {
+  return stat.isFile() && checkMode(stat, options)
+}
+
+function checkMode (stat, options) {
+  var mod = stat.mode
+  var uid = stat.uid
+  var gid = stat.gid
+
+  var myUid = options.uid !== undefined ?
+    options.uid : process.getuid && process.getuid()
+  var myGid = options.gid !== undefined ?
+    options.gid : process.getgid && process.getgid()
+
+  var u = parseInt('100', 8)
+  var g = parseInt('010', 8)
+  var o = parseInt('001', 8)
+  var ug = u | g
+
+  var ret = (mod & o) ||
+    (mod & g) && gid === myGid ||
+    (mod & u) && uid === myUid ||
+    (mod & ug) && myUid === 0
+
+  return ret
+}
+
+
+/***/ }),
+
+/***/ 2001:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __nccwpck_require__(5747)
+
+function checkPathExt (path, options) {
+  var pathext = options.pathExt !== undefined ?
+    options.pathExt : process.env.PATHEXT
+
+  if (!pathext) {
+    return true
+  }
+
+  pathext = pathext.split(';')
+  if (pathext.indexOf('') !== -1) {
+    return true
+  }
+  for (var i = 0; i < pathext.length; i++) {
+    var p = pathext[i].toLowerCase()
+    if (p && path.substr(-p.length).toLowerCase() === p) {
+      return true
+    }
+  }
+  return false
+}
+
+function checkStat (stat, path, options) {
+  if (!stat.isSymbolicLink() && !stat.isFile()) {
+    return false
+  }
+  return checkPathExt(path, options)
+}
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, path, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), path, options)
 }
 
 
@@ -7258,6 +8222,175 @@ module.exports = validRange
 
 /***/ }),
 
+/***/ 7032:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const shebangRegex = __nccwpck_require__(2638);
+
+module.exports = (string = '') => {
+	const match = string.match(shebangRegex);
+
+	if (!match) {
+		return null;
+	}
+
+	const [path, argument] = match[0].replace(/#! ?/, '').split(' ');
+	const binary = path.split('/').pop();
+
+	if (binary === 'env') {
+		return argument;
+	}
+
+	return argument ? `${binary} ${argument}` : binary;
+};
+
+
+/***/ }),
+
+/***/ 2638:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = /^#!(.*)/;
+
+
+/***/ }),
+
+/***/ 4207:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const isWindows = process.platform === 'win32' ||
+    process.env.OSTYPE === 'cygwin' ||
+    process.env.OSTYPE === 'msys'
+
+const path = __nccwpck_require__(5622)
+const COLON = isWindows ? ';' : ':'
+const isexe = __nccwpck_require__(7126)
+
+const getNotFoundError = (cmd) =>
+  Object.assign(new Error(`not found: ${cmd}`), { code: 'ENOENT' })
+
+const getPathInfo = (cmd, opt) => {
+  const colon = opt.colon || COLON
+
+  // If it has a slash, then we don't bother searching the pathenv.
+  // just check the file itself, and that's it.
+  const pathEnv = cmd.match(/\//) || isWindows && cmd.match(/\\/) ? ['']
+    : (
+      [
+        // windows always checks the cwd first
+        ...(isWindows ? [process.cwd()] : []),
+        ...(opt.path || process.env.PATH ||
+          /* istanbul ignore next: very unusual */ '').split(colon),
+      ]
+    )
+  const pathExtExe = isWindows
+    ? opt.pathExt || process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM'
+    : ''
+  const pathExt = isWindows ? pathExtExe.split(colon) : ['']
+
+  if (isWindows) {
+    if (cmd.indexOf('.') !== -1 && pathExt[0] !== '')
+      pathExt.unshift('')
+  }
+
+  return {
+    pathEnv,
+    pathExt,
+    pathExtExe,
+  }
+}
+
+const which = (cmd, opt, cb) => {
+  if (typeof opt === 'function') {
+    cb = opt
+    opt = {}
+  }
+  if (!opt)
+    opt = {}
+
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+  const found = []
+
+  const step = i => new Promise((resolve, reject) => {
+    if (i === pathEnv.length)
+      return opt.all && found.length ? resolve(found)
+        : reject(getNotFoundError(cmd))
+
+    const ppRaw = pathEnv[i]
+    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
+
+    const pCmd = path.join(pathPart, cmd)
+    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
+      : pCmd
+
+    resolve(subStep(p, i, 0))
+  })
+
+  const subStep = (p, i, ii) => new Promise((resolve, reject) => {
+    if (ii === pathExt.length)
+      return resolve(step(i + 1))
+    const ext = pathExt[ii]
+    isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
+      if (!er && is) {
+        if (opt.all)
+          found.push(p + ext)
+        else
+          return resolve(p + ext)
+      }
+      return resolve(subStep(p, i, ii + 1))
+    })
+  })
+
+  return cb ? step(0).then(res => cb(null, res), cb) : step(0)
+}
+
+const whichSync = (cmd, opt) => {
+  opt = opt || {}
+
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+  const found = []
+
+  for (let i = 0; i < pathEnv.length; i ++) {
+    const ppRaw = pathEnv[i]
+    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
+
+    const pCmd = path.join(pathPart, cmd)
+    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
+      : pCmd
+
+    for (let j = 0; j < pathExt.length; j ++) {
+      const cur = p + pathExt[j]
+      try {
+        const is = isexe.sync(cur, { pathExt: pathExtExe })
+        if (is) {
+          if (opt.all)
+            found.push(cur)
+          else
+            return cur
+        }
+      } catch (ex) {}
+    }
+  }
+
+  if (opt.all && found.length)
+    return found
+
+  if (opt.nothrow)
+    return null
+
+  throw getNotFoundError(cmd)
+}
+
+module.exports = which
+which.sync = whichSync
+
+
+/***/ }),
+
 /***/ 2940:
 /***/ ((module) => {
 
@@ -7756,6 +8889,14 @@ module.exports = require("assert");;
 
 /***/ }),
 
+/***/ 3129:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");;
+
+/***/ }),
+
 /***/ 8614:
 /***/ ((module) => {
 
@@ -7888,8 +9029,8 @@ var external_path_ = __nccwpck_require__(5622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: ./node_modules/@metamask/action-utils/dist/index.js
 var dist = __nccwpck_require__(1281);
-// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/parse-changelog.js
-var parse_changelog = __nccwpck_require__(7607);
+// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
+var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/utils.js
 
 /**
@@ -8002,7 +9143,7 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
  */
 async function getPackageReleaseNotes(releaseVersion, repoUrl, packagePath) {
     const changelogContent = (await external_fs_.promises.readFile(external_path_default().join(packagePath, 'CHANGELOG.md'))).toString();
-    const changelog = (0,parse_changelog.parseChangelog)({
+    const changelog = (0,auto_changelog_dist.parseChangelog)({
         changelogContent,
         repoUrl,
     });
