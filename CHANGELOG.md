@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.1.0]
-### Uncategorized
-- Rename branch-prefix input and update readme ([#15](https://github.com/MetaMask/action-publish-release/pull/15))
+### Changed
+- **(BREAKING)** Rename `branch-prefix` input to `release-branch-prefix` ([#15](https://github.com/MetaMask/action-publish-release/pull/15))
+  - This matches the name of the corresponding input to [MetaMask/action-create-release-pr@v0.1.0](https://github.com/MetaMask/action-create-release-pr).
 
 ## [0.0.7]
 ### Changed
