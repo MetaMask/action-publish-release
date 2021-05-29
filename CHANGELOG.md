@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0]
+### Uncategorized
+- Rename branch-prefix input and update readme ([#15](https://github.com/MetaMask/action-publish-release/pull/15))
+
 ## [0.0.7]
 ### Changed
 - **(BREAKING)** Change release branch prefix from 'release-v' to 'automation_release-' ([#12](https://github.com/MetaMask/action-publish-release/pull/12))
@@ -40,7 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/MetaMask/action-publish-release/compare/v0.0.7...v0.1.0
 [0.0.7]: https://github.com/MetaMask/action-publish-release/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/MetaMask/action-publish-release/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/MetaMask/action-publish-release/compare/v0.0.4...v0.0.5
