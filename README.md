@@ -25,7 +25,9 @@ on:
     types: [closed]
 
 jobs:
-  release_merge:
+  publish-release:
+    permissions:
+      contents: write
     # The second argument to startsWith() must match the release-branch-prefix
     # input to this Action. Here, we use the default, "automation_release-".
     if: |
@@ -40,7 +42,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: MetaMask/action-publish-release@v0.1.0
+      - uses: MetaMask/action-publish-release@v0.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
