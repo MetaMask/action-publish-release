@@ -29,10 +29,10 @@ jobs:
     permissions:
       contents: write
     # The second argument to startsWith() must match the release-branch-prefix
-    # input to this Action. Here, we use the default, "automation_release-".
+    # input to this Action. Here, we use the default, "release/".
     if: |
       github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'automation_release-')
+      startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -49,8 +49,8 @@ jobs:
 
 ### Release Branch Names
 
-Release branch names **must** be of the form `<prefix><version>`, where `<prefix>` is the `release-branch-prefix` input to this action (by default `automation_release-`), and `<version>` is the SemVer version being released.
-For example, using the default prefix, the branch for the `1.0.0` release would be named `automation_release-1.0.0`.
+Release branch names **must** be of the form `<prefix><version>`, where `<prefix>` is the `release-branch-prefix` input to this action (by default `release/`), and `<version>` is the SemVer version being released.
+For example, using the default prefix, the branch for the `1.0.0` release would be named `release/1.0.0`.
 
 If used with [Metamask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr), the `release-branch-prefix` inputs for both Actions must be identical.
 The default values for this input is the same for both Actions within major versions.
