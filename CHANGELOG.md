@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0]
+### Uncategorized
+- First stable release
+
+### Changed
+- Default release branch prefix ([#22](https://github.com/MetaMask/action-publish-release/pull/22))
+  - The default prefix is now `release/`, matching [`action-create-release-pr@v1`](https://github.com/MetaMask/action-create-release-pr).
+
+### Fixed
+- Faulty usage instructions in readme ([#21](https://github.com/MetaMask/action-publish-release/pull/21))
+
 ## [0.1.0]
 ### Changed
 - **(BREAKING)** Rename `branch-prefix` input to `release-branch-prefix` ([#15](https://github.com/MetaMask/action-publish-release/pull/15))
@@ -45,7 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/MetaMask/action-publish-release/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/MetaMask/action-publish-release/compare/v0.0.7...v0.1.0
 [0.0.7]: https://github.com/MetaMask/action-publish-release/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/MetaMask/action-publish-release/compare/v0.0.5...v0.0.6
