@@ -3,7 +3,7 @@ description: 'Publish the release'
 inputs:
   release-branch-prefix:
     description: 'The prefix used for branches of release PRs.'
-    default: 'automation_release-'
+    default: 'release/'
     required: true
 
 runs:
