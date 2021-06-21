@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0]
+### Uncategorized
+- Use local version of self in publish-release workflow ([#23](https://github.com/MetaMask/action-publish-release/pull/23))
+- Add codeowners ([#24](https://github.com/MetaMask/action-publish-release/pull/24))
+- Update branch prefix ([#22](https://github.com/MetaMask/action-publish-release/pull/22))
+- Fix readme ([#21](https://github.com/MetaMask/action-publish-release/pull/21))
+- Update create-release-pr version ([#19](https://github.com/MetaMask/action-publish-release/pull/19))
+- Fix publish-release workflow ([#18](https://github.com/MetaMask/action-publish-release/pull/18))
+- Update local workflow MetaMask Action versions ([#17](https://github.com/MetaMask/action-publish-release/pull/17))
+
 ## [0.1.0]
 ### Changed
 - **(BREAKING)** Rename `branch-prefix` input to `release-branch-prefix` ([#15](https://github.com/MetaMask/action-publish-release/pull/15))
@@ -45,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/MetaMask/action-publish-release/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/MetaMask/action-publish-release/compare/v0.0.7...v0.1.0
 [0.0.7]: https://github.com/MetaMask/action-publish-release/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/MetaMask/action-publish-release/compare/v0.0.5...v0.0.6
