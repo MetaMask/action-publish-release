@@ -24,7 +24,5 @@ jobs:
         id: publish-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          release-branch-prefix: release/
       - name: Update shorthand major version tag
         run: ./scripts/update-major-version-tag.sh ${{ steps.publish-release.outputs.RELEASE_VERSION }}
