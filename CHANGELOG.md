@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1]
+### Added
+- `release-version` output ([#28](https://github.com/MetaMask/action-publish-release/pull/28))
+  - This outputs the version of the GitHub release, once it has been created.
+
 ## [1.0.0]
 ### Uncategorized
 - First stable release
@@ -56,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/MetaMask/action-publish-release/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/MetaMask/action-publish-release/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/MetaMask/action-publish-release/compare/v0.0.7...v0.1.0
 [0.0.7]: https://github.com/MetaMask/action-publish-release/compare/v0.0.6...v0.0.7
