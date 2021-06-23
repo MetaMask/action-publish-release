@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.1]
-### Uncategorized
-- Automate shorthand major version tag updating ([#28](https://github.com/MetaMask/action-publish-release/pull/28))
+### Added
+- `release-version` output ([#28](https://github.com/MetaMask/action-publish-release/pull/28))
+  - This outputs the version of the GitHub release, once it has been created.
 
 ## [1.0.0]
 ### Uncategorized
