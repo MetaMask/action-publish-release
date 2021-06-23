@@ -37,8 +37,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          # This is to guarantee that the most recent tag is fetched.
-          fetch-depth: 0
           # We check out the release pull request's base branch, which will be
           # used as the base branch for all git operations.
           ref: ${{ github.event.pull_request.base.ref }}
