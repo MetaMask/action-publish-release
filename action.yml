@@ -6,6 +6,11 @@ inputs:
     default: 'release/'
     required: true
 
+outputs:
+  release-version:
+    description: 'The version of the release'
+    value: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+
 runs:
   using: 'composite'
   steps:
