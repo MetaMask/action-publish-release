@@ -7,7 +7,7 @@ set -o pipefail
 RELEASE_VERSION="${1}"
 
 if [[ -z $RELEASE_VERSION ]]; then
-  echo "Error: No new version specified."
+  echo "Error: No release version specified."
   exit 1
 fi
 
