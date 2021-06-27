@@ -5,6 +5,6 @@ import {
 import { getReleaseNotes } from './getReleaseNotes';
 
 getReleaseNotes().catch((error) => {
-  logError(error?.stack || 'The error has no stack.');
+  logError(error.stack);
   setActionToFailed(error);
 });
