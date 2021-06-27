@@ -5,6 +5,9 @@ import {
 import { getReleaseNotes } from './getReleaseNotes';
 
 getReleaseNotes().catch((error) => {
-  logError(error.stack);
+  // istanbul ignore else
+  if (error.stack) {
+    logError(error.stack);
+  }
   setActionToFailed(error);
 });
