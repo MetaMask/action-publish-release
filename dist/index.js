@@ -9161,6 +9161,10 @@ async function getPackageReleaseNotes(releaseVersion, repoUrl, packagePath) {
 
 
 getReleaseNotes().catch((error) => {
+    // istanbul ignore else
+    if (error.stack) {
+        (0,core.error)(error.stack);
+    }
     (0,core.setFailed)(error);
 });
 //# sourceMappingURL=index.js.map
