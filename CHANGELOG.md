@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.2]
-### Uncategorized
-- Add debug logging ([#31](https://github.com/MetaMask/action-publish-release/pull/31))
-- Update recommended and local publish-release workflow ([#30](https://github.com/MetaMask/action-publish-release/pull/30))
+### Fixed
+- Error logging on Action failure ([#31](https://github.com/MetaMask/action-publish-release/pull/31))
+
+### Changed
+- Improve usage documentation ([#30](https://github.com/MetaMask/action-publish-release/pull/30))
 
 ## [1.0.1]
 ### Added
