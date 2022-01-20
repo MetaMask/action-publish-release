@@ -5,6 +5,9 @@ inputs:
     description: 'The prefix used for branches of release PRs.'
     default: 'release/'
     required: true
+  npm-token:
+    description: 'The token used for npm publishing'
+    required: true
 
 outputs:
   release-version:
@@ -31,3 +34,19 @@ runs:
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh \
           ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+
+    - name: Setup node
+      uses: actions/setup-node@v2
+      with:
+        node-version: '12'
+        cache: 'npm'
+
+    - id: Setup
+      shell: bash
+      run: ${{ github.action_path }}/scripts/yarn-setup.sh
+
+    - id: Publish
+      shell: bash
+      run: ${{ github.action_path }}/scripts/npm-publish.sh
+      env:
+        NPM_TOKEN: ${{ inputs.npm-token }}
