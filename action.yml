@@ -35,12 +35,6 @@ runs:
         ${{ github.action_path }}/scripts/create-github-release.sh \
           ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
 
-    - name: Setup node
-      uses: actions/setup-node@v2
-      with:
-        node-version: '12'
-        cache: 'npm'
-
     - id: Setup
       shell: bash
       run: ${{ github.action_path }}/scripts/yarn-setup.sh
