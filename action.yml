@@ -35,10 +35,6 @@ runs:
         ${{ github.action_path }}/scripts/create-github-release.sh \
           ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
 
-    - id: Setup
-      shell: bash
-      run: ${{ github.action_path }}/scripts/yarn-setup.sh
-
     - id: Publish
       shell: bash
       run: ${{ github.action_path }}/scripts/npm-publish.sh
