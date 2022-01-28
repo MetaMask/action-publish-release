@@ -6,8 +6,8 @@ inputs:
     default: 'release/'
     required: true
   npm-token:
-    description: 'The token used for npm publishing'
-    required: true
+    description: 'The token used for npm publishing. Publishing to npm will be skipped if omitted.'
+    required: false
 
 outputs:
   release-version:
