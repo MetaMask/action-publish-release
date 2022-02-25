@@ -5,9 +5,6 @@ inputs:
     description: 'The prefix used for branches of release PRs.'
     default: 'release/'
     required: true
-  npm-token:
-    description: 'The token used for npm publishing. Publishing to npm will be skipped if omitted.'
-    required: false
 
 outputs:
   release-version:
@@ -34,9 +31,3 @@ runs:
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh \
           ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
-
-    - id: Publish
-      shell: bash
-      run: ${{ github.action_path }}/scripts/npm-publish.sh
-      env:
-        NPM_TOKEN: ${{ inputs.npm-token }}
