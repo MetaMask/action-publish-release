@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0]
+### Uncategorized
+- get releae version from package.json ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
+- Revert "Add npm Publish (#43)" ([#43](https://github.com/MetaMask/action-publish-release/pull/43))
+- Add npm Publish ([#43](https://github.com/MetaMask/action-publish-release/pull/43))
+- Update ESLint config to v7.0.1 ([#41](https://github.com/MetaMask/action-publish-release/pull/41))
+- Bump @metamask/eslint-config-nodejs from 6.0.0 to 7.0.1 ([#37](https://github.com/MetaMask/action-publish-release/pull/37))
+- Bump @metamask/eslint-config-typescript from 6.0.0 to 7.0.1 ([#40](https://github.com/MetaMask/action-publish-release/pull/40))
+- Bump @metamask/eslint-config from 6.0.0 to 7.0.0 ([#36](https://github.com/MetaMask/action-publish-release/pull/36))
+
 ## [1.0.3]
 ### Changed
 - Bump `@metamask/auto-changelog` from `2.3.0` to `2.4.0` ([#34](https://github.com/MetaMask/action-publish-release/pull/34))
@@ -72,7 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/MetaMask/action-publish-release/compare/v1.0.3...v2.0.0
 [1.0.3]: https://github.com/MetaMask/action-publish-release/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/MetaMask/action-publish-release/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/MetaMask/action-publish-release/compare/v1.0.0...v1.0.1
