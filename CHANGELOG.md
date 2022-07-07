@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0]
 ### Changed
-- Use the version in `package.json` to determine the release version instead of the name of the release branch ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
+- **BREAKING:** Use the version in `package.json` to determine the release version instead of the name of the release branch ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
+  - Projects that use this action should no longer pass a `release-branch-prefix` input. Additionally, they should make sure that when a release branch is merged, the version of the package (or root package in the case of a monorepo) is updated to the desired release version.
 
 ## [1.0.3]
 ### Changed
