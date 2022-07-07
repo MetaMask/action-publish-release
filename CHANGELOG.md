@@ -7,14 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.0.0]
-### Uncategorized
-- get releae version from package.json ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
-- Revert "Add npm Publish (#43)" ([#43](https://github.com/MetaMask/action-publish-release/pull/43))
-- Add npm Publish ([#43](https://github.com/MetaMask/action-publish-release/pull/43))
-- Update ESLint config to v7.0.1 ([#41](https://github.com/MetaMask/action-publish-release/pull/41))
-- Bump @metamask/eslint-config-nodejs from 6.0.0 to 7.0.1 ([#37](https://github.com/MetaMask/action-publish-release/pull/37))
-- Bump @metamask/eslint-config-typescript from 6.0.0 to 7.0.1 ([#40](https://github.com/MetaMask/action-publish-release/pull/40))
-- Bump @metamask/eslint-config from 6.0.0 to 7.0.0 ([#36](https://github.com/MetaMask/action-publish-release/pull/36))
+### Changed
+- Use the version in `package.json` to determine the release version instead of the name of the release branch ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
 
 ## [1.0.3]
 ### Changed
