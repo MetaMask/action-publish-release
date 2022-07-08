@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0]
+### Changed
+- **BREAKING:** Use the version in `package.json` to determine the release version instead of the name of the release branch ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
+  - Projects that use this action should no longer pass a `release-branch-prefix` input. Additionally, they should make sure that when a release branch is merged, the version of the package (or root package in the case of a monorepo) is updated to the desired release version.
+
 ## [1.0.3]
 ### Changed
 - Bump `@metamask/auto-changelog` from `2.3.0` to `2.4.0` ([#34](https://github.com/MetaMask/action-publish-release/pull/34))
@@ -72,7 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/MetaMask/action-publish-release/compare/v1.0.3...v2.0.0
 [1.0.3]: https://github.com/MetaMask/action-publish-release/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/MetaMask/action-publish-release/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/MetaMask/action-publish-release/compare/v1.0.0...v1.0.1
