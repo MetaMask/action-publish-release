@@ -12,7 +12,11 @@ runs:
     - id: get-release-version
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/get-release-version.sh
+        ${{ github.action_path }}/scripts/get.sh ".version" "RELEASE_VERSION"
+    - id: get-repository-url
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/get.sh ".repository.url" "REPOSITORY_URL"
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
@@ -20,6 +24,7 @@ runs:
       run: node ${{ github.action_path }}/dist/index.js
       env:
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+        REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
     - id: create-github-release
       shell: bash
       run: |

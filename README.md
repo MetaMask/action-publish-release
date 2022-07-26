@@ -51,14 +51,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Release Branch Names
-
-Release branch names **must** be of the form `<prefix><version>`, where `<prefix>` is the `release-branch-prefix` input to this action (by default `release/`), and `<version>` is the SemVer version being released.
-For example, using the default prefix, the branch for the `1.0.0` release would be named `release/1.0.0`.
-
-If used with [Metamask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr), the `release-branch-prefix` inputs for both Actions must be identical.
-The default values for this input is the same for both Actions within major versions.
-
 ## Contributing
 
 ### Setup
