@@ -5,6 +5,9 @@ import {
 } from '@metamask/action-utils';
 
 import {
+  GITHUB_WORKSPACE,
+  RELEASE_VERSION,
+  REPOSITORY_URL,
   GITHUB_WORKSPACE_ERROR,
   RELEASE_VERSION_ERROR,
   REPOSITORY_URL_ERROR,
@@ -12,12 +15,12 @@ import {
 
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The root of the workspace running this action
-  GITHUB_WORKSPACE?: string;
+  [GITHUB_WORKSPACE]?: string;
   // This is set from the repository `package.json` key: .repository.url
-  REPOSITORY_URL?: string;
+  [REPOSITORY_URL]?: string;
   // The version to be released,
   // this is set from the repository `package.json` key: .version
-  RELEASE_VERSION?: string;
+  [RELEASE_VERSION]?: string;
 }
 
 /**
@@ -64,7 +67,7 @@ export function parseEnvironmentVariables(
   environmentVariables: ExpectedProcessEnv = process.env,
 ): ParsedEnvironmentVariables {
   const workspaceRoot = getStringRecordValue(
-    'GITHUB_WORKSPACE',
+    GITHUB_WORKSPACE,
     environmentVariables,
   );
 
@@ -73,7 +76,7 @@ export function parseEnvironmentVariables(
   }
 
   const releaseVersion = getStringRecordValue(
-    'RELEASE_VERSION',
+    RELEASE_VERSION,
     environmentVariables,
   );
   if (!isTruthyString(releaseVersion) || !isValidSemver(releaseVersion)) {
@@ -81,7 +84,7 @@ export function parseEnvironmentVariables(
   }
 
   const repositoryUrl = getStringRecordValue(
-    'REPOSITORY_URL',
+    REPOSITORY_URL,
     environmentVariables,
   );
 
