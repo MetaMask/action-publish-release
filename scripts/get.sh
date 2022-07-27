@@ -7,6 +7,7 @@ set -o pipefail
 
 KEY="${1}"
 OUTPUT="${2}"
+FILE="${3}"
 
 if [[ -z $KEY ]]; then
   echo "Error: KEY not specified."
@@ -18,4 +19,8 @@ if [[ -z $OUTPUT ]]; then
   exit 1
 fi
 
-echo "::set-output name=$OUTPUT::$(jq --raw-output "$KEY" package.json)"
+if [[ -z $FILE ]]; then
+  FILE="package.json"
+fi
+
+echo "::set-output name=$OUTPUT::$(jq --raw-output "$KEY" "$FILE")"
