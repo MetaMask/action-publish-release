@@ -11,6 +11,10 @@ import {
   GITHUB_WORKSPACE_ERROR,
   RELEASE_VERSION_ERROR,
   REPOSITORY_URL_ERROR,
+  HTTP,
+  HTTPS,
+  GIT_EXT,
+  VERSION_STRATEGY,
 } from './constants';
 
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
@@ -21,6 +25,9 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The version to be released,
   // this is set from the repository `package.json` key: .version
   [RELEASE_VERSION]?: string;
+  // version strategy
+  // this is set from the repository `release.config.json` key: .versioningStrategy
+  [VERSION_STRATEGY]?: string;
 }
 
 /**
@@ -49,11 +56,11 @@ const isValidUrl = (str: string): boolean => {
     return false;
   }
 
-  return url.protocol === 'http:' || url.protocol === 'https:';
+  return url.protocol === HTTP || url.protocol === HTTPS;
 };
 
 const removeGitEx = (url: string): string =>
-  url.substring(0, url.lastIndexOf('.git'));
+  url.substring(0, url.lastIndexOf(GIT_EXT));
 
 /**
  * Utility function for parsing expected environment variables.
