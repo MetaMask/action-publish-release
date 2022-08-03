@@ -10788,19 +10788,26 @@ var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
+;// CONCATENATED MODULE: ./lib/constants.js
+// error messages
+const GITHUB_WORKSPACE_ERROR = 'process.env.GITHUB_WORKSPACE must be set.';
+const RELEASE_VERSION_ERROR = 'process.env.RELEASE_VERSION must be a valid SemVer version.';
+const REPOSITORY_URL_ERROR = 'process.env.REPOSITORY_URL must be a valid URL.';
+//# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
-/**
- * Matches valid "Orgname/Reponame" strings.
- *
- * Organization names may only have non-consecutive hyphens and alphanumerical
- * characters, and may not start or end with hyphens. We don't deal with the
- * non-consecutive edge case.
- *
- * Repo names are more permissive, but in practice the URLs will only include
- * alphanumerical characters, hyphens, underscores, and periods.
- */
-const githubRepoIdRegEx = /^[\d\w](?:[\d\w-]*[\d\w])*\/[\d\w_.-]+$/iu;
+
+const isValidUrl = (str) => {
+    let url;
+    try {
+        url = new URL(str);
+    }
+    catch (_) {
+        return false;
+    }
+    return url.protocol === 'http:' || url.protocol === 'https:';
+};
+const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
 /**
  * Utility function for parsing expected environment variables.
  *
@@ -10810,22 +10817,23 @@ const githubRepoIdRegEx = /^[\d\w](?:[\d\w-]*[\d\w])*\/[\d\w_.-]+$/iu;
  * @returns The parsed environment variables.
  */
 function parseEnvironmentVariables(environmentVariables = process.env) {
-    const githubWorkspace = (0,dist.getStringRecordValue)('GITHUB_WORKSPACE', environmentVariables);
-    if (!(0,dist.isTruthyString)(githubWorkspace)) {
-        throw new Error('process.env.GITHUB_WORKSPACE must be set.');
-    }
-    const githubRepository = (0,dist.getStringRecordValue)('GITHUB_REPOSITORY', environmentVariables);
-    if (!githubRepoIdRegEx.test(githubRepository)) {
-        throw new Error('process.env.GITHUB_REPOSITORY must be a valid GitHub repository identifier.');
+    const workspaceRoot = (0,dist.getStringRecordValue)('GITHUB_WORKSPACE', environmentVariables);
+    if (!(0,dist.isTruthyString)(workspaceRoot)) {
+        throw new Error(GITHUB_WORKSPACE_ERROR);
     }
     const releaseVersion = (0,dist.getStringRecordValue)('RELEASE_VERSION', environmentVariables);
     if (!(0,dist.isTruthyString)(releaseVersion) || !(0,dist.isValidSemver)(releaseVersion)) {
-        throw new Error('process.env.RELEASE_VERSION must be a valid SemVer version.');
+        throw new Error(RELEASE_VERSION_ERROR);
     }
+    const repositoryUrl = (0,dist.getStringRecordValue)('REPOSITORY_URL', environmentVariables);
+    if (!isValidUrl(repositoryUrl)) {
+        throw new Error(REPOSITORY_URL_ERROR);
+    }
+    const repoUrl = removeGitEx(repositoryUrl);
     return {
         releaseVersion,
-        repoUrl: `https://github.com/${githubRepository}`,
-        workspaceRoot: githubWorkspace,
+        repoUrl,
+        workspaceRoot,
     };
 }
 //# sourceMappingURL=utils.js.map
