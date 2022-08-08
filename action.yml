@@ -9,20 +9,28 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - id: get-version-strategy
+      shell: bash
+      run: |
+        VERSION_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
+        echo "::set-output name=VERSION_STRATEGY::$VERSION_STRATEGY"
     - id: get-release-version
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/get.sh ".version" "RELEASE_VERSION"
+        RELEASE_VERSION=$(jq --raw-output ".version" "package.json")
+        echo "::set-output name=RELEASE_VERSION::$RELEASE_VERSION"
     - id: get-repository-url
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/get.sh ".repository.url" "REPOSITORY_URL"
+        REPOSITORY_URL=$(jq --raw-output ".repository.url" "package.json")
+        echo "::set-output name=REPOSITORY_URL::$REPOSITORY_URL"
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
       shell: bash
       run: node ${{ github.action_path }}/dist/index.js
       env:
+        VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
     - id: create-github-release
