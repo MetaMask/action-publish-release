@@ -15,6 +15,8 @@ import {
   HTTPS,
   GIT_EXT,
   VERSION_STRATEGY,
+  VERSION_STRATEGY_ERROR,
+  fixedOrIndependent,
 } from './constants';
 
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
@@ -45,6 +47,7 @@ interface ParsedEnvironmentVariables {
   releaseVersion: string;
   repoUrl: string;
   workspaceRoot: string;
+  versionStrategy: string;
 }
 
 const isValidUrl = (str: string): boolean => {
@@ -101,9 +104,19 @@ export function parseEnvironmentVariables(
 
   const repoUrl = removeGitEx(repositoryUrl);
 
+  const versionStrategy = getStringRecordValue(
+    VERSION_STRATEGY,
+    environmentVariables,
+  );
+
+  if (!fixedOrIndependent(versionStrategy)) {
+    throw new Error(VERSION_STRATEGY_ERROR);
+  }
+
   return {
     releaseVersion,
     repoUrl,
     workspaceRoot,
+    versionStrategy,
   };
 }

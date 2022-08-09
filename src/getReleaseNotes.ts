@@ -21,7 +21,7 @@ import { parseEnvironmentVariables } from './utils';
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 export async function getReleaseNotes() {
-  const { releaseVersion, repoUrl, workspaceRoot } =
+  const { releaseVersion, repoUrl, workspaceRoot, versionStrategy } =
     parseEnvironmentVariables();
 
   const rawRootManifest = await getPackageManifest(workspaceRoot);
@@ -41,6 +41,7 @@ export async function getReleaseNotes() {
       repoUrl,
       workspaceRoot,
       validateMonorepoPackageManifest(rootManifest, workspaceRoot),
+      versionStrategy,
     );
   } else {
     console.log(
@@ -79,6 +80,7 @@ async function getMonorepoReleaseNotes(
   repoUrl: string,
   workspaceRoot: string,
   rootManifest: MonorepoPackageManifest,
+  versioningStrategy: string,
 ): Promise<string> {
   const workspaceLocations = await getWorkspaceLocations(
     rootManifest.workspaces,
@@ -86,30 +88,38 @@ async function getMonorepoReleaseNotes(
   );
 
   let releaseNotes = '';
-  for (const workspaceLocation of workspaceLocations) {
-    const completeWorkspacePath = pathUtils.join(
-      workspaceRoot,
-      workspaceLocation,
-    );
 
-    const rawPackageManifest = await getPackageManifest(completeWorkspacePath);
-    const { name: packageName, version: packageVersion } =
-      validatePolyrepoPackageManifest(
-        rawPackageManifest,
+  if (versioningStrategy === 'fixed') {
+    for (const workspaceLocation of workspaceLocations) {
+      const completeWorkspacePath = pathUtils.join(
+        workspaceRoot,
+        workspaceLocation,
+      );
+
+      const rawPackageManifest = await getPackageManifest(
         completeWorkspacePath,
       );
-
-    if (packageVersion === releaseVersion) {
-      releaseNotes = releaseNotes.concat(
-        `## ${packageName}\n\n`,
-        await getPackageReleaseNotes(
-          releaseVersion,
-          repoUrl,
+      const { name: packageName, version: packageVersion } =
+        validatePolyrepoPackageManifest(
+          rawPackageManifest,
           completeWorkspacePath,
-        ),
-        '\n\n',
-      );
+        );
+
+      if (packageVersion === releaseVersion) {
+        releaseNotes = releaseNotes.concat(
+          `## ${packageName}\n\n`,
+          await getPackageReleaseNotes(
+            releaseVersion,
+            repoUrl,
+            completeWorkspacePath,
+          ),
+          '\n\n',
+        );
+      }
     }
+  } else {
+    // independent...
+    releaseNotes = 'foo';
   }
 
   return releaseNotes;

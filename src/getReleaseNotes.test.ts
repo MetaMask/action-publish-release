@@ -122,12 +122,14 @@ describe('getReleaseNotes', () => {
     const mockVersion = '1.0.0';
     const mockWorkspaces = ['a', 'b', 'c'];
     const mockChangelog = 'a changelog';
+    const mockVersionStrategy = 'fixed';
 
     parseEnvVariablesMock.mockImplementationOnce(() => {
       return {
         releaseVersion: mockVersion,
         repoUrl: mockRepoUrl,
         workspaceRoot: mockWorkspaceRoot,
+        versionStrategy: mockVersionStrategy,
       };
     });
     getPackageManifestMock.mockImplementationOnce(async () => {

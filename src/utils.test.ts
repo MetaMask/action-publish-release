@@ -5,6 +5,8 @@ import {
   GITHUB_WORKSPACE_ERROR,
   RELEASE_VERSION_ERROR,
   REPOSITORY_URL_ERROR,
+  VERSION_STRATEGY,
+  VERSION_STRATEGY_ERROR,
 } from './constants';
 import { parseEnvironmentVariables } from './utils';
 
@@ -29,11 +31,13 @@ describe('parseEnvironmentVariables', () => {
         [GITHUB_WORKSPACE]: 'foo',
         [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
         [RELEASE_VERSION]: '1.0.0',
+        [VERSION_STRATEGY]: 'fixed',
       }),
     ).toStrictEqual({
       releaseVersion: '1.0.0',
       repoUrl: 'https://github.com/MetaMask/snaps-skunkworks',
       workspaceRoot: 'foo',
+      versionStrategy: 'fixed',
     });
   });
 
@@ -73,5 +77,16 @@ describe('parseEnvironmentVariables', () => {
         [RELEASE_VERSION]: 'kaplar',
       }),
     ).toThrow(RELEASE_VERSION_ERROR);
+  });
+
+  it('throws if VERSION_STRATEGY is invalid', () => {
+    expect(() =>
+      parseEnvironmentVariables({
+        [GITHUB_WORKSPACE]: 'foo',
+        [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        [RELEASE_VERSION]: '1.0.0',
+        [VERSION_STRATEGY]: 'lol',
+      }),
+    ).toThrow(VERSION_STRATEGY_ERROR);
   });
 });
