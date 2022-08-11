@@ -10789,10 +10789,22 @@ var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/constants.js
+const FIXED = 'fixed';
+const INDEPENDENT = 'independent';
+const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
 // error messages
 const GITHUB_WORKSPACE_ERROR = 'process.env.GITHUB_WORKSPACE must be set.';
 const RELEASE_VERSION_ERROR = 'process.env.RELEASE_VERSION must be a valid SemVer version.';
 const REPOSITORY_URL_ERROR = 'process.env.REPOSITORY_URL must be a valid URL.';
+const VERSION_STRATEGY_ERROR = `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`;
+// env variables
+const GITHUB_WORKSPACE = 'GITHUB_WORKSPACE';
+const RELEASE_VERSION = 'RELEASE_VERSION';
+const REPOSITORY_URL = 'REPOSITORY_URL';
+const VERSION_STRATEGY = 'VERSION_STRATEGY';
+const HTTP = 'http:';
+const HTTPS = 'https:';
+const GIT_EXT = '.git';
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
@@ -10805,9 +10817,9 @@ const isValidUrl = (str) => {
     catch (_) {
         return false;
     }
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    return url.protocol === HTTP || url.protocol === HTTPS;
 };
-const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
+const removeGitEx = (url) => url.substring(0, url.lastIndexOf(GIT_EXT));
 /**
  * Utility function for parsing expected environment variables.
  *
@@ -10817,23 +10829,28 @@ const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
  * @returns The parsed environment variables.
  */
 function parseEnvironmentVariables(environmentVariables = process.env) {
-    const workspaceRoot = (0,dist.getStringRecordValue)('GITHUB_WORKSPACE', environmentVariables);
+    const workspaceRoot = (0,dist.getStringRecordValue)(GITHUB_WORKSPACE, environmentVariables);
     if (!(0,dist.isTruthyString)(workspaceRoot)) {
         throw new Error(GITHUB_WORKSPACE_ERROR);
     }
-    const releaseVersion = (0,dist.getStringRecordValue)('RELEASE_VERSION', environmentVariables);
+    const releaseVersion = (0,dist.getStringRecordValue)(RELEASE_VERSION, environmentVariables);
     if (!(0,dist.isTruthyString)(releaseVersion) || !(0,dist.isValidSemver)(releaseVersion)) {
         throw new Error(RELEASE_VERSION_ERROR);
     }
-    const repositoryUrl = (0,dist.getStringRecordValue)('REPOSITORY_URL', environmentVariables);
+    const repositoryUrl = (0,dist.getStringRecordValue)(REPOSITORY_URL, environmentVariables);
     if (!isValidUrl(repositoryUrl)) {
         throw new Error(REPOSITORY_URL_ERROR);
     }
     const repoUrl = removeGitEx(repositoryUrl);
+    const versionStrategy = (0,dist.getStringRecordValue)(VERSION_STRATEGY, environmentVariables);
+    if (!fixedOrIndependent(versionStrategy)) {
+        throw new Error(VERSION_STRATEGY_ERROR);
+    }
     return {
         releaseVersion,
         repoUrl,
         workspaceRoot,
+        versionStrategy,
     };
 }
 //# sourceMappingURL=utils.js.map
@@ -10852,13 +10869,13 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 async function getReleaseNotes() {
-    const { releaseVersion, repoUrl, workspaceRoot } = parseEnvironmentVariables();
+    const { releaseVersion, repoUrl, workspaceRoot, versionStrategy } = parseEnvironmentVariables();
     const rawRootManifest = await (0,dist.getPackageManifest)(workspaceRoot);
     const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, workspaceRoot);
     let releaseNotes;
     if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot));
+        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), versionStrategy);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
@@ -10883,16 +10900,22 @@ async function getReleaseNotes() {
  * @param rootManifest - The parsed package.json file of the root directory.
  * @returns The release notes for all packages included in the release.
  */
-async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest) {
+async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
     let releaseNotes = '';
-    for (const workspaceLocation of workspaceLocations) {
-        const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
-        const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
-        const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
-        if (packageVersion === releaseVersion) {
-            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
+    if (versioningStrategy === 'fixed') {
+        for (const workspaceLocation of workspaceLocations) {
+            const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
+            const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
+            const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
+            if (packageVersion === releaseVersion) {
+                releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
+            }
         }
+    }
+    else {
+        // independent...
+        releaseNotes = 'foo';
     }
     return releaseNotes;
 }
