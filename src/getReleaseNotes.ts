@@ -13,6 +13,11 @@ import {
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 
+const getUpdatedPackages = (workspaceRoot: string): string[] => {
+  // list of packages that have changed
+  return [`${workspaceRoot}/packages/cli`];
+};
+
 /**
  * Action entry function. Gets the release notes for use in a GitHub release.
  * Works for both monorepos and polyrepos.
@@ -120,6 +125,13 @@ async function getMonorepoReleaseNotes(
   } else {
     // independent...
     releaseNotes = 'foo';
+
+    // build releaseNotes from individual package changelogs
+    // only for packages that have been updated
+    const updatedPackages = getUpdatedPackages(workspaceRoot);
+    console.log({ updatedPackages });
+
+    // create main tag as well as individual tags for each package that's changed.
   }
 
   return releaseNotes;
