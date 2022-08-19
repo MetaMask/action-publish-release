@@ -6,7 +6,7 @@ This Action creates a GitHub release when a release PR is merged.
 A "release PR" is a PR whose branch is named with a particular prefix, followed by a SemVer version.
 The release title will simply be the SemVer version of the release, and the release body will be the change entries of the release from the repository's [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog.
 
-Designed for use with [MetaMask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr).
+Designed for use with [MetaMask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr) and (optionally) [MetaMask/action-npm-publish](https://github.com/MetaMask/action-npm-publish)
 
 ### Monorepos
 
