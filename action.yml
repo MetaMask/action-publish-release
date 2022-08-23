@@ -11,6 +11,7 @@ runs:
   steps:
     - run: |
         ls -ltra
+      shell: bash
     - id: get-version-strategy
       shell: bash
       run: |
