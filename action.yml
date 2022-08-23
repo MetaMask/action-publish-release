@@ -9,6 +9,8 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - run: |
+        ls -ltra
     - id: get-version-strategy
       shell: bash
       run: |
