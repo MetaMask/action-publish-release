@@ -10802,6 +10802,7 @@ const GITHUB_WORKSPACE = 'GITHUB_WORKSPACE';
 const RELEASE_VERSION = 'RELEASE_VERSION';
 const REPOSITORY_URL = 'REPOSITORY_URL';
 const VERSION_STRATEGY = 'VERSION_STRATEGY';
+const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
 const HTTP = 'http:';
 const HTTPS = 'https:';
 const GIT_EXT = '.git';
@@ -10809,6 +10810,7 @@ const GIT_EXT = '.git';
 ;// CONCATENATED MODULE: ./lib/utils.js
 
 
+const EMPTY_PACKAGES = undefined;
 const isValidUrl = (str) => {
     let url;
     try {
@@ -10846,11 +10848,14 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
     if (!fixedOrIndependent(versionStrategy)) {
         throw new Error(VERSION_STRATEGY_ERROR);
     }
+    const updatedPackages = (0,dist.getStringRecordValue)(UPDATED_PACKAGES, environmentVariables) ||
+        EMPTY_PACKAGES;
     return {
         releaseVersion,
         repoUrl,
         workspaceRoot,
         versionStrategy,
+        updatedPackages,
     };
 }
 //# sourceMappingURL=utils.js.map
@@ -10861,9 +10866,15 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 
 
 
-const getUpdatedPackages = (workspaceRoot) => {
-    // list of packages that have changed
-    return [`${workspaceRoot}/packages/cli`];
+const getUpdatedPackages = () => {
+    const { updatedPackages } = parseEnvironmentVariables();
+    if (updatedPackages === undefined) {
+        throw new Error('The updated packages are undefined');
+    }
+    else {
+        const { packages } = JSON.parse(updatedPackages);
+        return packages;
+    }
 };
 /**
  * Action entry function. Gets the release notes for use in a GitHub release.
@@ -10922,7 +10933,7 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
         releaseNotes = 'foo';
         // build releaseNotes from individual package changelogs
         // only for packages that have been updated
-        const updatedPackages = getUpdatedPackages(workspaceRoot);
+        const updatedPackages = getUpdatedPackages();
         console.log({ updatedPackages });
         // create main tag as well as individual tags for each package that's changed.
     }
