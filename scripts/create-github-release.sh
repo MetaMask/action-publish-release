@@ -9,10 +9,13 @@ if [[ -z $RELEASE_NOTES ]]; then
   exit 1
 fi
 
-RELEASE_VERSION="${1}"
-
 if [[ -z $RELEASE_VERSION ]]; then
   echo "Error: No release version specified."
+  exit 1
+fi
+
+if [[ -z $VERSION_STRATEGY ]]; then
+  echo "Error: No version strategy specified."
   exit 1
 fi
 
@@ -20,3 +23,7 @@ gh release create \
   "v$RELEASE_VERSION" \
   --title "$RELEASE_VERSION" \
   --notes "$RELEASE_NOTES"
+
+if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent"  ]]; then
+  echo "independent versioning strategy"
+fi

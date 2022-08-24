@@ -9,9 +9,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - run: |
-        ls -ltra
-      shell: bash
     - id: get-version-strategy
       shell: bash
       run: |
@@ -39,5 +36,7 @@ runs:
     - id: create-github-release
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/create-github-release.sh \
-          ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+        ${{ github.action_path }}/scripts/create-github-release.sh
+      env:
+        VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
+        RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
