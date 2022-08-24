@@ -18,6 +18,7 @@ export const GITHUB_WORKSPACE = 'GITHUB_WORKSPACE';
 export const RELEASE_VERSION = 'RELEASE_VERSION';
 export const REPOSITORY_URL = 'REPOSITORY_URL';
 export const VERSION_STRATEGY = 'VERSION_STRATEGY';
+export const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
 
 export const HTTP = 'http:';
 export const HTTPS = 'https:';

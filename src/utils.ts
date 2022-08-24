@@ -5,6 +5,7 @@ import {
 } from '@metamask/action-utils';
 
 import {
+  UPDATED_PACKAGES,
   GITHUB_WORKSPACE,
   RELEASE_VERSION,
   REPOSITORY_URL,
@@ -19,6 +20,8 @@ import {
   fixedOrIndependent,
 } from './constants';
 
+// {"packages":["@metamask/snaps-cli","@metamask/snap-controllers","@metamask/execution-environments","@metamask/snaps-browserify-plugin","@metamask/rollup-plugin-snaps","@metamask/snaps-webpack-plugin","@metamask/rpc-methods","@metamask/snap-types","@metamask/snap-utils"]}
+
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The root of the workspace running this action
   [GITHUB_WORKSPACE]?: string;
@@ -30,7 +33,11 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // version strategy
   // this is set from the repository `release.config.json` key: .versioningStrategy
   [VERSION_STRATEGY]?: string;
+  // this is a json list of the updated packages
+  [UPDATED_PACKAGES]?: string | undefined;
 }
+
+const EMPTY_PACKAGES = undefined;
 
 /**
  * Add missing properties to "process.env" interface.
@@ -48,6 +55,7 @@ interface ParsedEnvironmentVariables {
   repoUrl: string;
   workspaceRoot: string;
   versionStrategy: string;
+  updatedPackages: string | undefined;
 }
 
 const isValidUrl = (str: string): boolean => {
@@ -113,10 +121,15 @@ export function parseEnvironmentVariables(
     throw new Error(VERSION_STRATEGY_ERROR);
   }
 
+  const updatedPackages =
+    getStringRecordValue(UPDATED_PACKAGES, environmentVariables) ||
+    EMPTY_PACKAGES;
+
   return {
     releaseVersion,
     repoUrl,
     workspaceRoot,
     versionStrategy,
+    updatedPackages,
   };
 }

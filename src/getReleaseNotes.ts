@@ -13,9 +13,15 @@ import {
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 
-const getUpdatedPackages = (workspaceRoot: string): string[] => {
-  // list of packages that have changed
-  return [`${workspaceRoot}/packages/cli`];
+const getUpdatedPackages = (): string[] => {
+  const { updatedPackages } = parseEnvironmentVariables();
+
+  if (updatedPackages === undefined) {
+    throw new Error('The updated packages are undefined');
+  } else {
+    const { packages } = JSON.parse(updatedPackages);
+    return packages;
+  }
 };
 
 /**
@@ -128,7 +134,8 @@ async function getMonorepoReleaseNotes(
 
     // build releaseNotes from individual package changelogs
     // only for packages that have been updated
-    const updatedPackages = getUpdatedPackages(workspaceRoot);
+    const updatedPackages = getUpdatedPackages();
+
     console.log({ updatedPackages });
 
     // create main tag as well as individual tags for each package that's changed.

@@ -38,6 +38,7 @@ describe('parseEnvironmentVariables', () => {
       repoUrl: 'https://github.com/MetaMask/snaps-skunkworks',
       workspaceRoot: 'foo',
       versionStrategy: 'fixed',
+      updatedPackages: undefined,
     });
   });
 
