@@ -10934,6 +10934,7 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
         // build releaseNotes from individual package changelogs
         // only for packages that have been updated
         const updatedPackages = getUpdatedPackages();
+        console.log(typeof updatedPackages);
         console.log({ updatedPackages });
         // create main tag as well as individual tags for each package that's changed.
     }

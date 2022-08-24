@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # string of packages to publish
-toPublish="{\"packages\":["
+toPublish="{\"packages\":{"
 # store initial length of toPublish
 len="${#toPublish}"
 
-for dir in packages/*
+for DIR in packages/*
 do
-  MANIFEST="$dir/package.json"
+  MANIFEST="$DIR/package.json"
   PRIVATE=$(jq .private "$MANIFEST")
   if [[ "$PRIVATE" != "true" ]]; then
     NAME=$(jq --raw-output .name "$MANIFEST")
@@ -15,7 +15,7 @@ do
     CURRENT_PACKAGE_VERSION=$(jq --raw-output .version "$MANIFEST")
 
     if [ "$LATEST_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]; then
-      toPublish+="\"$NAME\","
+      toPublish+="\"$NAME\":"\"$DIR\"","
     fi
   fi
 done
@@ -26,7 +26,7 @@ if [[ "${#toPublish}" -gt "$len" ]]; then
   toPublish=${toPublish::-1}
 fi
 
-UPDATED_PACKAGES="$toPublish]}"
+UPDATED_PACKAGES="$toPublish}}"
 
 # echo "$UPDATED_PACKAGES"
 echo "::set-output name=UPDATED_PACKAGES::$UPDATED_PACKAGES"
