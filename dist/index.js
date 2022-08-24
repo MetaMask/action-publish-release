@@ -10861,6 +10861,10 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 
 
 
+const getUpdatedPackages = (workspaceRoot) => {
+    // list of packages that have changed
+    return [`${workspaceRoot}/packages/cli`];
+};
 /**
  * Action entry function. Gets the release notes for use in a GitHub release.
  * Works for both monorepos and polyrepos.
@@ -10916,6 +10920,11 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
     else {
         // independent...
         releaseNotes = 'foo';
+        // build releaseNotes from individual package changelogs
+        // only for packages that have been updated
+        const updatedPackages = getUpdatedPackages(workspaceRoot);
+        console.log({ updatedPackages });
+        // create main tag as well as individual tags for each package that's changed.
     }
     return releaseNotes;
 }
