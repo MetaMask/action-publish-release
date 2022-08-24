@@ -28,5 +28,5 @@ fi
 
 UPDATED_PACKAGES="$toPublish]}"
 
-# echo "$PACKAGES"
+# echo "$UPDATED_PACKAGES"
 echo "::set-output name=UPDATED_PACKAGES::$UPDATED_PACKAGES"
