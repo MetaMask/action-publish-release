@@ -5,6 +5,7 @@ toPublish="{\"packages\":{"
 # store initial length of toPublish
 len="${#toPublish}"
 
+# TODO: make this based on workspaces
 for DIR in packages/*
 do
   MANIFEST="$DIR/package.json"
@@ -15,7 +16,7 @@ do
     CURRENT_PACKAGE_VERSION=$(jq --raw-output .version "$MANIFEST")
 
     if [ "$LATEST_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]; then
-      toPublish+="\"$NAME\":"\"$DIR\"","
+      toPublish+="\"$NAME\":{\"path\":"\"$DIR\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
 done

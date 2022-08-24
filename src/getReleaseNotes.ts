@@ -13,7 +13,7 @@ import {
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 
-const getUpdatedPackages = (): Record<string, string> => {
+const getUpdatedPackages = (): Record<string, Record<string, string>> => {
   const { updatedPackages } = parseEnvironmentVariables();
 
   if (updatedPackages === undefined) {
@@ -136,8 +136,9 @@ async function getMonorepoReleaseNotes(
     // only for packages that have been updated
     const updatedPackages = getUpdatedPackages();
 
-    console.log(typeof updatedPackages);
-    console.log({ updatedPackages });
+    for (const [key, value] of Object.entries(updatedPackages)) {
+      console.log(`${key}: ${value}`);
+    }
 
     // create main tag as well as individual tags for each package that's changed.
   }
