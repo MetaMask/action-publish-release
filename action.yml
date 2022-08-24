@@ -24,6 +24,11 @@ runs:
       run: |
         REPOSITORY_URL=$(jq --raw-output ".repository.url" "package.json")
         echo "::set-output name=REPOSITORY_URL::$REPOSITORY_URL"
+    - id: get-updated-packages
+      if: steps.get-version-strategy.outputs.VERSION_STRATEGY == 'independent'
+      shell: bash
+      run: |
+        ${{ github.action_path }}/scripts/get-updated-packages.sh
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
@@ -33,6 +38,7 @@ runs:
         VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
+        UPDATED_PACKAGES: ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}
     - id: create-github-release
       shell: bash
       run: |
