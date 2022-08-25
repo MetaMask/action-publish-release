@@ -1,6 +1,24 @@
 #!/usr/bin/env bash
 
-# string of packages to publish
+set -x
+set -e
+set -u
+set -o pipefail
+
+# JSON string of packages to publish
+# shape is as follows:
+# {
+#   "packages": {
+#     "@metamask/snaps-cli": {
+#       "path": "packages/cli",
+#       "version": "0.19.2"
+#     },
+#     "@metamask/snap-controllers": {
+#       "path": "packages/controllers",
+#       "version": "0.19.2"
+#     }
+#   }
+# }
 toPublish="{\"packages\":{"
 # store initial length of toPublish
 len="${#toPublish}"
