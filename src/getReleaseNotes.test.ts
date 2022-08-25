@@ -62,6 +62,19 @@ describe('getUpdatedPackages', () => {
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
     expect(Object.entries(updatedPackages)).toHaveLength(2);
   });
+
+  it('should error if updated packages are undefined', () => {
+    parseEnvVariablesMock.mockImplementationOnce(() => {
+      return {
+        updatedPackages: undefined,
+      };
+    });
+
+    expect(() => {
+      getUpdatedPackages();
+    }).toThrow('The updated packages are undefined');
+    expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('getReleaseNotes', () => {
