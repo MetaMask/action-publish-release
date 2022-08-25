@@ -3,7 +3,7 @@ import * as actionsCore from '@actions/core';
 import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
 import * as localUtils from './utils';
-import { getReleaseNotes } from './getReleaseNotes';
+import { getReleaseNotes, getUpdatedPackages } from './getReleaseNotes';
 
 jest.mock('fs', () => {
   return {
@@ -38,6 +38,30 @@ jest.mock('./utils', () => {
   return {
     parseEnvironmentVariables: jest.fn(),
   };
+});
+
+describe('getUpdatedPackages', () => {
+  let parseEnvVariablesMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    parseEnvVariablesMock = jest.spyOn(localUtils, 'parseEnvironmentVariables');
+  });
+
+  it('should get updated packages', () => {
+    const mockUpdatedPackages =
+      '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
+
+    parseEnvVariablesMock.mockImplementationOnce(() => {
+      return {
+        updatedPackages: mockUpdatedPackages,
+      };
+    });
+
+    const updatedPackages = getUpdatedPackages();
+
+    expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
+    expect(updatedPackages).toHaveLength(2);
+  });
 });
 
 describe('getReleaseNotes', () => {

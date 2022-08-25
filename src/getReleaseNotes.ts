@@ -13,7 +13,10 @@ import {
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 
-const getUpdatedPackages = (): Record<string, Record<string, string>> => {
+export const getUpdatedPackages = (): Record<
+  string,
+  Record<string, string>
+> => {
   const { updatedPackages } = parseEnvironmentVariables();
 
   if (updatedPackages === undefined) {
