@@ -12,6 +12,7 @@ export const RELEASE_VERSION_ERROR =
 export const REPOSITORY_URL_ERROR =
   'process.env.REPOSITORY_URL must be a valid URL.';
 export const VERSION_STRATEGY_ERROR = `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`;
+export const UPDATED_PACKAGES_ERROR = 'The updated packages are undefined';
 
 // env variables
 export const GITHUB_WORKSPACE = 'GITHUB_WORKSPACE';

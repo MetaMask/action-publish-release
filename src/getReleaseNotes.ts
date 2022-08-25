@@ -12,6 +12,7 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
+import { UPDATED_PACKAGES_ERROR } from './constants';
 
 export const getUpdatedPackages = (): Record<
   string,
@@ -20,7 +21,7 @@ export const getUpdatedPackages = (): Record<
   const { updatedPackages } = parseEnvironmentVariables();
 
   if (updatedPackages === undefined) {
-    throw new Error('The updated packages are undefined');
+    throw new Error(UPDATED_PACKAGES_ERROR);
   } else {
     const { packages } = JSON.parse(updatedPackages);
     return packages;

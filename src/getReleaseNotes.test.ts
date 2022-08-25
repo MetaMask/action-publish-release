@@ -4,6 +4,7 @@ import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
 import * as localUtils from './utils';
 import { getReleaseNotes, getUpdatedPackages } from './getReleaseNotes';
+import { UPDATED_PACKAGES_ERROR } from './constants';
 
 jest.mock('fs', () => {
   return {
@@ -72,7 +73,7 @@ describe('getUpdatedPackages', () => {
 
     expect(() => {
       getUpdatedPackages();
-    }).toThrow('The updated packages are undefined');
+    }).toThrow(UPDATED_PACKAGES_ERROR);
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
   });
 });
