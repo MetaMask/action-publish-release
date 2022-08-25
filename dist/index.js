@@ -10930,18 +10930,10 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
         }
     }
     else {
-        // independent...
-        // releaseNotes = 'foo';
-        // build releaseNotes from individual package changelogs
-        // only for packages that have been updated
-        const updatedPackages = getUpdatedPackages();
-        for (const [packageName, value] of Object.entries(updatedPackages)) {
-            // console.log(`${key}: ${value}`);
-            const { path, version } = value;
-            console.log({ version });
+        for (const [packageName, value] of Object.entries(getUpdatedPackages())) {
+            const { path } = value;
             releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, path), '\n\n');
         }
-        // create main tag as well as individual tags for each package that's changed.
     }
     return releaseNotes;
 }
