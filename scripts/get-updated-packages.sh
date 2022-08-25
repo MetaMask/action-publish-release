@@ -10,10 +10,12 @@ set -o pipefail
 # {
 #   "packages": {
 #     "@metamask/snaps-cli": {
+#       "name": "@metamask/snaps-cli",
 #       "path": "packages/cli",
 #       "version": "0.19.2"
 #     },
 #     "@metamask/snap-controllers": {
+#       "name": "@metamask/snap-controllers",
 #       "path": "packages/controllers",
 #       "version": "0.19.2"
 #     }
@@ -34,7 +36,7 @@ do
     CURRENT_PACKAGE_VERSION=$(jq --raw-output .version "$MANIFEST")
 
     if [ "$LATEST_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]; then
-      toPublish+="\"$NAME\":{\"path\":"\"$DIR\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
+      toPublish+="\"$NAME\":{\"name\":"\"$NAME\"",\"path\":"\"$DIR\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
 done
