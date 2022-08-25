@@ -60,7 +60,7 @@ describe('getUpdatedPackages', () => {
     const updatedPackages = getUpdatedPackages();
 
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
-    expect(updatedPackages).toHaveLength(2);
+    expect(Object.entries(updatedPackages)).toHaveLength(2);
   });
 });
 
