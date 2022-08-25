@@ -98,8 +98,6 @@ async function getMonorepoReleaseNotes(
     workspaceRoot,
   );
 
-  console.log({ workspaceRoot });
-
   let releaseNotes = '';
 
   if (versioningStrategy === 'fixed') {

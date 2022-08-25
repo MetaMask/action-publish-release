@@ -42,7 +42,7 @@ describe('parseEnvironmentVariables', () => {
     });
   });
 
-  it('throws if [ is invalid', () => {
+  it('throws if GITHUB_WORKSPACE is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
         [GITHUB_WORKSPACE]: '',
