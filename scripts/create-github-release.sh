@@ -36,8 +36,6 @@ if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" =
   git config user.email github-actions@github.com
 
   while read -r name path version; do
-    # echo "Do whatever with ${name} ${path} ${version}"
-    echo "${name}@${version}"
     git tag "${name}@${version}" HEAD
     git push --tags
   done< <(echo "$UPDATED_PACKAGES" | jq --raw-output '.packages[] | "\(.name) \(.path) \(.version)"')
