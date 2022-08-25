@@ -10917,7 +10917,6 @@ async function getReleaseNotes() {
  */
 async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
-    console.log({ workspaceRoot });
     let releaseNotes = '';
     if (versioningStrategy === 'fixed') {
         for (const workspaceLocation of workspaceLocations) {
