@@ -46,3 +46,4 @@ runs:
       env:
         VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+        UPDATED_PACKAGES: ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}

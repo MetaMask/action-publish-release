@@ -4,8 +4,6 @@ set -x
 set -e
 set -o pipefail
 
-script_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
-
 if [[ -z $RELEASE_NOTES ]]; then
   echo "Error: RELEASE_NOTES environment variable not set."
   exit 1
@@ -21,6 +19,11 @@ if [[ -z $VERSION_STRATEGY ]]; then
   exit 1
 fi
 
+if [[ -z $UPDATED_PACKAGES ]]; then
+  echo "Error: No updated packages specified."
+  exit 1
+fi
+
 gh release create \
   "v$RELEASE_VERSION" \
   --title "$RELEASE_VERSION" \
@@ -28,6 +31,14 @@ gh release create \
 
 if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent"  ]]; then
   echo "independent versioning strategy"
-  # todo: iterate over $UPDATED_PACKAGES instead
-  yarn workspaces foreach --no-private --verbose exec "$script_path/tag.sh"
+
+  git config user.name github-actions
+  git config user.email github-actions@github.com
+
+  while read -r name path version; do
+    # echo "Do whatever with ${name} ${path} ${version}"
+    echo "${name}@${version}"
+    git tag "${name}@${version}" HEAD
+    git push --tags
+  done< <(echo "$UPDATED_PACKAGES" | jq --raw-output '.packages[] | "\(.name) \(.path) \(.version)"')
 fi
