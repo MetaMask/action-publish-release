@@ -20,8 +20,6 @@ import {
   fixedOrIndependent,
 } from './constants';
 
-// {"packages":["@metamask/snaps-cli","@metamask/snap-controllers","@metamask/execution-environments","@metamask/snaps-browserify-plugin","@metamask/rollup-plugin-snaps","@metamask/snaps-webpack-plugin","@metamask/rpc-methods","@metamask/snap-types","@metamask/snap-utils"]}
-
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The root of the workspace running this action
   [GITHUB_WORKSPACE]?: string;
