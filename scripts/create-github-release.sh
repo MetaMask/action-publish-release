@@ -4,6 +4,8 @@ set -x
 set -e
 set -o pipefail
 
+script_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+
 if [[ -z $RELEASE_NOTES ]]; then
   echo "Error: RELEASE_NOTES environment variable not set."
   exit 1
@@ -26,4 +28,5 @@ gh release create \
 
 if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent"  ]]; then
   echo "independent versioning strategy"
+  yarn workspaces foreach --no-private --verbose exec "$script_path/tag.sh"
 fi
