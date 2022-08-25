@@ -98,6 +98,8 @@ async function getMonorepoReleaseNotes(
     workspaceRoot,
   );
 
+  console.log({ workspaceRoot });
+
   let releaseNotes = '';
 
   if (versioningStrategy === 'fixed') {
@@ -130,14 +132,21 @@ async function getMonorepoReleaseNotes(
     }
   } else {
     // independent...
-    releaseNotes = 'foo';
+    // releaseNotes = 'foo';
 
     // build releaseNotes from individual package changelogs
     // only for packages that have been updated
     const updatedPackages = getUpdatedPackages();
 
-    for (const [key, value] of Object.entries(updatedPackages)) {
-      console.log(`${key}: ${value}`);
+    for (const [packageName, value] of Object.entries(updatedPackages)) {
+      // console.log(`${key}: ${value}`);
+      const { path, version } = value;
+      console.log({ version });
+      releaseNotes = releaseNotes.concat(
+        `## ${packageName}\n\n`,
+        await getPackageReleaseNotes(releaseVersion, repoUrl, path),
+        '\n\n',
+      );
     }
 
     // create main tag as well as individual tags for each package that's changed.
