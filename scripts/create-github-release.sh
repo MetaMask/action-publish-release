@@ -28,5 +28,6 @@ gh release create \
 
 if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent"  ]]; then
   echo "independent versioning strategy"
+  # todo: iterate over $UPDATED_PACKAGES instead
   yarn workspaces foreach --no-private --verbose exec "$script_path/tag.sh"
 fi
