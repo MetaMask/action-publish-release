@@ -12,7 +12,7 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
-import { UPDATED_PACKAGES_ERROR } from './constants';
+import { FIXED, UPDATED_PACKAGES_ERROR } from './constants';
 
 export const getUpdatedPackages = (): Record<
   string,
@@ -104,7 +104,7 @@ async function getMonorepoReleaseNotes(
 
   let releaseNotes = '';
 
-  if (versioningStrategy === 'fixed') {
+  if (versioningStrategy === FIXED) {
     for (const workspaceLocation of workspaceLocations) {
       const completeWorkspacePath = pathUtils.join(
         workspaceRoot,
