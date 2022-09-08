@@ -95,7 +95,10 @@ describe('getReleaseNotes', () => {
     readFileMock = jest.spyOn(fs.promises, 'readFile');
     parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
     exportActionVariableMock = jest.spyOn(actionsCore, 'exportVariable');
-    getUpdatedPackagesMock = jest.spyOn(releaseNotesUtils, 'getUpdatedPackages');
+    getUpdatedPackagesMock = jest.spyOn(
+      releaseNotesUtils,
+      'getUpdatedPackages',
+    );
   });
 
   it('should get the release notes for polyrepos', async () => {
