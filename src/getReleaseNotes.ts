@@ -134,10 +134,14 @@ async function getMonorepoReleaseNotes(
     }
   } else {
     for (const [packageName, value] of Object.entries(getUpdatedPackages())) {
-      const { path } = value;
+      const { path: packagePath } = value;
       releaseNotes = releaseNotes.concat(
         `## ${packageName}\n\n`,
-        await getPackageReleaseNotes(releaseVersion, repoUrl, path),
+        await getPackageReleaseNotes(
+          releaseVersion,
+          repoUrl,
+          String(packagePath),
+        ),
         '\n\n',
       );
     }
