@@ -82,7 +82,7 @@ describe('getReleaseNotes', () => {
   let readFileMock: jest.SpyInstance;
   let parseChangelogMock: jest.SpyInstance;
   let exportActionVariableMock: jest.SpyInstance;
-  let getUpdatedPackages: jest.SpyInstance;
+  let getUpdatedPackagesMock: jest.SpyInstance;
 
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -95,7 +95,7 @@ describe('getReleaseNotes', () => {
     readFileMock = jest.spyOn(fs.promises, 'readFile');
     parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
     exportActionVariableMock = jest.spyOn(actionsCore, 'exportVariable');
-    getUpdatedPackages = jest.spyOn(releaseNotesUtils, 'getUpdatedPackages');
+    getUpdatedPackagesMock = jest.spyOn(releaseNotesUtils, 'getUpdatedPackages');
   });
 
   it('should get the release notes for polyrepos', async () => {
@@ -161,7 +161,7 @@ describe('getReleaseNotes', () => {
     const mockChangelog = 'a changelog';
     const mockVersionStrategy = 'fixed';
 
-    getUpdatedPackages.mockImplementationOnce(() => {
+    getUpdatedPackagesMock.mockImplementationOnce(() => {
       return JSON.parse(MOCK_UPDATED_PACAKGES);
     });
 
@@ -272,7 +272,7 @@ describe('getReleaseNotes', () => {
     const mockChangelog = 'a changelog';
     const mockVersionStrategy = 'independent';
 
-    getUpdatedPackages.mockImplementationOnce(() => {
+    getUpdatedPackagesMock.mockImplementationOnce(() => {
       return JSON.parse(MOCK_UPDATED_PACAKGES);
     });
 
