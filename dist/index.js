@@ -10797,6 +10797,7 @@ const GITHUB_WORKSPACE_ERROR = 'process.env.GITHUB_WORKSPACE must be set.';
 const RELEASE_VERSION_ERROR = 'process.env.RELEASE_VERSION must be a valid SemVer version.';
 const REPOSITORY_URL_ERROR = 'process.env.REPOSITORY_URL must be a valid URL.';
 const VERSION_STRATEGY_ERROR = `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`;
+const UPDATED_PACKAGES_ERROR = 'The updated packages are undefined';
 // env variables
 const GITHUB_WORKSPACE = 'GITHUB_WORKSPACE';
 const RELEASE_VERSION = 'RELEASE_VERSION';
@@ -10806,6 +10807,7 @@ const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
 const HTTP = 'http:';
 const HTTPS = 'https:';
 const GIT_EXT = '.git';
+const MOCK_UPDATED_PACAKGES = '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
@@ -10866,10 +10868,11 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 
 
 
+
 const getUpdatedPackages = () => {
     const { updatedPackages } = parseEnvironmentVariables();
     if (updatedPackages === undefined) {
-        throw new Error('The updated packages are undefined');
+        throw new Error(UPDATED_PACKAGES_ERROR);
     }
     else {
         const { packages } = JSON.parse(updatedPackages);
@@ -10918,7 +10921,7 @@ async function getReleaseNotes() {
 async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
     let releaseNotes = '';
-    if (versioningStrategy === 'fixed') {
+    if (versioningStrategy === FIXED) {
         for (const workspaceLocation of workspaceLocations) {
             const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
             const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
@@ -10930,8 +10933,8 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
     }
     else {
         for (const [packageName, value] of Object.entries(getUpdatedPackages())) {
-            const { path } = value;
-            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, path), '\n\n');
+            const { path: packagePath } = value;
+            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, String(packagePath)), '\n\n');
         }
     }
     return releaseNotes;
