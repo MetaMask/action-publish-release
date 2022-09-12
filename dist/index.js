@@ -10804,8 +10804,7 @@ const RELEASE_VERSION = 'RELEASE_VERSION';
 const REPOSITORY_URL = 'REPOSITORY_URL';
 const VERSION_STRATEGY = 'VERSION_STRATEGY';
 const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
-const HTTP = 'http:';
-const HTTPS = 'https:';
+const HTTPS = `https`;
 const GIT_EXT = '.git';
 const MOCK_UPDATED_PACAKGES = '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
 //# sourceMappingURL=constants.js.map
@@ -10821,7 +10820,7 @@ const isValidUrl = (str) => {
     catch (_) {
         return false;
     }
-    return url.protocol === HTTP || url.protocol === HTTPS;
+    return url.protocol === `${HTTPS}:`;
 };
 const removeGitEx = (url) => url.substring(0, url.lastIndexOf(GIT_EXT));
 /**
