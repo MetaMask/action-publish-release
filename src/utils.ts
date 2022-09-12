@@ -12,7 +12,6 @@ import {
   GITHUB_WORKSPACE_ERROR,
   RELEASE_VERSION_ERROR,
   REPOSITORY_URL_ERROR,
-  HTTP,
   HTTPS,
   GIT_EXT,
   VERSION_STRATEGY,
@@ -65,7 +64,7 @@ const isValidUrl = (str: string): boolean => {
     return false;
   }
 
-  return url.protocol === HTTP || url.protocol === HTTPS;
+  return url.protocol === `${HTTPS}:`;
 };
 
 const removeGitEx = (url: string): string =>

@@ -21,8 +21,7 @@ export const REPOSITORY_URL = 'REPOSITORY_URL';
 export const VERSION_STRATEGY = 'VERSION_STRATEGY';
 export const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
 
-export const HTTP = 'http:';
-export const HTTPS = 'https:';
+export const HTTPS = `https`;
 export const GIT_EXT = '.git';
 
 export const MOCK_UPDATED_PACAKGES =
