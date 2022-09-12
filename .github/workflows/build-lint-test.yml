@@ -43,8 +43,35 @@ jobs:
           echo "::set-output name=length::$(echo '${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
       - name: Verify UPDATED_PACKAGES lengths
         run: |
-          if [[ "${{ steps.get-updated-packages-length.outputs.length }}" -ne 0 ]]; then
+          if [[ ${{ steps.get-updated-packages-length.outputs.length }} -ne 0 ]]; then
             echo "UPDATED_PACKAGES is an unexpected length"
+            exit 1
+          fi;
+      - name: Modify + Get UPDATED_PACKAGES lengths
+        id: modify-get-updated-packages
+        run: |
+          cd skunkworks
+          cli_manifest=packages/cli/package.json
+          cli_manifest_temp=packages/cli/package_temp.json
+          cli_version=$(jq --raw-output .version "$cli_manifest")
+          cli_version_new=$(echo "$cli_version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
+          jq --arg version "$cli_version_new" '.version = $version' "$cli_manifest" > "$cli_manifest_temp"
+          mv "$cli_manifest_temp" "$cli_manifest"
+          controllers_manifest=packages/controllers/package.json
+          controllers_manifest_temp=packages/controllers/package_temp.json
+          controllers_version=$(jq --raw-output .version "$controllers_manifest")
+          controllers_version_new=$(echo "$controllers_version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
+          jq --arg version "$controllers_version_new" '.version = $version' "$controllers_manifest" > "$controllers_manifest_temp"
+          mv "$controllers_manifest_temp" "$controllers_manifest"
+          ../action-publish-release/scripts/get-updated-packages.sh
+      - name: Get modified UPDATED_PACKAGES lengths
+        id: get-modified-updated-packages-length
+        run: |
+          echo "::set-output name=length::$(echo '${{ steps.modify-get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
+      - name: Verify modified UPDATED_PACKAGES lengths
+        run: |
+          if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 2 ]]; then
+            echo "modified UPDATED_PACKAGES is an unexpected length"
             exit 1
           fi;
 
