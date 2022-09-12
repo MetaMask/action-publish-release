@@ -37,9 +37,15 @@ jobs:
           yarn install --immutable
           yarn plugin import workspace-tools
           ../action-publish-release/scripts/get-updated-packages.sh
-      - name: modify
+      - name: Get UPDATED_PACKAGES lengths
         run: |
-          echo ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}
+          echo "::set-output name=length::$(echo ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }} | jq '.packages | length'
+      - name: Verify UPDATED_PACKAGES lengths
+        run: |
+          if [[ "${{ steps.latestrelease.outputs.releasever }}" != 0 ]]; then
+            echo "UPDATED_PACKAGES is an unexpected length"
+            exit 1
+          fi;
 
   all-tests-pass:
     runs-on: ubuntu-20.04
