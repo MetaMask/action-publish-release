@@ -83,6 +83,7 @@ describe('getReleaseNotes', () => {
   let parseChangelogMock: jest.SpyInstance;
   let exportActionVariableMock: jest.SpyInstance;
   let getUpdatedPackagesMock: jest.SpyInstance;
+  let entriesMock: jest.SpyInstance;
 
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -99,6 +100,7 @@ describe('getReleaseNotes', () => {
       releaseNotesUtils,
       'getUpdatedPackages',
     );
+    entriesMock = jest.spyOn(Object, 'entries');
   });
 
   it('should get the release notes for polyrepos', async () => {
@@ -294,24 +296,6 @@ describe('getReleaseNotes', () => {
         workspaces: [...mockWorkspaces],
       };
     });
-    getWorkspaceLocationsMock.mockImplementation(async (arr: string[]) => {
-      return arr.map((workspace) => `packages/${workspace}`);
-    });
-
-    // One call per workspace
-    getPackageManifestMock
-      // a
-      .mockImplementationOnce(async () => {
-        return { name: 'a', version: mockVersion };
-      })
-      // b
-      .mockImplementationOnce(async () => {
-        return { name: 'b', version: '0.0.1' }; // should not be updated
-      })
-      // c
-      .mockImplementationOnce(async () => {
-        return { name: 'c', version: mockVersion };
-      });
 
     // Return a different changelog for each package/workspace
     readFileMock.mockImplementation(
@@ -341,6 +325,8 @@ describe('getReleaseNotes', () => {
 
     // Calls to parse environment variables and the root manifest
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
+    expect(entriesMock).toHaveBeenCalledTimes(1);
+    expect(getUpdatedPackagesMock).toHaveBeenCalledTimes(1);
   });
 
   it('should fail if the computed release notes are empty', async () => {
