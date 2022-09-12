@@ -16,7 +16,7 @@ jobs:
       - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
       - run: yarn lint
       - run: yarn test
-
+  # tests to ensure get-updated-packages.sh functions as expected
   updated-packages-test:
     runs-on: ubuntu-20.04
     steps:
@@ -70,7 +70,7 @@ jobs:
           echo "::set-output name=length::$(echo '${{ steps.modify-get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
       - name: Verify modified UPDATED_PACKAGES lengths
         run: |
-          if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 3 ]]; then
+          if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 2 ]]; then
             echo "modified UPDATED_PACKAGES is an unexpected length"
             exit 1
           fi;
