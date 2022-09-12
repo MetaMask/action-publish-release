@@ -16,6 +16,7 @@ jobs:
       - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
       - run: yarn lint
       - run: yarn test
+
   updated-packages-test:
     runs-on: ubuntu-20.04
     steps:
@@ -30,8 +31,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: action-publish-release
-      - name: check
-        id: check
+      - id: get-updated-packages
         run: |
           cd skunkworks
           yarn install --immutable
@@ -39,9 +39,10 @@ jobs:
           ../action-publish-release/scripts/get-updated-packages.sh
       - name: modify
         run: |
-          echo ${{ steps.check.outputs.UPDATED_PACKAGES }}
+          echo ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}
+
   all-tests-pass:
     runs-on: ubuntu-20.04
-    needs: [build-lint-test,updated-packages-test]
+    needs: [build-lint-test, updated-packages-test]
     steps:
       - run: echo "Great success"
