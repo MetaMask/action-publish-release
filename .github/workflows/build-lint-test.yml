@@ -39,7 +39,7 @@ jobs:
           ../action-publish-release/scripts/get-updated-packages.sh
       - name: Get UPDATED_PACKAGES lengths
         run: |
-          echo "::set-output name=length::$(echo ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }} | jq '.packages | length'
+          echo "::set-output name=length::$(echo '${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
       - name: Verify UPDATED_PACKAGES lengths
         run: |
           if [[ "${{ steps.latestrelease.outputs.releasever }}" != 0 ]]; then
