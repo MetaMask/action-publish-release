@@ -38,11 +38,12 @@ jobs:
           yarn plugin import workspace-tools
           ../action-publish-release/scripts/get-updated-packages.sh
       - name: Get UPDATED_PACKAGES lengths
+        id: get-updated-packages-length
         run: |
           echo "::set-output name=length::$(echo '${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
       - name: Verify UPDATED_PACKAGES lengths
         run: |
-          if [[ "${{ steps.latestrelease.outputs.length }}" != 0 ]]; then
+          if [[ "${{ steps.get-updated-packages-length.outputs.length }}" != 0 ]]; then
             echo "UPDATED_PACKAGES is an unexpected length"
             exit 1
           fi;
