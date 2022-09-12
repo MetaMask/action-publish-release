@@ -25,10 +25,10 @@ toPublish="{\"packages\":{"
 # store initial length of toPublish
 len="${#toPublish}"
 
-# TODO: make this based on workspaces
-for DIR in packages/*
-do
-  MANIFEST="$DIR/package.json"
+workspaces=$(yarn workspaces list --verbose --json)
+
+while read -r location name; do
+  MANIFEST="$location/package.json"
   PRIVATE=$(jq .private "$MANIFEST")
   if [[ "$PRIVATE" != "true" ]]; then
     NAME=$(jq --raw-output .name "$MANIFEST")
@@ -36,10 +36,10 @@ do
     CURRENT_PACKAGE_VERSION=$(jq --raw-output .version "$MANIFEST")
 
     if [ "$LATEST_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]; then
-      toPublish+="\"$NAME\":{\"name\":"\"$NAME\"",\"path\":"\"$DIR\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
+      toPublish+="\"$NAME\":{\"name\":"\"$NAME\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
-done
+done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
 
 # if the length of toPublish is greater than the initial length
 # trim off the last char (,)
