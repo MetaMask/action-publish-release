@@ -16,9 +16,32 @@ jobs:
       - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
       - run: yarn lint
       - run: yarn test
-
+  updated-packages-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Get Latest Version from npm
+        id: latestrelease
+        run: echo "::set-output name=releasever::$(npm view MetaMask/snaps-skunkworks version --workspaces=false)"
+      - uses: actions/checkout@v3
+        with:
+          repository: MetaMask/snaps-skunkworks
+          ref: v${{ steps.latestrelease.outputs.releasever }}
+          path: skunkworks
+      - uses: actions/checkout@v3
+        with:
+          path: action-publish-release
+      - name: check
+        id: check
+        run: |
+          cd skunkworks
+          yarn install --immutable
+          yarn plugin import workspace-tools
+          ../action-publish-release/scripts/get-updated-packages.sh
+      - name: modify
+        run: |
+          echo ${{ steps.check.outputs.UPDATED_PACKAGES }}
   all-tests-pass:
     runs-on: ubuntu-20.04
-    needs: build-lint-test
+    needs: [build-lint-test,updated-packages-test]
     steps:
       - run: echo "Great success"
