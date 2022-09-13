@@ -34,7 +34,7 @@ jobs:
       - name: Modify + Get UPDATED_PACKAGES lengths
         id: modify-get-updated-packages
         run: |
-          cd skunkworks
+          cd skunkworks || exit
           packages=(cli controllers)
           for package in "${packages[@]}"; do
             manifest="packages/${package}/package.json"
