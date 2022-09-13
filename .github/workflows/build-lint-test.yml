@@ -51,18 +51,15 @@ jobs:
         id: modify-get-updated-packages
         run: |
           cd skunkworks
-          cli_manifest=packages/cli/package.json
-          cli_manifest_temp=packages/cli/package_temp.json
-          cli_version=$(jq --raw-output .version "$cli_manifest")
-          cli_version_new=$(echo "$cli_version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
-          jq --arg version "$cli_version_new" '.version = $version' "$cli_manifest" > "$cli_manifest_temp"
-          mv "$cli_manifest_temp" "$cli_manifest"
-          controllers_manifest=packages/controllers/package.json
-          controllers_manifest_temp=packages/controllers/package_temp.json
-          controllers_version=$(jq --raw-output .version "$controllers_manifest")
-          controllers_version_new=$(echo "$controllers_version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
-          jq --arg version "$controllers_version_new" '.version = $version' "$controllers_manifest" > "$controllers_manifest_temp"
-          mv "$controllers_manifest_temp" "$controllers_manifest"
+          packages=(cli controllers)
+          for package in "${packages[@]}"; do
+            manifest="packages/${package}/package.json"
+            manifest_temp="${manifest}_temp"
+            version=$(jq --raw-output .version "$manifest")
+            version_increment=$(echo "$version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
+            jq --arg version "$version_increment" '.version = $version' "$manifest" > "$manifest_temp"
+            mv "$manifest_temp" "$manifest"
+          done
           ../action-publish-release/scripts/get-updated-packages.sh
       - name: Get modified UPDATED_PACKAGES lengths
         id: get-modified-updated-packages-length
