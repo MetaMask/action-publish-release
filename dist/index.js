@@ -10791,7 +10791,6 @@ var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/constants.js
 const FIXED = 'fixed';
 const INDEPENDENT = 'independent';
-const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
 // error messages
 const GITHUB_WORKSPACE_ERROR = 'process.env.GITHUB_WORKSPACE must be set.';
 const RELEASE_VERSION_ERROR = 'process.env.RELEASE_VERSION must be a valid SemVer version.';
@@ -10823,6 +10822,7 @@ const isValidUrl = (str) => {
     return url.protocol === `${HTTPS}:`;
 };
 const removeGitEx = (url) => url.substring(0, url.lastIndexOf(GIT_EXT));
+const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
 /**
  * Utility function for parsing expected environment variables.
  *
