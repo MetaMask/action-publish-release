@@ -10805,7 +10805,6 @@ const VERSION_STRATEGY = 'VERSION_STRATEGY';
 const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
 const HTTPS = `https`;
 const GIT_EXT = '.git';
-const MOCK_UPDATED_PACAKGES = '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 

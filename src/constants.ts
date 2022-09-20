@@ -20,6 +20,3 @@ export const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
 
 export const HTTPS = `https`;
 export const GIT_EXT = '.git';
-
-export const MOCK_UPDATED_PACAKGES =
-  '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';

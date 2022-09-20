@@ -4,7 +4,10 @@ import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
 import * as localUtils from './utils';
 import * as releaseNotesUtils from './getReleaseNotes';
-import { UPDATED_PACKAGES_ERROR, MOCK_UPDATED_PACAKGES } from './constants';
+import { UPDATED_PACKAGES_ERROR } from './constants';
+
+const MOCK_UPDATED_PACAKGES =
+  '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
 
 jest.mock('fs', () => {
   return {
