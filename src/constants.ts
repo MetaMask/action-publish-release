@@ -1,9 +1,6 @@
 export const FIXED = 'fixed';
 export const INDEPENDENT = 'independent';
 
-export const fixedOrIndependent = (value: string) =>
-  value === FIXED || value === INDEPENDENT;
-
 // error messages
 export const GITHUB_WORKSPACE_ERROR =
   'process.env.GITHUB_WORKSPACE must be set.';

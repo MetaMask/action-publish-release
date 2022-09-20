@@ -16,7 +16,8 @@ import {
   GIT_EXT,
   VERSION_STRATEGY,
   VERSION_STRATEGY_ERROR,
-  fixedOrIndependent,
+  FIXED,
+  INDEPENDENT,
 } from './constants';
 
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
@@ -69,6 +70,9 @@ const isValidUrl = (str: string): boolean => {
 
 const removeGitEx = (url: string): string =>
   url.substring(0, url.lastIndexOf(GIT_EXT));
+
+const fixedOrIndependent = (value: string) =>
+  value === FIXED || value === INDEPENDENT;
 
 /**
  * Utility function for parsing expected environment variables.
