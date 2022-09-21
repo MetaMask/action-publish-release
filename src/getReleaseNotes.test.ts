@@ -4,7 +4,7 @@ import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
 import * as localUtils from './utils';
 import * as releaseNotesUtils from './getReleaseNotes';
-import { UPDATED_PACKAGES_ERROR } from './constants';
+import { UPDATED_PACKAGES_ERROR, PackageRecord } from './constants';
 
 const MOCK_UPDATED_PACAKGES =
   '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
@@ -279,8 +279,6 @@ describe('getReleaseNotes', () => {
     const mockWorkspaces = ['a', 'b', 'c'];
     const mockChangelog = 'a changelog';
     const mockVersionStrategy = 'independent';
-
-    type PackageRecord = Record<'name' | 'path' | 'version', string>;
 
     const packageA: PackageRecord = {
       name: '@metamask/snaps-cli',

@@ -12,9 +12,7 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
-import { FIXED, UPDATED_PACKAGES_ERROR } from './constants';
-
-type PackageRecord = Record<'name' | 'path' | 'version', string>;
+import { FIXED, UPDATED_PACKAGES_ERROR, PackageRecord } from './constants';
 
 export const getUpdatedPackages = (): Record<string, PackageRecord> => {
   const { updatedPackages } = parseEnvironmentVariables();
