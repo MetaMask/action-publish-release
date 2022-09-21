@@ -14,10 +14,9 @@ import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 import { FIXED, UPDATED_PACKAGES_ERROR } from './constants';
 
-export const getUpdatedPackages = (): Record<
-  string,
-  Record<string, string>
-> => {
+type PackageRecord = Record<'name' | 'path' | 'version', string>;
+
+export const getUpdatedPackages = (): Record<string, PackageRecord> => {
   const { updatedPackages } = parseEnvironmentVariables();
 
   if (updatedPackages === undefined) {
@@ -133,15 +132,12 @@ async function getMonorepoReleaseNotes(
       }
     }
   } else {
-    for (const [packageName, value] of Object.entries(getUpdatedPackages())) {
-      const { path: packagePath } = value;
+    for (const [packageName, { path }] of Object.entries(
+      getUpdatedPackages(),
+    )) {
       releaseNotes = releaseNotes.concat(
         `## ${packageName}\n\n`,
-        await getPackageReleaseNotes(
-          releaseVersion,
-          repoUrl,
-          String(packagePath),
-        ),
+        await getPackageReleaseNotes(releaseVersion, repoUrl, path),
         '\n\n',
       );
     }

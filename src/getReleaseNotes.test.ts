@@ -89,7 +89,7 @@ describe('getReleaseNotes', () => {
   let entriesMock: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    // jest.spyOn(console, 'log').mockImplementation(() => undefined);
     parseEnvVariablesMock = jest.spyOn(localUtils, 'parseEnvironmentVariables');
     getPackageManifestMock = jest.spyOn(actionUtils, 'getPackageManifest');
     getWorkspaceLocationsMock = jest.spyOn(
@@ -280,8 +280,27 @@ describe('getReleaseNotes', () => {
     const mockChangelog = 'a changelog';
     const mockVersionStrategy = 'independent';
 
+    type PackageRecord = Record<'name' | 'path' | 'version', string>;
+
+    const packageA: PackageRecord = {
+      name: '@metamask/snaps-cli',
+      path: 'packages/cli',
+      version: '0.20.1',
+    };
+
+    const packageB: PackageRecord = {
+      name: '@metamask/snap-controllers',
+      path: 'packages/controllers',
+      version: '0.20.1',
+    };
+
+    const record: Record<string, PackageRecord> = {
+      '@metamask/snaps-cli': packageA,
+      '@metamask/snap-controllers': packageB,
+    };
+
     getUpdatedPackagesMock.mockImplementationOnce(() => {
-      return JSON.parse(MOCK_UPDATED_PACAKGES);
+      return record;
     });
 
     parseEnvVariablesMock.mockImplementationOnce(() => {
