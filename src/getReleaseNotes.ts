@@ -12,13 +12,13 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
-import { FIXED, UPDATED_PACKAGES_ERROR, PackageRecord } from './constants';
+import { FIXED, PackageRecord } from './constants';
 
 export const getUpdatedPackages = (): Record<string, PackageRecord> => {
   const { updatedPackages } = parseEnvironmentVariables();
 
   if (updatedPackages === undefined) {
-    throw new Error(UPDATED_PACKAGES_ERROR);
+    throw new Error('The updated packages are undefined');
   } else {
     const { packages } = JSON.parse(updatedPackages);
     return packages;

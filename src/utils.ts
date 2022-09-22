@@ -4,35 +4,21 @@ import {
   isValidSemver,
 } from '@metamask/action-utils';
 
-import {
-  UPDATED_PACKAGES,
-  GITHUB_WORKSPACE,
-  RELEASE_VERSION,
-  REPOSITORY_URL,
-  GITHUB_WORKSPACE_ERROR,
-  RELEASE_VERSION_ERROR,
-  REPOSITORY_URL_ERROR,
-  HTTPS,
-  GIT_EXT,
-  VERSION_STRATEGY,
-  VERSION_STRATEGY_ERROR,
-  FIXED,
-  INDEPENDENT,
-} from './constants';
+import { FIXED, INDEPENDENT } from './constants';
 
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The root of the workspace running this action
-  [GITHUB_WORKSPACE]?: string;
+  GITHUB_WORKSPACE?: string;
   // This is set from the repository `package.json` key: .repository.url
-  [REPOSITORY_URL]?: string;
+  REPOSITORY_URL?: string;
   // The version to be released,
   // this is set from the repository `package.json` key: .version
-  [RELEASE_VERSION]?: string;
+  RELEASE_VERSION?: string;
   // version strategy
   // this is set from the repository `release.config.json` key: .versioningStrategy
-  [VERSION_STRATEGY]?: string;
+  VERSION_STRATEGY?: string;
   // this is a json list of the updated packages
-  [UPDATED_PACKAGES]?: string | undefined;
+  UPDATED_PACKAGES?: string | undefined;
 }
 
 /**
@@ -63,11 +49,11 @@ const isValidUrl = (str: string): boolean => {
     return false;
   }
 
-  return url.protocol === `${HTTPS}:`;
+  return url.protocol === `https:`;
 };
 
 const removeGitEx = (url: string): string =>
-  url.substring(0, url.lastIndexOf(GIT_EXT));
+  url.substring(0, url.lastIndexOf('.git'));
 
 const fixedOrIndependent = (value: string) =>
   value === FIXED || value === INDEPENDENT;
@@ -84,44 +70,48 @@ export function parseEnvironmentVariables(
   environmentVariables: ExpectedProcessEnv = process.env,
 ): ParsedEnvironmentVariables {
   const workspaceRoot = getStringRecordValue(
-    GITHUB_WORKSPACE,
+    'GITHUB_WORKSPACE',
     environmentVariables,
   );
 
   if (!isTruthyString(workspaceRoot)) {
-    throw new Error(GITHUB_WORKSPACE_ERROR);
+    throw new Error('process.env.GITHUB_WORKSPACE must be set.');
   }
 
   const releaseVersion = getStringRecordValue(
-    RELEASE_VERSION,
+    'RELEASE_VERSION',
     environmentVariables,
   );
   if (!isTruthyString(releaseVersion) || !isValidSemver(releaseVersion)) {
-    throw new Error(RELEASE_VERSION_ERROR);
+    throw new Error(
+      'process.env.RELEASE_VERSION must be a valid SemVer version.',
+    );
   }
 
   const repositoryUrl = getStringRecordValue(
-    REPOSITORY_URL,
+    'REPOSITORY_URL',
     environmentVariables,
   );
 
   if (!isValidUrl(repositoryUrl)) {
-    throw new Error(REPOSITORY_URL_ERROR);
+    throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
   }
 
   const repoUrl = removeGitEx(repositoryUrl);
 
   const versionStrategy = getStringRecordValue(
-    VERSION_STRATEGY,
+    'VERSION_STRATEGY',
     environmentVariables,
   );
 
   if (!fixedOrIndependent(versionStrategy)) {
-    throw new Error(VERSION_STRATEGY_ERROR);
+    throw new Error(
+      `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
+    );
   }
 
   const updatedPackages =
-    getStringRecordValue(UPDATED_PACKAGES, environmentVariables) || undefined;
+    getStringRecordValue('UPDATED_PACKAGES', environmentVariables) || undefined;
 
   return {
     releaseVersion,

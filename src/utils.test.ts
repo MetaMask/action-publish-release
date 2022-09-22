@@ -1,13 +1,4 @@
-import {
-  GITHUB_WORKSPACE,
-  REPOSITORY_URL,
-  RELEASE_VERSION,
-  GITHUB_WORKSPACE_ERROR,
-  RELEASE_VERSION_ERROR,
-  REPOSITORY_URL_ERROR,
-  VERSION_STRATEGY,
-  VERSION_STRATEGY_ERROR,
-} from './constants';
+import { FIXED, INDEPENDENT } from './constants';
 import { parseEnvironmentVariables } from './utils';
 
 describe('parseEnvironmentVariables', () => {
@@ -28,10 +19,10 @@ describe('parseEnvironmentVariables', () => {
   it('successfully parses valid environment variables', () => {
     expect(
       parseEnvironmentVariables({
-        [GITHUB_WORKSPACE]: 'foo',
-        [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
-        [RELEASE_VERSION]: '1.0.0',
-        [VERSION_STRATEGY]: 'fixed',
+        GITHUB_WORKSPACE: 'foo',
+        REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        RELEASE_VERSION: '1.0.0',
+        VERSION_STRATEGY: 'fixed',
       }),
     ).toStrictEqual({
       releaseVersion: '1.0.0',
@@ -45,49 +36,53 @@ describe('parseEnvironmentVariables', () => {
   it('throws if GITHUB_WORKSPACE is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
-        [GITHUB_WORKSPACE]: '',
-        [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
-        [RELEASE_VERSION]: '1.0.0',
+        GITHUB_WORKSPACE: '',
+        REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        RELEASE_VERSION: '1.0.0',
       }),
-    ).toThrow(GITHUB_WORKSPACE_ERROR);
-    expect(() => parseEnvironmentVariables()).toThrow(GITHUB_WORKSPACE_ERROR);
+    ).toThrow('process.env.GITHUB_WORKSPACE must be set.');
+    expect(() => parseEnvironmentVariables()).toThrow(
+      'process.env.GITHUB_WORKSPACE must be set.',
+    );
   });
 
   it('throws if REPOSITORY_URL is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
-        [GITHUB_WORKSPACE]: 'foo',
-        [REPOSITORY_URL]: 'MetaMask/snaps-skunkworks',
-        [RELEASE_VERSION]: '1.0.0',
+        GITHUB_WORKSPACE: 'foo',
+        REPOSITORY_URL: 'MetaMask/snaps-skunkworks',
+        RELEASE_VERSION: '1.0.0',
       }),
-    ).toThrow(REPOSITORY_URL_ERROR);
+    ).toThrow('process.env.REPOSITORY_URL must be a valid URL.');
   });
 
   it('throws if RELEASE_VERSION is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
-        [GITHUB_WORKSPACE]: 'foo',
-        [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
-        [RELEASE_VERSION]: '',
+        GITHUB_WORKSPACE: 'foo',
+        REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        RELEASE_VERSION: '',
       }),
-    ).toThrow(RELEASE_VERSION_ERROR);
+    ).toThrow('process.env.RELEASE_VERSION must be a valid SemVer version.');
     expect(() =>
       parseEnvironmentVariables({
-        [GITHUB_WORKSPACE]: 'foo',
-        [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
-        [RELEASE_VERSION]: 'kaplar',
+        GITHUB_WORKSPACE: 'foo',
+        REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        RELEASE_VERSION: 'kaplar',
       }),
-    ).toThrow(RELEASE_VERSION_ERROR);
+    ).toThrow('process.env.RELEASE_VERSION must be a valid SemVer version.');
   });
 
   it('throws if VERSION_STRATEGY is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
-        [GITHUB_WORKSPACE]: 'foo',
-        [REPOSITORY_URL]: 'https://github.com/MetaMask/snaps-skunkworks.git',
-        [RELEASE_VERSION]: '1.0.0',
-        [VERSION_STRATEGY]: 'lol',
+        GITHUB_WORKSPACE: 'foo',
+        REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        RELEASE_VERSION: '1.0.0',
+        VERSION_STRATEGY: 'lol',
       }),
-    ).toThrow(VERSION_STRATEGY_ERROR);
+    ).toThrow(
+      `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
+    );
   });
 });
