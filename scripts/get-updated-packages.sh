@@ -29,11 +29,11 @@ workspaces=$(yarn workspaces list --verbose --json)
 
 while read -r location name; do
   MANIFEST="$location/package.json"
-  read PRIVATE NAME CURRENT_PACKAGE_VERSION < <(echo $(jq --raw-output '.private, .name, .version' "$MANIFEST"))
+  read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
   if [[ "$PRIVATE" != "true" ]]; then
-    LATEST_PACKAGE_VERSION=$(npm view "$NAME" version --workspaces=false || echo "")
+    LATEST_PACKAGE_VERSION=$(npm view "$name" version --workspaces=false || echo "")
     if [ "$LATEST_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]; then
-      toPublish+="\"$NAME\":{\"name\":"\"$NAME\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
+      toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
 done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
