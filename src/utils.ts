@@ -35,8 +35,6 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   [UPDATED_PACKAGES]?: string | undefined;
 }
 
-const EMPTY_PACKAGES = undefined;
-
 /**
  * Add missing properties to "process.env" interface.
  */
@@ -123,8 +121,7 @@ export function parseEnvironmentVariables(
   }
 
   const updatedPackages =
-    getStringRecordValue(UPDATED_PACKAGES, environmentVariables) ||
-    EMPTY_PACKAGES;
+    getStringRecordValue(UPDATED_PACKAGES, environmentVariables) || undefined;
 
   return {
     releaseVersion,
