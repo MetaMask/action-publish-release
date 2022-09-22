@@ -6,9 +6,6 @@ import * as localUtils from './utils';
 import * as releaseNotesUtils from './getReleaseNotes';
 import { UPDATED_PACKAGES_ERROR, PackageRecord } from './constants';
 
-const MOCK_UPDATED_PACAKGES =
-  '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}';
-
 jest.mock('fs', () => {
   return {
     promises: {
@@ -54,7 +51,8 @@ describe('getUpdatedPackages', () => {
   it('should get updated packages', () => {
     parseEnvVariablesMock.mockImplementationOnce(() => {
       return {
-        updatedPackages: MOCK_UPDATED_PACAKGES,
+        updatedPackages:
+          '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}',
       };
     });
 
