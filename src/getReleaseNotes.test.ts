@@ -169,10 +169,6 @@ describe('getReleaseNotes', () => {
     const mockChangelog = 'a changelog';
     const mockVersionStrategy = 'fixed';
 
-    getUpdatedPackagesMock.mockImplementationOnce(() => {
-      return JSON.parse(MOCK_UPDATED_PACAKGES);
-    });
-
     parseEnvVariablesMock.mockImplementationOnce(() => {
       return {
         releaseVersion: mockVersion,
