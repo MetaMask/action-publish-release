@@ -10791,20 +10791,6 @@ var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/constants.js
 const FIXED = 'fixed';
 const INDEPENDENT = 'independent';
-// error messages
-const GITHUB_WORKSPACE_ERROR = 'process.env.GITHUB_WORKSPACE must be set.';
-const RELEASE_VERSION_ERROR = 'process.env.RELEASE_VERSION must be a valid SemVer version.';
-const REPOSITORY_URL_ERROR = 'process.env.REPOSITORY_URL must be a valid URL.';
-const VERSION_STRATEGY_ERROR = `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`;
-const UPDATED_PACKAGES_ERROR = 'The updated packages are undefined';
-// env variables
-const GITHUB_WORKSPACE = 'GITHUB_WORKSPACE';
-const RELEASE_VERSION = 'RELEASE_VERSION';
-const REPOSITORY_URL = 'REPOSITORY_URL';
-const VERSION_STRATEGY = 'VERSION_STRATEGY';
-const UPDATED_PACKAGES = 'UPDATED_PACKAGES';
-const HTTPS = `https`;
-const GIT_EXT = '.git';
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
@@ -10817,9 +10803,9 @@ const isValidUrl = (str) => {
     catch (_) {
         return false;
     }
-    return url.protocol === `${HTTPS}:`;
+    return url.protocol === `https:`;
 };
-const removeGitEx = (url) => url.substring(0, url.lastIndexOf(GIT_EXT));
+const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
 const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
 /**
  * Utility function for parsing expected environment variables.
@@ -10830,24 +10816,24 @@ const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
  * @returns The parsed environment variables.
  */
 function parseEnvironmentVariables(environmentVariables = process.env) {
-    const workspaceRoot = (0,dist.getStringRecordValue)(GITHUB_WORKSPACE, environmentVariables);
+    const workspaceRoot = (0,dist.getStringRecordValue)('GITHUB_WORKSPACE', environmentVariables);
     if (!(0,dist.isTruthyString)(workspaceRoot)) {
-        throw new Error(GITHUB_WORKSPACE_ERROR);
+        throw new Error('process.env.GITHUB_WORKSPACE must be set.');
     }
-    const releaseVersion = (0,dist.getStringRecordValue)(RELEASE_VERSION, environmentVariables);
+    const releaseVersion = (0,dist.getStringRecordValue)('RELEASE_VERSION', environmentVariables);
     if (!(0,dist.isTruthyString)(releaseVersion) || !(0,dist.isValidSemver)(releaseVersion)) {
-        throw new Error(RELEASE_VERSION_ERROR);
+        throw new Error('process.env.RELEASE_VERSION must be a valid SemVer version.');
     }
-    const repositoryUrl = (0,dist.getStringRecordValue)(REPOSITORY_URL, environmentVariables);
+    const repositoryUrl = (0,dist.getStringRecordValue)('REPOSITORY_URL', environmentVariables);
     if (!isValidUrl(repositoryUrl)) {
-        throw new Error(REPOSITORY_URL_ERROR);
+        throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
     }
     const repoUrl = removeGitEx(repositoryUrl);
-    const versionStrategy = (0,dist.getStringRecordValue)(VERSION_STRATEGY, environmentVariables);
+    const versionStrategy = (0,dist.getStringRecordValue)('VERSION_STRATEGY', environmentVariables);
     if (!fixedOrIndependent(versionStrategy)) {
-        throw new Error(VERSION_STRATEGY_ERROR);
+        throw new Error(`process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
     }
-    const updatedPackages = (0,dist.getStringRecordValue)(UPDATED_PACKAGES, environmentVariables) || undefined;
+    const updatedPackages = (0,dist.getStringRecordValue)('UPDATED_PACKAGES', environmentVariables) || undefined;
     return {
         releaseVersion,
         repoUrl,
@@ -10868,7 +10854,7 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 const getUpdatedPackages = () => {
     const { updatedPackages } = parseEnvironmentVariables();
     if (updatedPackages === undefined) {
-        throw new Error(UPDATED_PACKAGES_ERROR);
+        throw new Error('The updated packages are undefined');
     }
     else {
         const { packages } = JSON.parse(updatedPackages);
