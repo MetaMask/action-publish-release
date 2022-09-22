@@ -10809,7 +10809,6 @@ const GIT_EXT = '.git';
 ;// CONCATENATED MODULE: ./lib/utils.js
 
 
-const EMPTY_PACKAGES = undefined;
 const isValidUrl = (str) => {
     let url;
     try {
@@ -10848,8 +10847,7 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
     if (!fixedOrIndependent(versionStrategy)) {
         throw new Error(VERSION_STRATEGY_ERROR);
     }
-    const updatedPackages = (0,dist.getStringRecordValue)(UPDATED_PACKAGES, environmentVariables) ||
-        EMPTY_PACKAGES;
+    const updatedPackages = (0,dist.getStringRecordValue)(UPDATED_PACKAGES, environmentVariables) || undefined;
     return {
         releaseVersion,
         repoUrl,
@@ -10930,9 +10928,8 @@ async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, r
         }
     }
     else {
-        for (const [packageName, value] of Object.entries(getUpdatedPackages())) {
-            const { path: packagePath } = value;
-            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, String(packagePath)), '\n\n');
+        for (const [packageName, { path }] of Object.entries(getUpdatedPackages())) {
+            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, path), '\n\n');
         }
     }
     return releaseNotes;
