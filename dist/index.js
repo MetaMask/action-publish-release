@@ -10887,6 +10887,26 @@ async function getReleaseNotes() {
     }
     (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
 }
+async function getReleaseNotesForMonorepoWithIndependentVersions(releaseVersion, repoUrl) {
+    let releaseNotes = '';
+    for (const [packageName, { path }] of Object.entries(getUpdatedPackages())) {
+        releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, path), '\n\n');
+    }
+    return releaseNotes;
+}
+async function getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest) {
+    const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
+    let releaseNotes = '';
+    for (const workspaceLocation of workspaceLocations) {
+        const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
+        const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
+        const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
+        if (packageVersion === releaseVersion) {
+            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
+        }
+    }
+    return releaseNotes;
+}
 /**
  * Gets the combined release notes for all packages in the monorepo that are
  * included in the current release.
@@ -10901,23 +10921,9 @@ async function getReleaseNotes() {
  * @returns The release notes for all packages included in the release.
  */
 async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
-    const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
-    let releaseNotes = '';
-    if (versioningStrategy === FIXED) {
-        for (const workspaceLocation of workspaceLocations) {
-            const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
-            const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
-            const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
-            if (packageVersion === releaseVersion) {
-                releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
-            }
-        }
-    }
-    else {
-        for (const [packageName, { path }] of Object.entries(getUpdatedPackages())) {
-            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, path), '\n\n');
-        }
-    }
+    const releaseNotes = versioningStrategy === INDEPENDENT
+        ? await getReleaseNotesForMonorepoWithIndependentVersions(releaseVersion, repoUrl)
+        : await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
     return releaseNotes;
 }
 /**
