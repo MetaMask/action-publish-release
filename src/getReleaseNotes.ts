@@ -12,7 +12,7 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
-import { FIXED, PackageRecord } from './constants';
+import { INDEPENDENT, PackageRecord } from './constants';
 
 export const getUpdatedPackages = (): Record<string, PackageRecord> => {
   const { updatedPackages } = parseEnvironmentVariables();
@@ -74,6 +74,61 @@ export async function getReleaseNotes() {
   exportActionVariable('RELEASE_NOTES', releaseNotes.concat('\n\n'));
 }
 
+async function getReleaseNotesForMonorepoWithIndependentVersions(
+  releaseVersion: string,
+  repoUrl: string,
+) {
+  let releaseNotes = '';
+  for (const [packageName, { path }] of Object.entries(getUpdatedPackages())) {
+    releaseNotes = releaseNotes.concat(
+      `## ${packageName}\n\n`,
+      await getPackageReleaseNotes(releaseVersion, repoUrl, path),
+      '\n\n',
+    );
+  }
+  return releaseNotes;
+}
+
+async function getReleaseNotesForMonorepoWithFixedVersions(
+  releaseVersion: string,
+  repoUrl: string,
+  workspaceRoot: string,
+  rootManifest: MonorepoPackageManifest,
+) {
+  const workspaceLocations = await getWorkspaceLocations(
+    rootManifest.workspaces,
+    workspaceRoot,
+  );
+
+  let releaseNotes = '';
+  for (const workspaceLocation of workspaceLocations) {
+    const completeWorkspacePath = pathUtils.join(
+      workspaceRoot,
+      workspaceLocation,
+    );
+
+    const rawPackageManifest = await getPackageManifest(completeWorkspacePath);
+    const { name: packageName, version: packageVersion } =
+      validatePolyrepoPackageManifest(
+        rawPackageManifest,
+        completeWorkspacePath,
+      );
+
+    if (packageVersion === releaseVersion) {
+      releaseNotes = releaseNotes.concat(
+        `## ${packageName}\n\n`,
+        await getPackageReleaseNotes(
+          releaseVersion,
+          repoUrl,
+          completeWorkspacePath,
+        ),
+        '\n\n',
+      );
+    }
+  }
+  return releaseNotes;
+}
+
 /**
  * Gets the combined release notes for all packages in the monorepo that are
  * included in the current release.
@@ -94,52 +149,18 @@ async function getMonorepoReleaseNotes(
   rootManifest: MonorepoPackageManifest,
   versioningStrategy: string,
 ): Promise<string> {
-  const workspaceLocations = await getWorkspaceLocations(
-    rootManifest.workspaces,
-    workspaceRoot,
-  );
-
-  let releaseNotes = '';
-
-  if (versioningStrategy === FIXED) {
-    for (const workspaceLocation of workspaceLocations) {
-      const completeWorkspacePath = pathUtils.join(
-        workspaceRoot,
-        workspaceLocation,
-      );
-
-      const rawPackageManifest = await getPackageManifest(
-        completeWorkspacePath,
-      );
-      const { name: packageName, version: packageVersion } =
-        validatePolyrepoPackageManifest(
-          rawPackageManifest,
-          completeWorkspacePath,
+  const releaseNotes =
+    versioningStrategy === INDEPENDENT
+      ? await getReleaseNotesForMonorepoWithIndependentVersions(
+          releaseVersion,
+          repoUrl,
+        )
+      : await getReleaseNotesForMonorepoWithFixedVersions(
+          releaseVersion,
+          repoUrl,
+          workspaceRoot,
+          rootManifest,
         );
-
-      if (packageVersion === releaseVersion) {
-        releaseNotes = releaseNotes.concat(
-          `## ${packageName}\n\n`,
-          await getPackageReleaseNotes(
-            releaseVersion,
-            repoUrl,
-            completeWorkspacePath,
-          ),
-          '\n\n',
-        );
-      }
-    }
-  } else {
-    for (const [packageName, { path }] of Object.entries(
-      getUpdatedPackages(),
-    )) {
-      releaseNotes = releaseNotes.concat(
-        `## ${packageName}\n\n`,
-        await getPackageReleaseNotes(releaseVersion, repoUrl, path),
-        '\n\n',
-      );
-    }
-  }
 
   return releaseNotes;
 }
