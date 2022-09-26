@@ -41,11 +41,19 @@ jobs:
 
           while read -r location name; do
             if [[ "$name" != "root" ]]; then
-              packages+=("$location")
-              count=$((count + 1))
+              private=$(jq --raw-output '.private' "$location/package.json")
+        # add two non private
+              if [[ "$count" -le 2 && "$private" != true ]]; then
+                packages+=("$location")
+                count=$((count + 1))
+              fi
+        # add one private
+              if [[ "$count" -le 2 && "$private" == true ]]; then
+                packages+=("$location")
+                count=$((count + 1))
+              fi
             fi
-
-            if [[ "$count" -eq 2 ]]; then
+            if [[ "$count" -eq 3 ]]; then
               break;
             fi
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
