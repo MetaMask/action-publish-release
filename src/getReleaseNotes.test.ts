@@ -87,7 +87,7 @@ describe('getReleaseNotes', () => {
   let entriesMock: jest.SpyInstance;
 
   beforeEach(() => {
-    // jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
     parseEnvVariablesMock = jest.spyOn(localUtils, 'parseEnvironmentVariables');
     getPackageManifestMock = jest.spyOn(actionUtils, 'getPackageManifest');
     getWorkspaceLocationsMock = jest.spyOn(
