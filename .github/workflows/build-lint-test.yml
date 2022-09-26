@@ -35,9 +35,22 @@ jobs:
         id: modify-get-updated-packages
         run: |
           cd skunkworks || exit
-          packages=(cli controllers)
+          workspaces=$(yarn workspaces list --verbose --json)
+          count=0
+          to_increment=2
+          packages=()
+
+          while read -r location name; do
+            if [[ "$name" != "root" ]]; then
+              packages+=("$location")
+              count=$((count + 1))
+              if [[ "$count" -eq "$to_increment" ]]; then
+                break;
+              fi
+            fi
+          done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
           for package in "${packages[@]}"; do
-            manifest="packages/${package}/package.json"
+            manifest="${package}/package.json"
             manifest_temp="${manifest}_temp"
             version=$(jq --raw-output .version "$manifest")
             version_increment=$(echo "$version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
