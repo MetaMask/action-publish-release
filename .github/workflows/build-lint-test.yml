@@ -63,6 +63,7 @@ jobs:
             jq --arg version "$version_increment" '.version = $version' "$manifest" > "$manifest_temp"
             mv "$manifest_temp" "$manifest"
           done
+          echo "packages length: ${#packages[@]}"
           ../action-publish-release/scripts/get-updated-packages.sh
       - name: Get modified UPDATED_PACKAGES lengths
         id: get-modified-updated-packages-length
