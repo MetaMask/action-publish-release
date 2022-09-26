@@ -37,16 +37,16 @@ jobs:
           cd skunkworks || exit
           workspaces=$(yarn workspaces list --verbose --json)
           count=0
-          to_increment=2
           packages=()
 
           while read -r location name; do
             if [[ "$name" != "root" ]]; then
               packages+=("$location")
               count=$((count + 1))
-              if [[ "$count" -eq "$to_increment" ]]; then
-                break;
-              fi
+            fi
+
+            if [[ "$count" -eq 2 ]]; then
+              break;
             fi
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
           for package in "${packages[@]}"; do
