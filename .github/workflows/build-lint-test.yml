@@ -57,6 +57,7 @@ jobs:
               break;
             fi
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
+          echo "packages length: ${#packages[@]}"
           echo "::set-output name=packages::$(echo "$packages")"
       - name: Modify + Get UPDATED_PACKAGES lengths
         id: modify-get-updated-packages
@@ -80,7 +81,7 @@ jobs:
       - name: Verify modified UPDATED_PACKAGES lengths
         run: |
           packages=${{ steps.get-packages.outputs.packages }}
-          packages_length=${#packages[@]}"
+          packages_length="${#packages[@]}"
           echo "packages length: ${#packages[@]}"
           if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne "$packages_length" ]]; then
             echo "modified UPDATED_PACKAGES is an unexpected length"
