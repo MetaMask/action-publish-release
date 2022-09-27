@@ -41,6 +41,24 @@ jest.mock('./utils', () => {
   };
 });
 
+const parseChangelogMockImplementation = ({
+  changelogContent,
+}: {
+  changelogContent: string;
+}) => {
+  const getStringifiedReleaseMockFactory = (workspace: string) => {
+    // getStringifiedRelease returns a string whose first line is a markdown
+    // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
+    return (version: string) =>
+      `## Header\nrelease ${version} for ${workspace}`;
+  };
+  return {
+    getStringifiedRelease: getStringifiedReleaseMockFactory(
+      changelogContent.slice(-1),
+    ),
+  };
+};
+
 describe('getUpdatedPackages', () => {
   let parseEnvVariablesMock: jest.SpyInstance;
 
@@ -209,21 +227,7 @@ describe('getReleaseNotes', () => {
         )}`,
     );
 
-    const getStringifiedReleaseMockFactory = (workspace: string) => {
-      // getStringifiedRelease returns a string whose first line is a markdown
-      // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
-      return (version: string) =>
-        `## Header\nrelease ${version} for ${workspace}`;
-    };
-    parseChangelogMock.mockImplementation(
-      ({ changelogContent }: { changelogContent: string }) => {
-        return {
-          getStringifiedRelease: getStringifiedReleaseMockFactory(
-            changelogContent.slice(-1),
-          ),
-        };
-      },
-    );
+    parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
 
     await releaseNotesUtils.getReleaseNotes();
 
@@ -319,21 +323,7 @@ describe('getReleaseNotes', () => {
         )}`,
     );
 
-    const getStringifiedReleaseMockFactory = (workspace: string) => {
-      // getStringifiedRelease returns a string whose first line is a markdown
-      // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
-      return (version: string) =>
-        `## Header\nrelease ${version} for ${workspace}`;
-    };
-    parseChangelogMock.mockImplementation(
-      ({ changelogContent }: { changelogContent: string }) => {
-        return {
-          getStringifiedRelease: getStringifiedReleaseMockFactory(
-            changelogContent.slice(-1),
-          ),
-        };
-      },
-    );
+    parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
 
     await releaseNotesUtils.getReleaseNotes();
 
