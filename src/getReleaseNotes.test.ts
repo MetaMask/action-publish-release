@@ -46,16 +46,12 @@ const parseChangelogMockImplementation = ({
 }: {
   changelogContent: string;
 }) => {
-  const getStringifiedReleaseMockFactory = (workspace: string) => {
+  return {
     // getStringifiedRelease returns a string whose first line is a markdown
     // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
-    return (version: string) =>
-      `## Header\nrelease ${version} for ${workspace}`;
-  };
-  return {
-    getStringifiedRelease: getStringifiedReleaseMockFactory(
-      changelogContent.slice(-1),
-    ),
+    getStringifiedRelease(version: string) {
+      return `## Header\nrelease ${version} for ${changelogContent.slice(-1)}`;
+    },
   };
 };
 
