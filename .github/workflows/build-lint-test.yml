@@ -59,7 +59,7 @@ jobs:
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
           echo "packages length: ${#packages[@]}"
           IFS=,
-          echo "::set-output name=packages::$(echo "${data[*]}")"
+          echo "::set-output name=packages::$(echo "${packages[*]}")"
       - name: Modify + Get UPDATED_PACKAGES lengths
         id: modify-get-updated-packages
         run: |
