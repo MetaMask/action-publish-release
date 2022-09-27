@@ -57,14 +57,12 @@ jobs:
               break;
             fi
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
-          echo "packages length: ${#packages[@]}"
           IFS=,
           echo "::set-output name=packages::$(echo "${packages[*]}")"
       - name: Modify + Get UPDATED_PACKAGES lengths
         id: modify-get-updated-packages
         run: |
           packages=${{ steps.get-packages.outputs.packages }}
-          echo "$packages"
           cd skunkworks || exit
           for package in ${packages//,/ }; do
             manifest="${package}/package.json"
@@ -74,7 +72,6 @@ jobs:
             jq --arg version "$version_increment" '.version = $version' "$manifest" > "$manifest_temp"
             mv "$manifest_temp" "$manifest"
           done
-          echo "packages length: ${#packages[@]}"
           ../action-publish-release/scripts/get-updated-packages.sh
       - name: Get modified UPDATED_PACKAGES lengths
         id: get-modified-updated-packages-length
