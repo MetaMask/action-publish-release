@@ -83,8 +83,8 @@ jobs:
       - name: Verify modified UPDATED_PACKAGES lengths
         run: |
           packages=${{ steps.get-packages.outputs.packages }}
-          packages_length="${#packages[@]}"
-          echo "packages length: ${#packages[@]}"
+          packages_length=$(echo "$packages" | grep -o "," | wc -l)
+          echo "packages length: $packages_length"
           if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne "$packages_length" ]]; then
             echo "modified UPDATED_PACKAGES is an unexpected length"
             exit 1
