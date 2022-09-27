@@ -62,6 +62,7 @@ jobs:
         id: modify-get-updated-packages
         run: |
           packages=${{ steps.get-packages.outputs.packages }}
+          cd skunkworks || exit
           for package in "${packages[@]}"; do
             manifest="${package}/package.json"
             manifest_temp="${manifest}_temp"
