@@ -58,7 +58,7 @@ jobs:
             fi
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
           echo "packages length: ${#packages[@]}"
-          echo "::set-output name=packages::${{ join($packages, ', ') }}"
+          echo "::set-output name=packages::${{ join('$packages', ', ') }}"
       - name: Modify + Get UPDATED_PACKAGES lengths
         id: modify-get-updated-packages
         run: |
