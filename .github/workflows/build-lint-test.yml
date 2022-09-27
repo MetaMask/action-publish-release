@@ -82,7 +82,7 @@ jobs:
           echo "::set-output name=length::$(echo '${{ steps.modify-get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
       - name: Verify modified UPDATED_PACKAGES lengths
         run: |
-          if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -eq 2 ]]; then
+          if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 2 ]]; then
             echo "modified UPDATED_PACKAGES is an unexpected length"
             exit 1
           fi;
