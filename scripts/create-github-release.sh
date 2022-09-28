@@ -19,18 +19,17 @@ if [[ -z $VERSION_STRATEGY ]]; then
   exit 1
 fi
 
+if [[ -z $UPDATED_PACKAGES ]]; then
+  echo "Error: No updated packages specified."
+  exit 1
+fi
+
 gh release create \
   "v$RELEASE_VERSION" \
   --title "$RELEASE_VERSION" \
   --notes "$RELEASE_NOTES"
 
 if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent"  ]]; then
-
-  if [[ -z $UPDATED_PACKAGES ]]; then
-    echo "Error: No updated packages specified."
-    exit 1
-  fi
-
   echo "independent versioning strategy"
 
   git config user.name github-actions
