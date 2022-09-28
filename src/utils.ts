@@ -18,7 +18,7 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // this is set from the repository `release.config.json` key: .versioningStrategy
   VERSION_STRATEGY?: string;
   // this is a json list of the updated packages
-  UPDATED_PACKAGES?: string | undefined;
+  UPDATED_PACKAGES?: string;
 }
 
 /**
