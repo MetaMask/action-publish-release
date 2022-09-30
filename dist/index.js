@@ -10829,17 +10829,17 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
         throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
     }
     const repoUrl = removeGitEx(repositoryUrl);
-    const versionStrategy = (0,dist.getStringRecordValue)('VERSION_STRATEGY', environmentVariables);
-    if (!fixedOrIndependent(versionStrategy)) {
+    const releaseStrategy = (0,dist.getStringRecordValue)('RELEASE_STRATEGY', environmentVariables);
+    if (!fixedOrIndependent(releaseStrategy)) {
         throw new Error(`process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
     }
-    const updatedPackages = (0,dist.getStringRecordValue)('UPDATED_PACKAGES', environmentVariables) || undefined;
+    const releasePackages = (0,dist.getStringRecordValue)('RELEASE_PACKAGES', environmentVariables) || undefined;
     return {
         releaseVersion,
         repoUrl,
         workspaceRoot,
-        versionStrategy,
-        updatedPackages,
+        releaseStrategy,
+        releasePackages,
     };
 }
 //# sourceMappingURL=utils.js.map
@@ -10852,12 +10852,12 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 
 
 const getUpdatedPackages = () => {
-    const { updatedPackages } = parseEnvironmentVariables();
-    if (updatedPackages === undefined) {
+    const { releasePackages } = parseEnvironmentVariables();
+    if (releasePackages === undefined) {
         throw new Error('The updated packages are undefined');
     }
     else {
-        const { packages } = JSON.parse(updatedPackages);
+        const { packages } = JSON.parse(releasePackages);
         return packages;
     }
 };
@@ -10869,13 +10869,13 @@ const getUpdatedPackages = () => {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 async function getReleaseNotes() {
-    const { releaseVersion, repoUrl, workspaceRoot, versionStrategy } = parseEnvironmentVariables();
+    const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } = parseEnvironmentVariables();
     const rawRootManifest = await (0,dist.getPackageManifest)(workspaceRoot);
     const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, workspaceRoot);
     let releaseNotes;
     if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), versionStrategy);
+        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), releaseStrategy);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');

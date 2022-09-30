@@ -44,7 +44,7 @@ if [[ "${#toPublish}" -gt "$len" ]]; then
   toPublish=${toPublish::-1}
 fi
 
-UPDATED_PACKAGES="$toPublish}}"
+RELEASE_PACKAGES="$toPublish}}"
 
-# echo "$UPDATED_PACKAGES"
-echo "::set-output name=UPDATED_PACKAGES::$UPDATED_PACKAGES"
+# echo "$RELEASE_PACKAGES"
+echo "::set-output name=RELEASE_PACKAGES::$RELEASE_PACKAGES"

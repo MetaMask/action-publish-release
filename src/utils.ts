@@ -14,11 +14,11 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The version to be released,
   // this is set from the repository `package.json` key: .version
   RELEASE_VERSION?: string;
-  // version strategy
+  // release strategy
   // this is set from the repository `release.config.json` key: .versioningStrategy
-  VERSION_STRATEGY?: string;
+  RELEASE_STRATEGY?: string;
   // this is a json list of the updated packages
-  UPDATED_PACKAGES?: string;
+  RELEASE_PACKAGES?: string;
 }
 
 /**
@@ -36,8 +36,8 @@ interface ParsedEnvironmentVariables {
   releaseVersion: string;
   repoUrl: string;
   workspaceRoot: string;
-  versionStrategy: string;
-  updatedPackages: string | undefined;
+  releaseStrategy: string;
+  releasePackages: string | undefined;
 }
 
 const isValidUrl = (str: string): boolean => {
@@ -99,25 +99,25 @@ export function parseEnvironmentVariables(
 
   const repoUrl = removeGitEx(repositoryUrl);
 
-  const versionStrategy = getStringRecordValue(
-    'VERSION_STRATEGY',
+  const releaseStrategy = getStringRecordValue(
+    'RELEASE_STRATEGY',
     environmentVariables,
   );
 
-  if (!fixedOrIndependent(versionStrategy)) {
+  if (!fixedOrIndependent(releaseStrategy)) {
     throw new Error(
       `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
     );
   }
 
-  const updatedPackages =
-    getStringRecordValue('UPDATED_PACKAGES', environmentVariables) || undefined;
+  const releasePackages =
+    getStringRecordValue('RELEASE_PACKAGES', environmentVariables) || undefined;
 
   return {
     releaseVersion,
     repoUrl,
     workspaceRoot,
-    versionStrategy,
-    updatedPackages,
+    releaseStrategy,
+    releasePackages,
   };
 }

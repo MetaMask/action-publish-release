@@ -12,8 +12,8 @@ runs:
     - id: get-version-strategy
       shell: bash
       run: |
-        VERSION_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
-        echo "::set-output name=VERSION_STRATEGY::$VERSION_STRATEGY"
+        RELEASE_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
+        echo "::set-output name=RELEASE_STRATEGY::$RELEASE_STRATEGY"
     - id: get-release-version
       shell: bash
       run: |
@@ -24,26 +24,26 @@ runs:
       run: |
         REPOSITORY_URL=$(jq --raw-output ".repository.url" "package.json")
         echo "::set-output name=REPOSITORY_URL::$REPOSITORY_URL"
-    - id: get-updated-packages
-      if: steps.get-version-strategy.outputs.VERSION_STRATEGY == 'independent'
+    - id: get-release-packages
+      if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/get-updated-packages.sh
+        ${{ github.action_path }}/scripts/get-release-packages.sh
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
       shell: bash
       run: node ${{ github.action_path }}/dist/index.js
       env:
-        VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
+        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
-        UPDATED_PACKAGES: ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}
+        UPDATED_PACKAGES: ${{ steps.get-release-packages.outputs.UPDATED_PACKAGES }}
     - id: create-github-release
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh
       env:
-        VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
+        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
-        UPDATED_PACKAGES: ${{ steps.get-updated-packages.outputs.UPDATED_PACKAGES }}
+        UPDATED_PACKAGES: ${{ steps.get-release-packages.outputs.UPDATED_PACKAGES }}

@@ -16,7 +16,7 @@ jobs:
       - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
       - run: yarn lint
       - run: yarn test
-  # tests to ensure get-updated-packages.sh functions as expected
+  # tests to ensure get-release-packages.sh functions as expected
   updated-packages-test:
     runs-on: ubuntu-20.04
     steps:
@@ -59,8 +59,8 @@ jobs:
           done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
           IFS=,
           echo "::set-output name=packages::$(echo "${packages[*]}")"
-      - name: Modify + Get UPDATED_PACKAGES lengths
-        id: modify-get-updated-packages
+      - name: Modify + Get RELEASE_PACKAGES lengths
+        id: modify-get-release-packages
         run: |
           packages=${{ steps.get-packages.outputs.packages }}
           cd skunkworks || exit
@@ -72,15 +72,15 @@ jobs:
             jq --arg version "$version_increment" '.version = $version' "$manifest" > "$manifest_temp"
             mv "$manifest_temp" "$manifest"
           done
-          ../action-publish-release/scripts/get-updated-packages.sh
-      - name: Get modified UPDATED_PACKAGES lengths
+          ../action-publish-release/scripts/get-release-packages.sh
+      - name: Get modified RELEASE_PACKAGES lengths
         id: get-modified-updated-packages-length
         run: |
-          echo "::set-output name=length::$(echo '${{ steps.modify-get-updated-packages.outputs.UPDATED_PACKAGES }}' | jq '.packages | length')"
-      - name: Verify modified UPDATED_PACKAGES lengths
+          echo "::set-output name=length::$(echo '${{ steps.modify-get-release-packages.outputs.RELEASE_PACKAGES }}' | jq '.packages | length')"
+      - name: Verify modified RELEASE_PACKAGES lengths
         run: |
           if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 2 ]]; then
-            echo "modified UPDATED_PACKAGES is an unexpected length"
+            echo "modified RELEASE_PACKAGES is an unexpected length"
             exit 1
           fi;
 

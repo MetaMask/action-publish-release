@@ -15,12 +15,12 @@ import { parseEnvironmentVariables } from './utils';
 import { INDEPENDENT, PackageRecord } from './constants';
 
 export const getUpdatedPackages = (): Record<string, PackageRecord> => {
-  const { updatedPackages } = parseEnvironmentVariables();
+  const { releasePackages } = parseEnvironmentVariables();
 
-  if (updatedPackages === undefined) {
+  if (releasePackages === undefined) {
     throw new Error('The updated packages are undefined');
   } else {
-    const { packages } = JSON.parse(updatedPackages);
+    const { packages } = JSON.parse(releasePackages);
     return packages;
   }
 };
@@ -33,7 +33,7 @@ export const getUpdatedPackages = (): Record<string, PackageRecord> => {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 export async function getReleaseNotes() {
-  const { releaseVersion, repoUrl, workspaceRoot, versionStrategy } =
+  const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } =
     parseEnvironmentVariables();
 
   const rawRootManifest = await getPackageManifest(workspaceRoot);
@@ -53,7 +53,7 @@ export async function getReleaseNotes() {
       repoUrl,
       workspaceRoot,
       validateMonorepoPackageManifest(rootManifest, workspaceRoot),
-      versionStrategy,
+      releaseStrategy,
     );
   } else {
     console.log(

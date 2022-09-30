@@ -14,12 +14,12 @@ if [[ -z $RELEASE_VERSION ]]; then
   exit 1
 fi
 
-if [[ -z $VERSION_STRATEGY ]]; then
+if [[ -z $RELEASE_STRATEGY ]]; then
   echo "Error: No version strategy specified."
   exit 1
 fi
 
-if [[ -z $UPDATED_PACKAGES ]]; then
+if [[ -z $RELEASE_PACKAGES ]]; then
   echo "Error: No updated packages specified."
   exit 1
 fi
@@ -29,7 +29,7 @@ gh release create \
   --title "$RELEASE_VERSION" \
   --notes "$RELEASE_NOTES"
 
-if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent"  ]]; then
+if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$RELEASE_STRATEGY" = "independent"  ]]; then
   echo "independent versioning strategy"
 
   git config user.name github-actions
@@ -38,5 +38,5 @@ if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" =
   while read -r name version; do
     git tag "${name}@${version}" HEAD
     git push --tags
-  done< <(echo "$UPDATED_PACKAGES" | jq --raw-output '.packages[] | "\(.name) \(.version)"')
+  done< <(echo "$RELEASE_PACKAGES" | jq --raw-output '.packages[] | "\(.name) \(.version)"')
 fi

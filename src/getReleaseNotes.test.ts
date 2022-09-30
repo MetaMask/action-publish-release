@@ -65,21 +65,21 @@ describe('getUpdatedPackages', () => {
   it('should get updated packages', () => {
     parseEnvVariablesMock.mockImplementationOnce(() => {
       return {
-        updatedPackages:
+        releasePackages:
           '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}',
       };
     });
 
-    const updatedPackages = releaseNotesUtils.getUpdatedPackages();
+    const releasePackages = releaseNotesUtils.getUpdatedPackages();
 
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
-    expect(Object.entries(updatedPackages)).toHaveLength(2);
+    expect(Object.entries(releasePackages)).toHaveLength(2);
   });
 
   it('should error if updated packages are undefined', () => {
     parseEnvVariablesMock.mockImplementationOnce(() => {
       return {
-        updatedPackages: undefined,
+        releasePackages: undefined,
       };
     });
 
@@ -272,7 +272,7 @@ describe('getReleaseNotes', () => {
     const mockVersion = '1.0.0';
     const mockWorkspaces = ['a', 'b', 'c'];
     const mockChangelog = 'a changelog';
-    const mockVersionStrategy = 'independent';
+    const mockReleaseStrategy = 'independent';
 
     const packageA: PackageRecord = {
       name: '@metamask/snaps-cli',
@@ -300,7 +300,7 @@ describe('getReleaseNotes', () => {
         releaseVersion: mockVersion,
         repoUrl: mockRepoUrl,
         workspaceRoot: mockWorkspaceRoot,
-        versionStrategy: mockVersionStrategy,
+        releaseStrategy: mockReleaseStrategy,
       };
     });
     getPackageManifestMock.mockImplementationOnce(async () => {
