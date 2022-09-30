@@ -42,15 +42,13 @@ jobs:
           while read -r location name; do
             if [[ "$name" != "root" ]]; then
               private=$(jq --raw-output '.private' "$location/package.json")
-              if [[ "$count" -le 2 ]]; then
-                if [[ "$private" != true ]]; then
-                  packages+=("$location")
-                  count=$((count + 1))
-                fi
-                if [[ "$private" == true ]]; then
-                  packages+=("$location")
-                  count=$((count + 1))
-                fi
+              if [[ "$count" -le 2 && "$private" != true ]]; then
+                packages+=("$location")
+                count=$((count + 1))
+              fi
+              if [[ "$private" == true ]]; then
+                packages+=("$location")
+                count=$((count + 1))
               fi
             fi
             if [[ "$count" -eq 3 ]]; then
