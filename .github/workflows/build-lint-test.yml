@@ -35,41 +35,59 @@ jobs:
         id: get-packages
         run: |
           cd skunkworks || exit
-          workspaces=$(yarn workspaces list --verbose --json)
-          count=0
-          packages=()
+          WORKSPACES=$(yarn workspaces list --verbose --json)
+          PUBLIC_PACKAGES=()
+          PRIVATE_PACKAGE=()
 
           while read -r location name; do
             if [[ "$name" != "root" ]]; then
-              private=$(jq --raw-output '.private' "$location/package.json")
-              if [[ "$count" -le 2 && "$private" != true ]]; then
-                packages+=("$location")
-                count=$((count + 1))
+              PRIVATE=$(jq --raw-output '.private' "$location/package.json")
+              if [[ "$PRIVATE" != true && "${#PUBLIC_PACKAGES[@]}" -ne 3 ]]; then
+                PUBLIC_PACKAGES+=("$location")
               fi
-              if [[ "$private" == true ]]; then
-                packages+=("$location")
-                count=$((count + 1))
+              if [[ "$PRIVATE" == true && "${#PRIVATE_PACKAGE[@]}" -ne 1 ]]; then
+                PRIVATE_PACKAGE+=("$location")
               fi
             fi
-            if [[ "$count" -eq 3 ]]; then
-              break;
-            fi
-          done< <(echo "$workspaces" | jq --raw-output '"\(.location) \(.name)"')
-          IFS=,
-          echo "::set-output name=packages::$(echo "${packages[*]}")"
+          done< <(echo "$WORKSPACES" | jq --raw-output '"\(.location) \(.name)"')
+
+          RELEASE_PACKAGES=("${PUBLIC_PACKAGES[@]}" "${PRIVATE_PACKAGE[@]}")
+
+          IFS="," echo "::set-output name=RELEASE_PACKAGES::$(echo "${RELEASE_PACKAGES[*]}")"
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
         run: |
-          packages=${{ steps.get-packages.outputs.packages }}
           cd skunkworks || exit
-          for package in ${packages//,/ }; do
-            manifest="${package}/package.json"
-            manifest_temp="${manifest}_temp"
-            version=$(jq --raw-output .version "$manifest")
-            version_increment=$(echo "$version" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
-            jq --arg version "$version_increment" '.version = $version' "$manifest" > "$manifest_temp"
-            mv "$manifest_temp" "$manifest"
+          function update_manifest() {
+            MANIFEST="${1}/package.json"
+            MANIFEST_TEMP="${MANIFEST}_temp"
+            VERSION=$(jq --raw-output .version "$MANIFEST")
+            NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
+            if [[ "$2" == "unbump" ]]; then
+              IFS='.' read -r -a VERSIONS <<< "$VERSION"
+              if [[ "${VERSIONS[2]}" == "0" ]]; then
+                NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$2-=1} 1' | awk 'BEGIN{FS=OFS="."} {$3=9} 1')
+              else
+                NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$3-=1} 1')
+              fi
+            fi;
+            jq --arg version "$NEW_VERSION" '.version = $version' "$MANIFEST" > "$MANIFEST_TEMP"
+            mv "$MANIFEST_TEMP" "$MANIFEST"
+          }
+          IFS="," read -r -a PACKAGES <<< ${{ steps.get-packages.outputs.packages }}
+
+          # loop throuh public packages
+          for i in {0..1}
+          do
+            # echo "${PACKAGES[$i]}"
+            update_manifest "${PACKAGES[$i]}" "bump"
           done
+
+          # unbump final single public package
+          update_manifest "${PACKAGES[2]}" "unbump"
+
+          # increment private package
+          update_manifest "${PACKAGES[3]}" "bump"
           ../action-publish-release/scripts/get-release-packages.sh
       - name: Get modified RELEASE_PACKAGES lengths
         id: get-modified-updated-packages-length
