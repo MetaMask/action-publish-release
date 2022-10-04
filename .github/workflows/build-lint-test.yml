@@ -74,7 +74,7 @@ jobs:
             mv "$MANIFEST_TEMP" "$MANIFEST"
           }
           cd skunkworks || exit
-          IFS="," read -r -a PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
+          IFS="," read -r -a PACKAGES <<< ${{ steps.get-packages.outputs.RELEASE_PACKAGES }}
           for i in {0..1}
           do
             update_manifest "${PACKAGES[$i]}" "bump"
