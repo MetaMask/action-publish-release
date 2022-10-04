@@ -53,7 +53,7 @@ jobs:
 
           RELEASE_PACKAGES=("${PUBLIC_PACKAGES[@]}" "${PRIVATE_PACKAGE[@]}")
           IFS="," RELEASE_PACKAGES_FORMATTED="${RELEASE_PACKAGES[*]}"
-          echo "::set-output name=RELEASE_PACKAGES::$(echo "${RELEASE_PACKAGES_FORMATTED[*]}")"
+          echo "::set-output name=RELEASE_PACKAGES::$(echo "$RELEASE_PACKAGES_FORMATTED")"
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
         run: |
