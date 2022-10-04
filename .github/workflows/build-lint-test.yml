@@ -57,16 +57,29 @@ jobs:
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
         run: |
+          function update_manifest() {
+            MANIFEST="${1}/package.json"
+            MANIFEST_TEMP="${MANIFEST}_temp"
+            VERSION=$(jq --raw-output .version "$MANIFEST")
+            NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
+            if [[ "$2" == "unbump" ]]; then
+              IFS='.' read -r -a VERSIONS <<< "$VERSION"
+              if [[ "${VERSIONS[2]}" == "0" ]]; then
+                NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$2-=1} 1' | awk 'BEGIN{FS=OFS="."} {$3=9} 1')
+              else
+                NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$3-=1} 1')
+              fi
+            fi;
+            jq --arg version "$NEW_VERSION" '.version = $version' "$MANIFEST" > "$MANIFEST_TEMP"
+            mv "$MANIFEST_TEMP" "$MANIFEST"
+          }
           cd skunkworks || exit
           IFS="," read -r -a PACKAGES <<< ${{ steps.get-packages.outputs.packages }}
-          # bump public packages
           for i in {0..1}
           do
             update_manifest "${PACKAGES[$i]}" "bump"
           done
-          # unbump final single public package
           update_manifest "${PACKAGES[2]}" "unbump"
-          # bump private package
           update_manifest "${PACKAGES[3]}" "bump"
           ../action-publish-release/scripts/get-release-packages.sh
       - name: Get modified RELEASE_PACKAGES lengths
