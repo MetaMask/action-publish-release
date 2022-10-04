@@ -75,8 +75,6 @@ jobs:
           }
           cd skunkworks || exit
           IFS="," read -r -a RELEASE_PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
-          ls -ltra
-          echo "$RELEASE_PACKAGES"
           for i in {0..1}
           do
             update_manifest "${RELEASE_PACKAGES[$i]}" "bump"
