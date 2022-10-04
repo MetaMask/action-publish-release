@@ -52,9 +52,7 @@ jobs:
           done< <(echo "$WORKSPACES" | jq --raw-output '"\(.location) \(.name)"')
 
           RELEASE_PACKAGES=("${PUBLIC_PACKAGES[@]}" "${PRIVATE_PACKAGE[@]}")
-          echo "${RELEASE_PACKAGES[*]}"
           IFS="," RELEASE_PACKAGES_FORMATTED="${RELEASE_PACKAGES[*]}"
-          echo "$RELEASE_PACKAGES_FORMATTED"
           echo "::set-output name=RELEASE_PACKAGES::$(echo "${RELEASE_PACKAGES_FORMATTED[*]}")"
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
@@ -76,15 +74,15 @@ jobs:
             mv "$MANIFEST_TEMP" "$MANIFEST"
           }
           cd skunkworks || exit
-          IFS="," read -r -a PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
+          IFS="," read -r -a RELEASE_PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
           ls -ltra
-          echo "$PACKAGES"
+          echo "$RELEASE_PACKAGES"
           for i in {0..1}
           do
-            update_manifest "${PACKAGES[$i]}" "bump"
+            update_manifest "${RELEASE_PACKAGES[$i]}" "bump"
           done
-          update_manifest "${PACKAGES[2]}" "unbump"
-          update_manifest "${PACKAGES[3]}" "bump"
+          update_manifest "${RELEASE_PACKAGES[2]}" "unbump"
+          update_manifest "${RELEASE_PACKAGES[3]}" "bump"
           ../action-publish-release/scripts/get-release-packages.sh
       - name: Get modified RELEASE_PACKAGES lengths
         id: get-modified-updated-packages-length
