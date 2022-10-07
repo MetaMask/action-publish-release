@@ -316,20 +316,11 @@ describe('getReleaseNotes', () => {
     });
 
     // Return a different changelog for each package/workspace
-    readFileMock.mockImplementation(
-      async (path: string) =>
-        `${mockChangelog} for ${path.charAt(
-          path.indexOf('/CHANGELOG.md') - 1,
-        )}`,
-    );
-
-    // Return a different changelog for each package/workspace
-    readFileMock.mockImplementation(
-      async (path: string) =>
-        `${mockChangelog} for ${path.charAt(
-          path.indexOf('/CHANGELOG.md') - 1,
-        )}`,
-    );
+    readFileMock.mockImplementation(async (path: string) => {
+      return `${mockChangelog} for ${path.charAt(
+        path.indexOf('/CHANGELOG.md') - 1,
+      )}`;
+    });
 
     parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
 
