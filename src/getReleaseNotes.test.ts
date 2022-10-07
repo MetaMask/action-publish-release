@@ -311,6 +311,18 @@ describe('getReleaseNotes', () => {
       };
     });
 
+    getWorkspaceLocationsMock.mockImplementation(async (arr: string[]) => {
+      return arr.map((workspace) => `packages/${workspace}`);
+    });
+
+    // Return a different changelog for each package/workspace
+    readFileMock.mockImplementation(
+      async (path: string) =>
+        `${mockChangelog} for ${path.charAt(
+          path.indexOf('/CHANGELOG.md') - 1,
+        )}`,
+    );
+
     // Return a different changelog for each package/workspace
     readFileMock.mockImplementation(
       async (path: string) =>
@@ -327,6 +339,26 @@ describe('getReleaseNotes', () => {
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
     expect(entriesMock).toHaveBeenCalledTimes(1);
     expect(getUpdatedPackagesMock).toHaveBeenCalledTimes(1);
+
+    // Calls to get and parse the changelogs for every package of the specified
+    // release version
+    expect(readFileMock).toHaveBeenCalledTimes(2);
+    expect(readFileMock).toHaveBeenNthCalledWith(
+      1,
+      'packages/cli/CHANGELOG.md',
+    );
+    expect(readFileMock).toHaveBeenNthCalledWith(
+      2,
+      'packages/controllers/CHANGELOG.md',
+    );
+    expect(parseChangelogMock).toHaveBeenCalledTimes(2);
+
+    // Finally, the Action output, as an environment variable
+    expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
+    expect(exportActionVariableMock).toHaveBeenCalledWith(
+      'RELEASE_NOTES',
+      `## @metamask/snaps-cli\n\nrelease 1.0.0 for i\n\n## @metamask/snap-controllers\n\nrelease 1.0.0 for s\n\n`,
+    );
   });
 
   it('should fail if the computed release notes are empty', async () => {
