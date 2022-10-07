@@ -61,15 +61,27 @@ jobs:
             MANIFEST="${1}/package.json"
             MANIFEST_TEMP="${MANIFEST}_temp"
             VERSION=$(jq --raw-output .version "$MANIFEST")
-            NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$3+=1} 1')
+            IFS='.' read -r -a VERSIONS <<< "$VERSION"
+            MAJOR="${VERSIONS[0]}"
+            MINOR="${VERSIONS[1]}"
+            PATCH="${VERSIONS[2]}"
             if [[ "$2" == "unbump" ]]; then
-              IFS='.' read -r -a VERSIONS <<< "$VERSION"
-              if [[ "${VERSIONS[2]}" == "0" ]]; then
-                NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$2-=1} 1' | awk 'BEGIN{FS=OFS="."} {$3=9} 1')
+              if [[ "$PATCH" == "0" ]]; then
+                if [[ "$MINOR" == "0" ]]; then
+                  # e.g. 10.0.0 -> 9.9.9
+                  NEW_VERSION="$((MAJOR - 1)).9.9"
+                else
+                  # e.g. 1.10.0 -> 1.9.9
+                  NEW_VERSION="${MAJOR}.$((MINOR - 1)).9"
+                fi
               else
-                NEW_VERSION=$(echo "$VERSION" | awk 'BEGIN{FS=OFS="."} {$3-=1} 1')
+                # e.g. 1.2.10 -> 1.2.9
+                NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH - 1))"
               fi
-            fi;
+            else
+              # e.g. 1.0.0 -> 1.0.1
+              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+            fi
             jq --arg version "$NEW_VERSION" '.version = $version' "$MANIFEST" > "$MANIFEST_TEMP"
             mv "$MANIFEST_TEMP" "$MANIFEST"
           }
