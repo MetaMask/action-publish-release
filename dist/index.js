@@ -10851,7 +10851,7 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 
 
 
-const getUpdatedPackages = () => {
+const getReleasePackages = () => {
     const { releasePackages } = parseEnvironmentVariables();
     if (releasePackages === undefined) {
         throw new Error('The updated packages are undefined');
@@ -10887,10 +10887,10 @@ async function getReleaseNotes() {
     }
     (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
 }
-async function getReleaseNotesForMonorepoWithIndependentVersions(releaseVersion, repoUrl) {
+async function getReleaseNotesForMonorepoWithIndependentVersions(repoUrl) {
     let releaseNotes = '';
-    for (const [packageName, { path }] of Object.entries(getUpdatedPackages())) {
-        releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, path), '\n\n');
+    for (const [packageName, { path, version }] of Object.entries(getReleasePackages())) {
+        releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(version, repoUrl, path), '\n\n');
     }
     return releaseNotes;
 }
@@ -10922,7 +10922,7 @@ async function getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoU
  */
 async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
     const releaseNotes = versioningStrategy === INDEPENDENT
-        ? await getReleaseNotesForMonorepoWithIndependentVersions(releaseVersion, repoUrl)
+        ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
         : await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
     return releaseNotes;
 }
