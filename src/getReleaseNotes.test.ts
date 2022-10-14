@@ -275,20 +275,20 @@ describe('getReleaseNotes', () => {
     const mockReleaseStrategy = 'independent';
 
     const packageA: PackageRecord = {
-      name: '@metamask/snaps-cli',
-      path: 'packages/cli',
-      version: '0.20.1',
+      name: '@metamask/controllers',
+      path: 'packages/base-controller',
+      version: '0.3.0',
     };
 
     const packageB: PackageRecord = {
       name: '@metamask/snap-controllers',
-      path: 'packages/controllers',
-      version: '0.20.1',
+      path: 'packages/controller-utils',
+      version: '0.7.1',
     };
 
     const record: Record<string, PackageRecord> = {
-      '@metamask/snaps-cli': packageA,
-      '@metamask/snap-controllers': packageB,
+      '@metamask/base-controller': packageA,
+      '@metamask/controller-utils': packageB,
     };
 
     getReleasePackagesMock.mockImplementationOnce(() => {
@@ -336,11 +336,11 @@ describe('getReleaseNotes', () => {
     expect(readFileMock).toHaveBeenCalledTimes(2);
     expect(readFileMock).toHaveBeenNthCalledWith(
       1,
-      'packages/cli/CHANGELOG.md',
+      'packages/base-controller/CHANGELOG.md',
     );
     expect(readFileMock).toHaveBeenNthCalledWith(
       2,
-      'packages/controllers/CHANGELOG.md',
+      'packages/controller-utils/CHANGELOG.md',
     );
     expect(parseChangelogMock).toHaveBeenCalledTimes(2);
 
@@ -348,7 +348,7 @@ describe('getReleaseNotes', () => {
     expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
     expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
-      `## @metamask/snaps-cli\n\nrelease 1.0.0 for i\n\n## @metamask/snap-controllers\n\nrelease 1.0.0 for s\n\n`,
+      `## @metamask/base-controller\n\nrelease 0.3.0 for r\n\n## @metamask/controller-utils\n\nrelease 0.7.1 for s\n\n`,
     );
   });
 

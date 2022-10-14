@@ -75,14 +75,15 @@ export async function getReleaseNotes() {
 }
 
 async function getReleaseNotesForMonorepoWithIndependentVersions(
-  releaseVersion: string,
   repoUrl: string,
 ) {
   let releaseNotes = '';
-  for (const [packageName, { path }] of Object.entries(getReleasePackages())) {
+  for (const [packageName, { path, version }] of Object.entries(
+    getReleasePackages(),
+  )) {
     releaseNotes = releaseNotes.concat(
       `## ${packageName}\n\n`,
-      await getPackageReleaseNotes(releaseVersion, repoUrl, path),
+      await getPackageReleaseNotes(version, repoUrl, path),
       '\n\n',
     );
   }
@@ -151,10 +152,7 @@ async function getMonorepoReleaseNotes(
 ): Promise<string> {
   const releaseNotes =
     versioningStrategy === INDEPENDENT
-      ? await getReleaseNotesForMonorepoWithIndependentVersions(
-          releaseVersion,
-          repoUrl,
-        )
+      ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
       : await getReleaseNotesForMonorepoWithFixedVersions(
           releaseVersion,
           repoUrl,
