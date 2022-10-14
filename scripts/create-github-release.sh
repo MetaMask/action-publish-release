@@ -19,7 +19,9 @@ if [[ -z $RELEASE_STRATEGY ]]; then
   exit 1
 fi
 
-if [[ -z $RELEASE_PACKAGES ]]; then
+IS_MONOREPO_WITH_INDEPENDENT_VERSIONS=$(test "$(jq 'has("workspaces")' package.json)" = "true" && "$RELEASE_STRATEGY" = "independent")
+
+if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS && -z $RELEASE_PACKAGES ]]; then
   echo "Error: No updated packages specified."
   exit 1
 fi
@@ -29,7 +31,7 @@ gh release create \
   --title "$RELEASE_VERSION" \
   --notes "$RELEASE_NOTES"
 
-if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$RELEASE_STRATEGY" = "independent"  ]]; then
+if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS ]]; then
   echo "independent versioning strategy"
 
   git config user.name github-actions
