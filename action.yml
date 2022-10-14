@@ -38,7 +38,7 @@ runs:
         RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
-        UPDATED_PACKAGES: ${{ steps.get-release-packages.outputs.UPDATED_PACKAGES }}
+        RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
     - id: create-github-release
       shell: bash
       run: |
@@ -46,4 +46,4 @@ runs:
       env:
         RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
-        UPDATED_PACKAGES: ${{ steps.get-release-packages.outputs.UPDATED_PACKAGES }}
+        RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
