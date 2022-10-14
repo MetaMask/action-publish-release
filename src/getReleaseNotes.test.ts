@@ -55,7 +55,7 @@ const parseChangelogMockImplementation = ({
   };
 };
 
-describe('getUpdatedPackages', () => {
+describe('getReleasePackages', () => {
   let parseEnvVariablesMock: jest.SpyInstance;
 
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('getUpdatedPackages', () => {
       };
     });
 
-    const releasePackages = releaseNotesUtils.getUpdatedPackages();
+    const releasePackages = releaseNotesUtils.getReleasePackages();
 
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
     expect(Object.entries(releasePackages)).toHaveLength(2);
@@ -84,7 +84,7 @@ describe('getUpdatedPackages', () => {
     });
 
     expect(() => {
-      releaseNotesUtils.getUpdatedPackages();
+      releaseNotesUtils.getReleasePackages();
     }).toThrow('The updated packages are undefined');
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
   });
@@ -97,7 +97,7 @@ describe('getReleaseNotes', () => {
   let readFileMock: jest.SpyInstance;
   let parseChangelogMock: jest.SpyInstance;
   let exportActionVariableMock: jest.SpyInstance;
-  let getUpdatedPackagesMock: jest.SpyInstance;
+  let getReleasePackagesMock: jest.SpyInstance;
   let entriesMock: jest.SpyInstance;
 
   beforeEach(() => {
@@ -111,9 +111,9 @@ describe('getReleaseNotes', () => {
     readFileMock = jest.spyOn(fs.promises, 'readFile');
     parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
     exportActionVariableMock = jest.spyOn(actionsCore, 'exportVariable');
-    getUpdatedPackagesMock = jest.spyOn(
+    getReleasePackagesMock = jest.spyOn(
       releaseNotesUtils,
-      'getUpdatedPackages',
+      'getReleasePackages',
     );
     entriesMock = jest.spyOn(Object, 'entries');
   });
@@ -291,7 +291,7 @@ describe('getReleaseNotes', () => {
       '@metamask/snap-controllers': packageB,
     };
 
-    getUpdatedPackagesMock.mockImplementationOnce(() => {
+    getReleasePackagesMock.mockImplementationOnce(() => {
       return record;
     });
 
@@ -329,7 +329,7 @@ describe('getReleaseNotes', () => {
     // Calls to parse environment variables and the root manifest
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
     expect(entriesMock).toHaveBeenCalledTimes(1);
-    expect(getUpdatedPackagesMock).toHaveBeenCalledTimes(1);
+    expect(getReleasePackagesMock).toHaveBeenCalledTimes(1);
 
     // Calls to get and parse the changelogs for every package of the specified
     // release version

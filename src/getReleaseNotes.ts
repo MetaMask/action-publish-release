@@ -14,7 +14,7 @@ import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
 import { INDEPENDENT, PackageRecord } from './constants';
 
-export const getUpdatedPackages = (): Record<string, PackageRecord> => {
+export const getReleasePackages = (): Record<string, PackageRecord> => {
   const { releasePackages } = parseEnvironmentVariables();
 
   if (releasePackages === undefined) {
@@ -79,7 +79,7 @@ async function getReleaseNotesForMonorepoWithIndependentVersions(
   repoUrl: string,
 ) {
   let releaseNotes = '';
-  for (const [packageName, { path }] of Object.entries(getUpdatedPackages())) {
+  for (const [packageName, { path }] of Object.entries(getReleasePackages())) {
     releaseNotes = releaseNotes.concat(
       `## ${packageName}\n\n`,
       await getPackageReleaseNotes(releaseVersion, repoUrl, path),
