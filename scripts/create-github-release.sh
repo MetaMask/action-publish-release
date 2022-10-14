@@ -19,9 +19,13 @@ if [[ -z $RELEASE_STRATEGY ]]; then
   exit 1
 fi
 
-IS_MONOREPO_WITH_INDEPENDENT_VERSIONS=$(test "$(jq 'has("workspaces")' package.json)" = "true" && "$RELEASE_STRATEGY" = "independent")
+if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$RELEASE_STRATEGY" = "independent" ]]; then
+  IS_MONOREPO_WITH_INDEPENDENT_VERSIONS=1
+else
+  IS_MONOREPO_WITH_INDEPENDENT_VERSIONS=0
+fi
 
-if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS && -z $RELEASE_PACKAGES ]]; then
+if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS -eq 1 && -z $RELEASE_PACKAGES ]]; then
   echo "Error: No updated packages specified."
   exit 1
 fi
