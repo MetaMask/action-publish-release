@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1]
+### Uncategorized
+- Bump actions ([#53](https://github.com/MetaMask/action-publish-release/pull/53))
+- Update README.md to include automated npm publishing ([#50](https://github.com/MetaMask/action-publish-release/pull/50))
+- get version and repository info from package.json ([#49](https://github.com/MetaMask/action-publish-release/pull/49))
+
 ## [2.0.0]
 ### Changed
 - **BREAKING:** Use the version in `package.json` to determine the release version instead of the name of the release branch ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
@@ -77,7 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/MetaMask/action-publish-release/compare/v1.0.3...v2.0.0
 [1.0.3]: https://github.com/MetaMask/action-publish-release/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/MetaMask/action-publish-release/compare/v1.0.1...v1.0.2
