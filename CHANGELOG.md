@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.0.1]
-### Uncategorized
-- Bump actions ([#53](https://github.com/MetaMask/action-publish-release/pull/53))
+### Changed
+- Bump actions, removing deprecation warning ([#53](https://github.com/MetaMask/action-publish-release/pull/53))
 - Update README.md to include automated npm publishing ([#50](https://github.com/MetaMask/action-publish-release/pull/50))
 - get version and repository info from package.json ([#49](https://github.com/MetaMask/action-publish-release/pull/49))
 
