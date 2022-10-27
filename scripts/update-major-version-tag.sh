@@ -28,4 +28,4 @@ git tag "$MAJOR_VERSION_TAG" HEAD
 git push --tags
 echo "Updated shorthand major version tag."
 
-echo "MAJOR_VERSION_TAG=$MAJOR_VERSION_TAG" >> $GITHUB_OUTPUT
+echo "MAJOR_VERSION_TAG=$MAJOR_VERSION_TAG" >> "$GITHUB_OUTPUT"

@@ -18,4 +18,4 @@ if [[ -z $OUTPUT ]]; then
   exit 1
 fi
 
-echo "$OUTPUT=$(jq --raw-output "$KEY" package.json)" >> $GITHUB_OUTPUT
+echo "$OUTPUT=$(jq --raw-output "$KEY" package.json)" >> "$GITHUB_OUTPUT"

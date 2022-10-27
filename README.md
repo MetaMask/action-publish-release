@@ -42,7 +42,7 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
       - name: Get Node.js version
         id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
@@ -83,7 +83,7 @@ jobs:
           ref: ${{ github.sha }}
       - name: Get Node.js version
         id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
