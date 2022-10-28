@@ -13,17 +13,13 @@ runs:
       shell: bash
       run: |
         RELEASE_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
-        echo "::set-output name=RELEASE_STRATEGY::$RELEASE_STRATEGY"
+        echo "RELEASE_STRATEGY=$RELEASE_STRATEGY" >> "$GITHUB_OUTPUT"
     - id: get-release-version
       shell: bash
-      run: |
-        RELEASE_VERSION=$(jq --raw-output ".version" "package.json")
-        echo "::set-output name=RELEASE_VERSION::$RELEASE_VERSION"
+      run: echo "RELEASE_VERSION=$(jq --raw-output '.version' package.json)" >> "$GITHUB_OUTPUT"
     - id: get-repository-url
       shell: bash
-      run: |
-        REPOSITORY_URL=$(jq --raw-output ".repository.url" "package.json")
-        echo "::set-output name=REPOSITORY_URL::$REPOSITORY_URL"
+      run: echo "REPOSITORY_URL=$(jq --raw-output '.repository.url' package.json)" >> "$GITHUB_OUTPUT"
     - id: get-release-packages
       if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
       shell: bash
