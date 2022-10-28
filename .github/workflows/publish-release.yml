@@ -13,7 +13,7 @@ jobs:
       startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # This is to guarantee that the most recent tag is fetched,
           # which we need for updating the shorthand major version tag.
@@ -23,8 +23,8 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-      - uses: actions/setup-node@v2
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - uses: ./
