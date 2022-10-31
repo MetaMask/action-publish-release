@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.2]
 ### Changed
-- Remove `set-output` ([#55](https://github.com/MetaMask/action-publish-release/pull/55))
+- Resolve GitHub action deprecation warnings ([#55](https://github.com/MetaMask/action-publish-release/pull/55))
 
 ## [2.0.1]
 ### Changed
