@@ -3,7 +3,8 @@ import * as actionsCore from '@actions/core';
 import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
 import * as localUtils from './utils';
-import { getReleaseNotes } from './getReleaseNotes';
+import * as releaseNotesUtils from './getReleaseNotes';
+import { PackageRecord } from './constants';
 
 jest.mock('fs', () => {
   return {
@@ -40,6 +41,55 @@ jest.mock('./utils', () => {
   };
 });
 
+const parseChangelogMockImplementation = ({
+  changelogContent,
+}: {
+  changelogContent: string;
+}) => {
+  return {
+    // getStringifiedRelease returns a string whose first line is a markdown
+    // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
+    getStringifiedRelease(version: string) {
+      return `## Header\nrelease ${version} for ${changelogContent.slice(-1)}`;
+    },
+  };
+};
+
+describe('getReleasePackages', () => {
+  let parseEnvVariablesMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    parseEnvVariablesMock = jest.spyOn(localUtils, 'parseEnvironmentVariables');
+  });
+
+  it('should get updated packages', () => {
+    parseEnvVariablesMock.mockImplementationOnce(() => {
+      return {
+        releasePackages:
+          '{"packages":{"@metamask/snaps-cli":{"name":"@metamask/snaps-cli","path":"packages/cli","version":"0.20.1"},"@metamask/snap-controllers":{"name":"@metamask/snap-controllers","path":"packages/controllers","version":"0.20.1"}}}',
+      };
+    });
+
+    const releasePackages = releaseNotesUtils.getReleasePackages();
+
+    expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
+    expect(Object.entries(releasePackages)).toHaveLength(2);
+  });
+
+  it('should error if updated packages are undefined', () => {
+    parseEnvVariablesMock.mockImplementationOnce(() => {
+      return {
+        releasePackages: undefined,
+      };
+    });
+
+    expect(() => {
+      releaseNotesUtils.getReleasePackages();
+    }).toThrow('The updated packages are undefined');
+    expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('getReleaseNotes', () => {
   let parseEnvVariablesMock: jest.SpyInstance;
   let getPackageManifestMock: jest.SpyInstance;
@@ -47,6 +97,8 @@ describe('getReleaseNotes', () => {
   let readFileMock: jest.SpyInstance;
   let parseChangelogMock: jest.SpyInstance;
   let exportActionVariableMock: jest.SpyInstance;
+  let getReleasePackagesMock: jest.SpyInstance;
+  let entriesMock: jest.SpyInstance;
 
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -59,6 +111,11 @@ describe('getReleaseNotes', () => {
     readFileMock = jest.spyOn(fs.promises, 'readFile');
     parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
     exportActionVariableMock = jest.spyOn(actionsCore, 'exportVariable');
+    getReleasePackagesMock = jest.spyOn(
+      releaseNotesUtils,
+      'getReleasePackages',
+    );
+    entriesMock = jest.spyOn(Object, 'entries');
   });
 
   it('should get the release notes for polyrepos', async () => {
@@ -90,7 +147,7 @@ describe('getReleaseNotes', () => {
       return { getStringifiedRelease: getStringifiedReleaseMock };
     });
 
-    await getReleaseNotes();
+    await releaseNotesUtils.getReleaseNotes();
 
     // Calls to parse environment variables and the polyrepo package manifest
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
@@ -116,18 +173,20 @@ describe('getReleaseNotes', () => {
     );
   });
 
-  it('should get the release notes for monorepos', async () => {
+  it('should get the release notes for monorepos (fixed)', async () => {
     const mockWorkspaceRoot = 'foo/';
     const mockRepoUrl = 'https://github.com/Org/Name';
     const mockVersion = '1.0.0';
     const mockWorkspaces = ['a', 'b', 'c'];
     const mockChangelog = 'a changelog';
+    const mockVersionStrategy = 'fixed';
 
     parseEnvVariablesMock.mockImplementationOnce(() => {
       return {
         releaseVersion: mockVersion,
         repoUrl: mockRepoUrl,
         workspaceRoot: mockWorkspaceRoot,
+        versionStrategy: mockVersionStrategy,
       };
     });
     getPackageManifestMock.mockImplementationOnce(async () => {
@@ -164,23 +223,9 @@ describe('getReleaseNotes', () => {
         )}`,
     );
 
-    const getStringifiedReleaseMockFactory = (workspace: string) => {
-      // getStringifiedRelease returns a string whose first line is a markdown
-      // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
-      return (version: string) =>
-        `## Header\nrelease ${version} for ${workspace}`;
-    };
-    parseChangelogMock.mockImplementation(
-      ({ changelogContent }: { changelogContent: string }) => {
-        return {
-          getStringifiedRelease: getStringifiedReleaseMockFactory(
-            changelogContent.slice(-1),
-          ),
-        };
-      },
-    );
+    parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
 
-    await getReleaseNotes();
+    await releaseNotesUtils.getReleaseNotes();
 
     // Calls to parse environment variables and the root manifest
     expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
@@ -221,6 +266,92 @@ describe('getReleaseNotes', () => {
     );
   });
 
+  it('should get the release notes for monorepos (independent)', async () => {
+    const mockWorkspaceRoot = 'foo/';
+    const mockRepoUrl = 'https://github.com/Org/Name';
+    const mockVersion = '1.0.0';
+    const mockWorkspaces = ['a', 'b', 'c'];
+    const mockChangelog = 'a changelog';
+    const mockReleaseStrategy = 'independent';
+
+    const packageA: PackageRecord = {
+      name: '@metamask/controllers',
+      path: 'packages/base-controller',
+      version: '0.3.0',
+    };
+
+    const packageB: PackageRecord = {
+      name: '@metamask/snap-controllers',
+      path: 'packages/controller-utils',
+      version: '0.7.1',
+    };
+
+    const record: Record<string, PackageRecord> = {
+      '@metamask/base-controller': packageA,
+      '@metamask/controller-utils': packageB,
+    };
+
+    getReleasePackagesMock.mockImplementationOnce(() => {
+      return record;
+    });
+
+    parseEnvVariablesMock.mockImplementationOnce(() => {
+      return {
+        releaseVersion: mockVersion,
+        repoUrl: mockRepoUrl,
+        workspaceRoot: mockWorkspaceRoot,
+        releaseStrategy: mockReleaseStrategy,
+      };
+    });
+    getPackageManifestMock.mockImplementationOnce(async () => {
+      return {
+        version: mockVersion,
+        private: true,
+        workspaces: [...mockWorkspaces],
+      };
+    });
+
+    getWorkspaceLocationsMock.mockImplementation(async (arr: string[]) => {
+      return arr.map((workspace) => `packages/${workspace}`);
+    });
+
+    // Return a different changelog for each package/workspace
+    readFileMock.mockImplementation(async (path: string) => {
+      return `${mockChangelog} for ${path.charAt(
+        path.indexOf('/CHANGELOG.md') - 1,
+      )}`;
+    });
+
+    parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
+
+    await releaseNotesUtils.getReleaseNotes();
+
+    // Calls to parse environment variables and the root manifest
+    expect(parseEnvVariablesMock).toHaveBeenCalledTimes(1);
+    expect(entriesMock).toHaveBeenCalledTimes(1);
+    expect(getReleasePackagesMock).toHaveBeenCalledTimes(1);
+
+    // Calls to get and parse the changelogs for every package of the specified
+    // release version
+    expect(readFileMock).toHaveBeenCalledTimes(2);
+    expect(readFileMock).toHaveBeenNthCalledWith(
+      1,
+      'packages/base-controller/CHANGELOG.md',
+    );
+    expect(readFileMock).toHaveBeenNthCalledWith(
+      2,
+      'packages/controller-utils/CHANGELOG.md',
+    );
+    expect(parseChangelogMock).toHaveBeenCalledTimes(2);
+
+    // Finally, the Action output, as an environment variable
+    expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
+    expect(exportActionVariableMock).toHaveBeenCalledWith(
+      'RELEASE_NOTES',
+      `## @metamask/base-controller\n\nrelease 0.3.0 for r\n\n## @metamask/controller-utils\n\nrelease 0.7.1 for s\n\n`,
+    );
+  });
+
   it('should fail if the computed release notes are empty', async () => {
     const mockWorkspaceRoot = 'foo/';
     const mockRepoUrl = 'https://github.com/Org/Name';
@@ -247,7 +378,7 @@ describe('getReleaseNotes', () => {
       return { getStringifiedRelease: getStringifiedReleaseMock };
     });
 
-    await expect(getReleaseNotes()).rejects.toThrow(
+    await expect(releaseNotesUtils.getReleaseNotes()).rejects.toThrow(
       'The computed release notes are empty.',
     );
 

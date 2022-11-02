@@ -12,6 +12,18 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
+import { INDEPENDENT, PackageRecord } from './constants';
+
+export const getReleasePackages = (): Record<string, PackageRecord> => {
+  const { releasePackages } = parseEnvironmentVariables();
+
+  if (releasePackages === undefined) {
+    throw new Error('The updated packages are undefined');
+  } else {
+    const { packages } = JSON.parse(releasePackages);
+    return packages;
+  }
+};
 
 /**
  * Action entry function. Gets the release notes for use in a GitHub release.
@@ -21,7 +33,7 @@ import { parseEnvironmentVariables } from './utils';
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 export async function getReleaseNotes() {
-  const { releaseVersion, repoUrl, workspaceRoot } =
+  const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } =
     parseEnvironmentVariables();
 
   const rawRootManifest = await getPackageManifest(workspaceRoot);
@@ -41,6 +53,7 @@ export async function getReleaseNotes() {
       repoUrl,
       workspaceRoot,
       validateMonorepoPackageManifest(rootManifest, workspaceRoot),
+      releaseStrategy,
     );
   } else {
     console.log(
@@ -61,25 +74,28 @@ export async function getReleaseNotes() {
   exportActionVariable('RELEASE_NOTES', releaseNotes.concat('\n\n'));
 }
 
-/**
- * Gets the combined release notes for all packages in the monorepo that are
- * included in the current release.
- *
- * A package is assumed to be included in the release if the version in its
- * manifest is equal to the specified release version.
- *
- * @param releaseVersion - The version of the release.
- * @param repoUrl - The GitHub repository HTTPS URL.
- * @param workspaceRoot - The GitHub Actions workspace root directory.
- * @param rootManifest - The parsed package.json file of the root directory.
- * @returns The release notes for all packages included in the release.
- */
-async function getMonorepoReleaseNotes(
+async function getReleaseNotesForMonorepoWithIndependentVersions(
+  repoUrl: string,
+) {
+  let releaseNotes = '';
+  for (const [packageName, { path, version }] of Object.entries(
+    getReleasePackages(),
+  )) {
+    releaseNotes = releaseNotes.concat(
+      `## ${packageName}\n\n`,
+      await getPackageReleaseNotes(version, repoUrl, path),
+      '\n\n',
+    );
+  }
+  return releaseNotes;
+}
+
+async function getReleaseNotesForMonorepoWithFixedVersions(
   releaseVersion: string,
   repoUrl: string,
   workspaceRoot: string,
   rootManifest: MonorepoPackageManifest,
-): Promise<string> {
+) {
   const workspaceLocations = await getWorkspaceLocations(
     rootManifest.workspaces,
     workspaceRoot,
@@ -111,6 +127,38 @@ async function getMonorepoReleaseNotes(
       );
     }
   }
+  return releaseNotes;
+}
+
+/**
+ * Gets the combined release notes for all packages in the monorepo that are
+ * included in the current release.
+ *
+ * A package is assumed to be included in the release if the version in its
+ * manifest is equal to the specified release version.
+ *
+ * @param releaseVersion - The version of the release.
+ * @param repoUrl - The GitHub repository HTTPS URL.
+ * @param workspaceRoot - The GitHub Actions workspace root directory.
+ * @param rootManifest - The parsed package.json file of the root directory.
+ * @returns The release notes for all packages included in the release.
+ */
+async function getMonorepoReleaseNotes(
+  releaseVersion: string,
+  repoUrl: string,
+  workspaceRoot: string,
+  rootManifest: MonorepoPackageManifest,
+  versioningStrategy: string,
+): Promise<string> {
+  const releaseNotes =
+    versioningStrategy === INDEPENDENT
+      ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
+      : await getReleaseNotesForMonorepoWithFixedVersions(
+          releaseVersion,
+          repoUrl,
+          workspaceRoot,
+          rootManifest,
+        );
 
   return releaseNotes;
 }

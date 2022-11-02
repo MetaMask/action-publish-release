@@ -1,13 +1,15 @@
+const coverage = 100;
+
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*.ts', '!**/*.d.ts'],
   coverageReporters: ['text', 'html'],
   coverageThreshold: {
     global: {
-      branches: 100,
-      functions: 100,
-      lines: 100,
-      statements: 100,
+      branches: coverage,
+      functions: coverage,
+      lines: coverage,
+      statements: coverage,
     },
   },
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],

@@ -9,24 +9,37 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - id: get-version-strategy
+      shell: bash
+      run: |
+        RELEASE_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
+        echo "RELEASE_STRATEGY=$RELEASE_STRATEGY" >> "$GITHUB_OUTPUT"
     - id: get-release-version
       shell: bash
-      run: |
-        ${{ github.action_path }}/scripts/get.sh ".version" "RELEASE_VERSION"
+      run: echo "RELEASE_VERSION=$(jq --raw-output '.version' package.json)" >> "$GITHUB_OUTPUT"
     - id: get-repository-url
       shell: bash
+      run: echo "REPOSITORY_URL=$(jq --raw-output '.repository.url' package.json)" >> "$GITHUB_OUTPUT"
+    - id: get-release-packages
+      if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
+      shell: bash
       run: |
-        ${{ github.action_path }}/scripts/get.sh ".repository.url" "REPOSITORY_URL"
+        ${{ github.action_path }}/scripts/get-release-packages.sh
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
       shell: bash
       run: node ${{ github.action_path }}/dist/index.js
       env:
+        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
+        RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
     - id: create-github-release
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/create-github-release.sh \
-          ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+        ${{ github.action_path }}/scripts/create-github-release.sh
+      env:
+        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
+        RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
+        RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}

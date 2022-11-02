@@ -10789,10 +10789,8 @@ var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/constants.js
-// error messages
-const GITHUB_WORKSPACE_ERROR = 'process.env.GITHUB_WORKSPACE must be set.';
-const RELEASE_VERSION_ERROR = 'process.env.RELEASE_VERSION must be a valid SemVer version.';
-const REPOSITORY_URL_ERROR = 'process.env.REPOSITORY_URL must be a valid URL.';
+const FIXED = 'fixed';
+const INDEPENDENT = 'independent';
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
@@ -10805,9 +10803,10 @@ const isValidUrl = (str) => {
     catch (_) {
         return false;
     }
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    return url.protocol === `https:`;
 };
 const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
+const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
 /**
  * Utility function for parsing expected environment variables.
  *
@@ -10819,21 +10818,28 @@ const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
 function parseEnvironmentVariables(environmentVariables = process.env) {
     const workspaceRoot = (0,dist.getStringRecordValue)('GITHUB_WORKSPACE', environmentVariables);
     if (!(0,dist.isTruthyString)(workspaceRoot)) {
-        throw new Error(GITHUB_WORKSPACE_ERROR);
+        throw new Error('process.env.GITHUB_WORKSPACE must be set.');
     }
     const releaseVersion = (0,dist.getStringRecordValue)('RELEASE_VERSION', environmentVariables);
     if (!(0,dist.isTruthyString)(releaseVersion) || !(0,dist.isValidSemver)(releaseVersion)) {
-        throw new Error(RELEASE_VERSION_ERROR);
+        throw new Error('process.env.RELEASE_VERSION must be a valid SemVer version.');
     }
     const repositoryUrl = (0,dist.getStringRecordValue)('REPOSITORY_URL', environmentVariables);
     if (!isValidUrl(repositoryUrl)) {
-        throw new Error(REPOSITORY_URL_ERROR);
+        throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
     }
     const repoUrl = removeGitEx(repositoryUrl);
+    const releaseStrategy = (0,dist.getStringRecordValue)('RELEASE_STRATEGY', environmentVariables);
+    if (!fixedOrIndependent(releaseStrategy)) {
+        throw new Error(`process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
+    }
+    const releasePackages = (0,dist.getStringRecordValue)('RELEASE_PACKAGES', environmentVariables) || undefined;
     return {
         releaseVersion,
         repoUrl,
         workspaceRoot,
+        releaseStrategy,
+        releasePackages,
     };
 }
 //# sourceMappingURL=utils.js.map
@@ -10844,6 +10850,17 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
 
 
 
+
+const getReleasePackages = () => {
+    const { releasePackages } = parseEnvironmentVariables();
+    if (releasePackages === undefined) {
+        throw new Error('The updated packages are undefined');
+    }
+    else {
+        const { packages } = JSON.parse(releasePackages);
+        return packages;
+    }
+};
 /**
  * Action entry function. Gets the release notes for use in a GitHub release.
  * Works for both monorepos and polyrepos.
@@ -10852,13 +10869,13 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 async function getReleaseNotes() {
-    const { releaseVersion, repoUrl, workspaceRoot } = parseEnvironmentVariables();
+    const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } = parseEnvironmentVariables();
     const rawRootManifest = await (0,dist.getPackageManifest)(workspaceRoot);
     const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, workspaceRoot);
     let releaseNotes;
     if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot));
+        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), releaseStrategy);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
@@ -10869,6 +10886,26 @@ async function getReleaseNotes() {
         throw new Error('The computed release notes are empty.');
     }
     (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+}
+async function getReleaseNotesForMonorepoWithIndependentVersions(repoUrl) {
+    let releaseNotes = '';
+    for (const [packageName, { path, version }] of Object.entries(getReleasePackages())) {
+        releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(version, repoUrl, path), '\n\n');
+    }
+    return releaseNotes;
+}
+async function getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest) {
+    const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
+    let releaseNotes = '';
+    for (const workspaceLocation of workspaceLocations) {
+        const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
+        const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
+        const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
+        if (packageVersion === releaseVersion) {
+            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
+        }
+    }
+    return releaseNotes;
 }
 /**
  * Gets the combined release notes for all packages in the monorepo that are
@@ -10883,17 +10920,10 @@ async function getReleaseNotes() {
  * @param rootManifest - The parsed package.json file of the root directory.
  * @returns The release notes for all packages included in the release.
  */
-async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest) {
-    const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
-    let releaseNotes = '';
-    for (const workspaceLocation of workspaceLocations) {
-        const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
-        const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
-        const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
-        if (packageVersion === releaseVersion) {
-            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
-        }
-    }
+async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
+    const releaseNotes = versioningStrategy === INDEPENDENT
+        ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
+        : await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
     return releaseNotes;
 }
 /**
