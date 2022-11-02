@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Get Latest Version from npm
         id: latestrelease
-        run: echo "::set-output name=releasever::$(npm view MetaMask/snaps-skunkworks version --workspaces=false)"
+        run: echo "releasever=$(npm view MetaMask/snaps-skunkworks version --workspaces=false)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v3
         with:
           repository: MetaMask/snaps-skunkworks
@@ -53,7 +53,7 @@ jobs:
 
           RELEASE_PACKAGES=("${PUBLIC_PACKAGES[@]}" "${PRIVATE_PACKAGE[@]}")
           IFS="," RELEASE_PACKAGES_FORMATTED="${RELEASE_PACKAGES[*]}"
-          echo "::set-output name=RELEASE_PACKAGES::$(echo "$RELEASE_PACKAGES_FORMATTED")"
+          echo "RELEASE_PACKAGES=$RELEASE_PACKAGES_FORMATTED" >> "$GITHUB_OUTPUT"
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
         run: |
@@ -97,7 +97,7 @@ jobs:
       - name: Get modified RELEASE_PACKAGES lengths
         id: get-modified-updated-packages-length
         run: |
-          echo "::set-output name=length::$(echo '${{ steps.modify-get-release-packages.outputs.RELEASE_PACKAGES }}' | jq '.packages | length')"
+          echo "length=$(echo '${{ steps.modify-get-release-packages.outputs.RELEASE_PACKAGES }}' | jq '.packages | length')" >> "$GITHUB_OUTPUT"
       - name: Verify modified RELEASE_PACKAGES lengths
         run: |
           if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 3 ]]; then
