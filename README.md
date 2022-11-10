@@ -238,12 +238,12 @@ jobs:
 
 ### Inputs
 
-* **`npm-registry-uri-fragment`** _(optional; defaults to "//registry.npmjs.org/")_. The URI fragment that specifies the NPM registry that Yarn or NPM commands will use to access and publish packages. Usually this is the registry URL without the leading protocol, but refer to <https://docs.npmjs.com/cli/v8/configuring-npm/npmrc#auth-related-configuration> for the correct format.
-* **`npm-token`** _(optional)_. The token used for accessing the NPM registry.
+- **`npm-registry-uri-fragment`** _(optional; defaults to "//registry.npmjs.org/")_. The URI fragment that specifies the NPM registry that Yarn or NPM commands will use to access and publish packages. Usually this is the registry URL without the leading protocol, but refer to <https://docs.npmjs.com/cli/v8/configuring-npm/npmrc#auth-related-configuration> for the correct format.
+- **`npm-token`** _(optional)_. The token used for accessing the NPM registry.
 
 ### Outputs
 
-* **`release-version`**. The version of the release.
+- **`release-version`**. The version of the release.
 
 ## Contributing
 
