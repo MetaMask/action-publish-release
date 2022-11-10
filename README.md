@@ -2,20 +2,19 @@
 
 ## Description
 
-This Action creates a GitHub release when a release PR is merged.
-A "release PR" is a PR whose branch is named with a particular prefix, followed by a SemVer version.
-The release title will simply be the SemVer version of the release, and the release body will be the change entries of the release from the repository's [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog.
+This action creates a [GitHub release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) for a project that represents a single NPM package (in the case of a polyrepo) or a collection of packages (in the case of a monorepo).
 
-Designed for use with [MetaMask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr) and (optionally) [MetaMask/action-npm-publish](https://github.com/MetaMask/action-npm-publish)
+- For polyrepo packages, the action will set the title of the release to the version of the package specified in `package.json` and the body of the release to the section of the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog within the project that corresponds to the version.
 
-### Monorepos
+- For monorepos, the action will first determine the set of workspace packages included in the release by selecting each workspace package whose version as specified in its respective `package.json` is different from its published version. It will then set the title of the release to the version of the root package specified in `package.json` and it will construct the body of the release by stitching together the sections within the changelogs of each workspace package obtained in the previous step.
 
-For monorepos, this Action will populate the release body with the change entries of the release from the changelogs of every released package.
-A package is assumed to be part of the release if its version is the same as the released version when this Action runs.
+This action assumes that Yarn is installed and that the package is using Yarn v3. It may fail for other Yarn versions or other package managers.
+
+Designed for use with [MetaMask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr) and (optionally) [MetaMask/action-npm-publish](https://github.com/MetaMask/action-npm-publish).
 
 ## Usage
 
-To create a GitHub release whenever a PR created by `MetaMask/action-create-release-pr` is merged, add the following workflow to your repository at `.github/workflows/publish-release.yml`:
+To create a GitHub release whenever a PR created by `MetaMask/action-create-release-pr` is merged, add the following workflow to your repository:
 
 ```yaml
 name: Publish Release
@@ -238,8 +237,8 @@ jobs:
 
 ### Inputs
 
-- **`npm-registry-uri-fragment`** _(optional; defaults to "//registry.npmjs.org/")_. The URI fragment that specifies the NPM registry that Yarn or NPM commands will use to access and publish packages. Usually this is the registry URL without the leading protocol, but refer to <https://docs.npmjs.com/cli/v8/configuring-npm/npmrc#auth-related-configuration> for the correct format.
-- **`npm-token`** _(optional)_. The token used for accessing the NPM registry.
+- **`npm-registry`** _(optional; defaults to whatever Yarn's `npmPublishRegistry` option defaults to)_. The URL of the NPM registry that Yarn commands will use to access packages.
+- **`npm-token`** _(optional)_. The auth token associated with the registry that Yarn commands will use to access and publish packages.
 
 ### Outputs
 
