@@ -12,7 +12,7 @@ Designed for use with [`action-npm-publish`](https://github.com/MetaMask/action-
 
 ### Quick start
 
-If you're in a hurry, take a look at the [`publish-release` workflow](https://github.com/MetaMask/metamask-module-template/blob/main/.github/workflows/publish-release.yml) from the [module template](https://github.com/MetaMask/metamask-module-template), which uses this action along with [`action-npm-publish`](https://github.com/MetaMask/action-npm-publish) to create a GitHub release whenever a release commit is merged. (A release commit is a commit that changes the version of the primary package within the project, whether that is the sole package in the case of a polyrepo package or the root package in the case of a monorepo.)
+If you're in a hurry, take a look at the [`publish-release` workflow](https://github.com/MetaMask/metamask-module-template/blob/main/.github/workflows/publish-release.yml) from the [module template](https://github.com/MetaMask/metamask-module-template), which uses this action to create a GitHub release whenever a release commit is merged. (A release commit is a commit that changes the version of the primary package within the project, whether that is the sole package in the case of a polyrepo package or the root package in the case of a monorepo.)
 
 ### Basic example
 
