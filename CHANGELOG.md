@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0]
+### Added
+- Support monorepos with independent versions ([#51](https://github.com/MetaMask/action-publish-release/pull/51))
+
 ## [2.0.2]
 ### Changed
 - Resolve GitHub action deprecation warnings ([#55](https://github.com/MetaMask/action-publish-release/pull/55))
@@ -86,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/MetaMask/action-publish-release/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/MetaMask/action-publish-release/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/MetaMask/action-publish-release/compare/v1.0.3...v2.0.0
