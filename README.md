@@ -4,7 +4,7 @@ This is a GitHub action that creates a GitHub release for a project that represe
 
 - For a polyrepo package, the action will set the title of the GitHub release to the version of the package specified in `package.json`, and it will set the body of the release to the section of the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog within the project that matches the version.
 
-- For a monorepo, the action will first determine the set of packages included in the release by choosing each workspace package (the set of packages matched via the `workspaces` field in `package.json`) whose version specified in its `package.json` is different from its published version on NPM. It will then set the title of the GitHub release to the version of the root package specified in `package.json`, and it will construct the body of the release by stitching together the sections within the changelogs of each package obtained in the previous step.
+- For a monorepo, the action will first determine the set of packages included in the release by choosing each workspace package (the set of packages matched via the `workspaces` field in `package.json`, recursively) whose version specified in its `package.json` is different from its published version on NPM. It will then set the title of the GitHub release to the version of the root package specified in `package.json`, and it will construct the body of the release by stitching together the sections within the changelogs of each package obtained in the previous step.
 
 Designed for use with [`action-npm-publish`](https://github.com/MetaMask/action-npm-publish) and (indirectly) [`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr).
 
