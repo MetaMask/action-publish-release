@@ -1,145 +1,34 @@
-# MetaMask/action-publish-release
+# action-publish-release
 
-## Description
+This is a GitHub action that creates a GitHub release for a project that represents a single NPM package (in the case of a polyrepo) or a collection of packages (in the case of a monorepo).
 
-This Action creates a GitHub release when a release PR is merged.
-A "release PR" is a PR whose branch is named with a particular prefix, followed by a SemVer version.
-The release title will simply be the SemVer version of the release, and the release body will be the change entries of the release from the repository's [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog.
+- For a polyrepo package, the action will set the title of the GitHub release to the version of the package specified in `package.json`, and it will set the body of the release to the section of the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog within the project that matches the version.
 
-Designed for use with [MetaMask/action-create-release-pr](https://github.com/MetaMask/action-create-release-pr) and (optionally) [MetaMask/action-npm-publish](https://github.com/MetaMask/action-npm-publish)
+- For a monorepo, the action will first determine the set of packages included in the release by choosing each workspace package (the set of packages matched via the `workspaces` field in `package.json`) whose version specified in its `package.json` is different from its published version on NPM. It will then set the title of the GitHub release to the version of the root package specified in `package.json`, and it will construct the body of the release by stitching together the sections within the changelogs of each package obtained in the previous step.
 
-### Monorepos
-
-For monorepos, this Action will populate the release body with the change entries of the release from the changelogs of every released package.
-A package is assumed to be part of the release if its version is the same as the released version when this Action runs.
+Designed for use with [`action-npm-publish`](https://github.com/MetaMask/action-npm-publish) and (indirectly) [`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr).
 
 ## Usage
 
-To create a GitHub release whenever a PR created by `MetaMask/action-create-release-pr` is merged, add the following workflow to your repository at `.github/workflows/publish-release.yml`:
+### Quick start
+
+If you're in a hurry, take a look at the [`publish-release` workflow](https://github.com/MetaMask/metamask-module-template/blob/main/.github/workflows/publish-release.yml) from the [module template](https://github.com/MetaMask/metamask-module-template), which uses this action along with [`action-npm-publish`](https://github.com/MetaMask/action-npm-publish) to create a GitHub release whenever a release commit is merged. (A release commit is a commit that changes the version of the primary package within the project, whether that is the sole package in the case of a polyrepo package or the root package in the case of a monorepo.)
+
+### Basic example
+
+Add the following to a job's list of steps:
 
 ```yaml
-name: Publish Release
-
-on:
-  pull_request:
-    types: [closed]
-
-jobs:
-  publish-release:
-    permissions:
-      contents: write
-    # The second argument to startsWith() must match the release-branch-prefix
-    # input to this Action. Here, we use the default, "release/".
-    if: |
-      github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          # We check out the release pull request's base branch, which will be
-          # used as the base branch for all git operations.
-          ref: ${{ github.event.pull_request.base.ref }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: MetaMask/action-publish-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+- uses: MetaMask/action-publish-release@v2
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Optionally, if you wish to automatically publish your repository/module to npm, that can be accomplish by utilizing [MetaMask/action-is-release](https://github.com/MetaMask/action-is-release) and [MetaMask/action-npm-publish](https://github.com/MetaMask/action-npm-publish) with the following configuration:
+## API
 
-```yaml
-name: Publish Release
+### Outputs
 
-on:
-  push:
-    branches: [main]
-
-jobs:
-  is-release:
-    # release merge commits come from github-actions
-    if: startsWith(github.event.commits[0].author.name, 'github-actions')
-    outputs:
-      IS_RELEASE: ${{ steps.is-release.outputs.IS_RELEASE }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: MetaMask/action-is-release@v1.0
-        id: is-release
-
-  publish-release:
-    permissions:
-      contents: write
-    if: needs.is-release.outputs.IS_RELEASE == 'true'
-    runs-on: ubuntu-latest
-    needs: is-release
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.sha }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-      - name: Setup Node
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: MetaMask/action-publish-release@v2.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install
-        run: |
-          yarn install
-          yarn build
-      - uses: actions/cache@v3
-        id: restore-build
-        with:
-          path: ./dist
-          key: ${{ github.sha }}
-
-  # Optionally perform a dry-run publish to review
-  publish-npm-dry-run:
-    runs-on: ubuntu-latest
-    needs: publish-release
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.sha }}
-      - uses: actions/cache@v3
-        id: restore-build
-        with:
-          path: ./dist
-          key: ${{ github.sha }}
-        # Set `ignore-scripts` to skip `prepublishOnly` because the release was built already in the previous job
-      - run: npm config set ignore-scripts true
-      - name: Dry Run Publish
-        # omit npm-token token to perform dry run publish
-        uses: MetaMask/action-npm-publish@v1.1.0
-
-  publish-npm:
-    environment: npm-publish
-    runs-on: ubuntu-latest
-    needs: publish-npm-dry-run
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.sha }}
-      - uses: actions/cache@v3
-        id: restore-build
-        with:
-          path: ./dist
-          key: ${{ github.sha }}
-        # Set `ignore-scripts` to skip `prepublishOnly` because the release was built already in the previous job
-      - run: npm config set ignore-scripts true
-      - name: Publish
-        uses: MetaMask/action-npm-publish@v1.1.0
-        with:
-          npm-token: ${{ secrets.NPM_TOKEN }}
-```
+- **`release-version`**. The version associated with the new release, derived from the primary package's version.
 
 ## Contributing
 
@@ -156,3 +45,36 @@ jobs:
 Run `yarn test` to run the tests once. To run tests on file changes, run `yarn test:watch`.
 
 Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and fix any automatically fixable issues.
+
+### Release & Publishing
+
+The project follows a similar release process as other projects in the MetaMask organization. The GitHub Action [`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr) is used alongside this very action to automate the release process; see that repository for more information about how it works.
+
+1. Choose a release version.
+
+   - The release version should be chosen according to SemVer. Analyze the changes to see whether they include any breaking changes, new features, or deprecations, then choose the appropriate SemVer version. See [the SemVer specification](https://semver.org/) for more information.
+
+2. If this release is backporting changes onto a previous release, then ensure there is a major version branch for that version (e.g. `1.x` for a `v1` backport release).
+
+   - The major version branch should be set to the most recent release with that major version. For example, when backporting a `v1.0.2` release, you'd want to ensure there was a `1.x` branch that was set to the `v1.0.1` tag.
+
+3. Trigger the [`workflow_dispatch`](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#workflow_dispatch) event [manually](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow) for the `Create Release Pull Request` action to create the release PR.
+
+   - For a backport release, the base branch should be the major version branch that you ensured existed in step 2. For a normal release, the base branch should be the main branch for that repository (which should be the default value).
+   - This should trigger the [`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr) workflow to create the release PR.
+
+4. Update the changelog to move each change entry into the appropriate change category ([See here](https://keepachangelog.com/en/1.0.0/#types) for the full list of change categories, and the correct ordering), and edit them to be more easily understood by users of the package.
+
+   - Generally any changes that don't affect consumers of the package (e.g. lockfile changes or development environment changes) are omitted. Exceptions may be made for changes that might be of interest despite not having an effect upon the published package (e.g. major test improvements, security improvements, improved documentation, etc.).
+   - Try to explain each change in terms that users of the package would understand (e.g. avoid referencing internal variables/concepts).
+   - Consolidate related changes into one change entry if it makes it easier to explain.
+   - Run `yarn auto-changelog validate --rc` to check that the changelog is correctly formatted.
+
+5. Review and QA the release.
+
+   - If changes are made to the base branch, the release branch will need to be updated with these changes and review/QA will need to restart again. As such, it's probably best to avoid merging other PRs into the base branch while review is underway.
+
+6. Squash & Merge the release.
+
+   - This should trigger this very action to tag the final release commit and publish the release on GitHub.
+   - This also triggers a custom step to ensure that a tag representing the latest major version of this action exists.
