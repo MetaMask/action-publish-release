@@ -12,7 +12,7 @@ runs:
     - id: get-version-strategy
       shell: bash
       run: |
-        RELEASE_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
+        RELEASE_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output '.versioningStrategy // "fixed"' "release.config.json" || echo "fixed")
         echo "RELEASE_STRATEGY=$RELEASE_STRATEGY" >> "$GITHUB_OUTPUT"
     - id: get-release-version
       shell: bash
