@@ -1389,7 +1389,7 @@ const execa_1 = __importDefault(__nccwpck_require__(5447));
 const parse_changelog_1 = __nccwpck_require__(7607);
 const constants_1 = __nccwpck_require__(1373);
 async function getMostRecentTag() {
-    const revListArgs = ['rev-list', '--tags', '--max-count=1'];
+    const revListArgs = ['rev-list', '--tags', '--max-count=1', '--date-order'];
     const results = await runCommand('git', revListArgs);
     if (results.length === 0) {
         return null;
@@ -1564,7 +1564,8 @@ async function runCommand(command, args) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateChangelog = exports.ChangelogFormattingError = exports.MissingCurrentVersionError = exports.UnreleasedChangesError = exports.InvalidChangelogError = void 0;
+exports.validateChangelog = exports.ChangelogFormattingError = exports.MissingCurrentVersionError = exports.UncategorizedChangesError = exports.UnreleasedChangesError = exports.InvalidChangelogError = void 0;
+const constants_1 = __nccwpck_require__(1373);
 const parse_changelog_1 = __nccwpck_require__(7607);
 /**
  * Indicates that the changelog is invalid.
@@ -1581,6 +1582,12 @@ class UnreleasedChangesError extends InvalidChangelogError {
     }
 }
 exports.UnreleasedChangesError = UnreleasedChangesError;
+class UncategorizedChangesError extends InvalidChangelogError {
+    constructor() {
+        super('Uncategorized changes present in the changelog');
+    }
+}
+exports.UncategorizedChangesError = UncategorizedChangesError;
 /**
  * Indicates that the release header for the current version is missing.
  */
@@ -1632,24 +1639,33 @@ exports.ChangelogFormattingError = ChangelogFormattingError;
  * version.
  * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog contains unreleased changes.
+ * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
 function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, }) {
+    var _a, _b;
     const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+    const releaseChanges = currentVersion
+        ? changelog.getReleaseChanges(currentVersion)
+        : undefined;
     if (isReleaseCandidate) {
         if (!currentVersion) {
             throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
         }
-        // Ensure release header exists, if necessary
-        if (!changelog
+        else if (!changelog
             .getReleases()
             .find((release) => release.version === currentVersion)) {
             throw new MissingCurrentVersionError(currentVersion);
         }
-    }
-    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-    if (isReleaseCandidate && hasUnreleasedChanges) {
-        throw new UnreleasedChangesError();
+        else if (hasUnreleasedChanges) {
+            throw new UnreleasedChangesError();
+        }
+        else if (((_a = releaseChanges === null || releaseChanges === void 0 ? void 0 : releaseChanges[constants_1.ChangeCategory.Uncategorized]) === null || _a === void 0 ? void 0 : _a.length) &&
+            ((_b = releaseChanges === null || releaseChanges === void 0 ? void 0 : releaseChanges[constants_1.ChangeCategory.Uncategorized]) === null || _b === void 0 ? void 0 : _b.length) !== 0) {
+            throw new UncategorizedChangesError();
+        }
     }
     const validChangelog = changelog.toString();
     if (validChangelog !== changelogContent) {
