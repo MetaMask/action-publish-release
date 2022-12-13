@@ -74,7 +74,7 @@ The project follows a similar release process as other projects in the MetaMask 
 
    - If changes are made to the base branch, the release branch will need to be updated with these changes and review/QA will need to restart again. As such, it's probably best to avoid merging other PRs into the base branch while review is underway.
 
-6. Squash & Merge the release.
+6. Squash and merge the release.
 
    - This should trigger this very action to tag the final release commit and publish the release on GitHub.
    - This also triggers a custom step to ensure that a tag representing the latest major version of this action exists.
