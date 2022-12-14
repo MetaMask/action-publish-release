@@ -14,12 +14,12 @@ if [[ -z $RELEASE_VERSION ]]; then
   exit 1
 fi
 
-if [[ -z $RELEASE_STRATEGY ]]; then
+if [[ -z $VERSION_STRATEGY ]]; then
   echo "Error: No version strategy specified."
   exit 1
 fi
 
-if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$RELEASE_STRATEGY" = "independent" ]]; then
+if [[ "$(jq 'has("workspaces")' package.json)" = "true" && "$VERSION_STRATEGY" = "independent" ]]; then
   IS_MONOREPO_WITH_INDEPENDENT_VERSIONS=1
 else
   IS_MONOREPO_WITH_INDEPENDENT_VERSIONS=0

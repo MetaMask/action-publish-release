@@ -33,7 +33,7 @@ export const getReleasePackages = (): Record<string, PackageRecord> => {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 export async function getReleaseNotes() {
-  const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } =
+  const { releaseVersion, repoUrl, workspaceRoot, versionStrategy } =
     parseEnvironmentVariables();
 
   const rawRootManifest = await getPackageManifest(workspaceRoot);
@@ -53,7 +53,7 @@ export async function getReleaseNotes() {
       repoUrl,
       workspaceRoot,
       validateMonorepoPackageManifest(rootManifest, workspaceRoot),
-      releaseStrategy,
+      versionStrategy,
     );
   } else {
     console.log(

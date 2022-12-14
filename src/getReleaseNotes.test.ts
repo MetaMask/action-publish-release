@@ -272,7 +272,7 @@ describe('getReleaseNotes', () => {
     const mockVersion = '1.0.0';
     const mockWorkspaces = ['a', 'b', 'c'];
     const mockChangelog = 'a changelog';
-    const mockReleaseStrategy = 'independent';
+    const mockVersionStrategy = 'independent';
 
     const packageA: PackageRecord = {
       name: '@metamask/controllers',
@@ -300,7 +300,7 @@ describe('getReleaseNotes', () => {
         releaseVersion: mockVersion,
         repoUrl: mockRepoUrl,
         workspaceRoot: mockWorkspaceRoot,
-        releaseStrategy: mockReleaseStrategy,
+        versionStrategy: mockVersionStrategy,
       };
     });
     getPackageManifestMock.mockImplementationOnce(async () => {

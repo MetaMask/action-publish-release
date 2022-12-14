@@ -10980,9 +10980,9 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
         throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
     }
     const repoUrl = removeGitEx(repositoryUrl);
-    const releaseStrategy = (0,dist.getStringRecordValue)('RELEASE_STRATEGY', environmentVariables);
+    const releaseStrategy = (0,dist.getStringRecordValue)('VERSION_STRATEGY', environmentVariables);
     if (!fixedOrIndependent(releaseStrategy)) {
-        throw new Error(`process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
+        throw new Error(`process.env.VERSION_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
     }
     const releasePackages = (0,dist.getStringRecordValue)('RELEASE_PACKAGES', environmentVariables) || undefined;
     return {

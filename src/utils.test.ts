@@ -22,13 +22,13 @@ describe('parseEnvironmentVariables', () => {
         GITHUB_WORKSPACE: 'foo',
         REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
         RELEASE_VERSION: '1.0.0',
-        RELEASE_STRATEGY: 'fixed',
+        VERSION_STRATEGY: 'fixed',
       }),
     ).toStrictEqual({
       releaseVersion: '1.0.0',
       repoUrl: 'https://github.com/MetaMask/snaps-skunkworks',
       workspaceRoot: 'foo',
-      releaseStrategy: 'fixed',
+      versionStrategy: 'fixed',
       releasePackages: undefined,
     });
   });
@@ -73,16 +73,16 @@ describe('parseEnvironmentVariables', () => {
     ).toThrow('process.env.RELEASE_VERSION must be a valid SemVer version.');
   });
 
-  it('throws if RELEASE_STRATEGY is invalid', () => {
+  it('throws if VERSION_STRATEGY is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
         GITHUB_WORKSPACE: 'foo',
         REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
         RELEASE_VERSION: '1.0.0',
-        RELEASE_STRATEGY: 'lol',
+        VERSION_STRATEGY: 'lol',
       }),
     ).toThrow(
-      `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
+      `process.env.VERSION_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
     );
   });
 });

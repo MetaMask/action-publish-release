@@ -12,8 +12,8 @@ runs:
     - id: get-version-strategy
       shell: bash
       run: |
-        RELEASE_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output '.versioningStrategy // "fixed"' "release.config.json" || echo "fixed")
-        echo "RELEASE_STRATEGY=$RELEASE_STRATEGY" >> "$GITHUB_OUTPUT"
+        VERSION_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output '.versioningStrategy // "fixed"' "release.config.json" || echo "fixed")
+        echo "VERSION_STRATEGY=$VERSION_STRATEGY" >> "$GITHUB_OUTPUT"
     - id: get-release-version
       shell: bash
       run: echo "RELEASE_VERSION=$(jq --raw-output '.version' package.json)" >> "$GITHUB_OUTPUT"
@@ -21,7 +21,7 @@ runs:
       shell: bash
       run: echo "REPOSITORY_URL=$(jq --raw-output '.repository.url' package.json)" >> "$GITHUB_OUTPUT"
     - id: get-release-packages
-      if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
+      if: steps.get-version-strategy.outputs.VERSION_STRATEGY == 'independent'
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/get-release-packages.sh
@@ -31,7 +31,7 @@ runs:
       shell: bash
       run: node ${{ github.action_path }}/dist/index.js
       env:
-        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
+        VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
         RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
@@ -40,6 +40,6 @@ runs:
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh
       env:
-        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
+        VERSION_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSION_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
