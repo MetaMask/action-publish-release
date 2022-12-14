@@ -1,4 +1,4 @@
-import { FIXED, INDEPENDENT } from './constants';
+import { ReleaseStrategy, VersioningStrategy } from './constants';
 import { parseEnvironmentVariables } from './utils';
 
 describe('parseEnvironmentVariables', () => {
@@ -22,13 +22,15 @@ describe('parseEnvironmentVariables', () => {
         GITHUB_WORKSPACE: 'foo',
         REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
         RELEASE_VERSION: '1.0.0',
-        VERSION_STRATEGY: 'fixed',
+        VERSIONING_STRATEGY: VersioningStrategy.fixed,
+        RELEASE_STRATEGY: ReleaseStrategy.combined,
       }),
     ).toStrictEqual({
       releaseVersion: '1.0.0',
       repoUrl: 'https://github.com/MetaMask/snaps-skunkworks',
       workspaceRoot: 'foo',
-      versionStrategy: 'fixed',
+      versioningStrategy: VersioningStrategy.fixed,
+      releaseStrategy: ReleaseStrategy.combined,
       releasePackages: undefined,
     });
   });
@@ -73,16 +75,30 @@ describe('parseEnvironmentVariables', () => {
     ).toThrow('process.env.RELEASE_VERSION must be a valid SemVer version.');
   });
 
-  it('throws if VERSION_STRATEGY is invalid', () => {
+  it('throws if VERSIONING_STRATEGY is invalid', () => {
     expect(() =>
       parseEnvironmentVariables({
         GITHUB_WORKSPACE: 'foo',
         REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
         RELEASE_VERSION: '1.0.0',
-        VERSION_STRATEGY: 'lol',
+        VERSIONING_STRATEGY: 'lol',
       }),
     ).toThrow(
-      `process.env.VERSION_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
+      `process.env.VERSIONING_STRATEGY must be one of "${VersioningStrategy.fixed}" or "${VersioningStrategy.independent}"`,
+    );
+  });
+
+  it('throws if RELEASE_STRATEGY is invalid', () => {
+    expect(() =>
+      parseEnvironmentVariables({
+        GITHUB_WORKSPACE: 'foo',
+        REPOSITORY_URL: 'https://github.com/MetaMask/snaps-skunkworks.git',
+        RELEASE_VERSION: '1.0.0',
+        VERSIONING_STRATEGY: 'fixed',
+        RELEASE_STRATEGY: 'lol',
+      }),
+    ).toThrow(
+      `process.env.RELEASE_STRATEGY must be one of "${ReleaseStrategy.combined}" or "${ReleaseStrategy.independent}"`,
     );
   });
 });

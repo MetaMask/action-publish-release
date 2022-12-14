@@ -10940,8 +10940,16 @@ var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/constants.js
-const FIXED = 'fixed';
-const INDEPENDENT = 'independent';
+var VersioningStrategy;
+(function (VersioningStrategy) {
+    VersioningStrategy["independent"] = "independent";
+    VersioningStrategy["fixed"] = "fixed";
+})(VersioningStrategy || (VersioningStrategy = {}));
+var ReleaseStrategy;
+(function (ReleaseStrategy) {
+    ReleaseStrategy["combined"] = "combined";
+    ReleaseStrategy["independent"] = "independent";
+})(ReleaseStrategy || (ReleaseStrategy = {}));
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
@@ -10957,7 +10965,9 @@ const isValidUrl = (str) => {
     return url.protocol === `https:`;
 };
 const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
-const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
+const isValidVersioningStrategy = (value) => value === VersioningStrategy.independent ||
+    value === VersioningStrategy.fixed;
+const isValidReleaseStrategy = (value) => value === ReleaseStrategy.combined || value === ReleaseStrategy.independent;
 /**
  * Utility function for parsing expected environment variables.
  *
@@ -10980,15 +10990,20 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
         throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
     }
     const repoUrl = removeGitEx(repositoryUrl);
-    const releaseStrategy = (0,dist.getStringRecordValue)('VERSION_STRATEGY', environmentVariables);
-    if (!fixedOrIndependent(releaseStrategy)) {
-        throw new Error(`process.env.VERSION_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
+    const versioningStrategy = (0,dist.getStringRecordValue)('VERSIONING_STRATEGY', environmentVariables);
+    if (!isValidVersioningStrategy(versioningStrategy)) {
+        throw new Error(`process.env.VERSIONING_STRATEGY must be one of "${VersioningStrategy.fixed}" or "${VersioningStrategy.independent}"`);
+    }
+    const releaseStrategy = (0,dist.getStringRecordValue)('RELEASE_STRATEGY', environmentVariables);
+    if (!isValidReleaseStrategy(releaseStrategy)) {
+        throw new Error(`process.env.RELEASE_STRATEGY must be one of "${ReleaseStrategy.combined}" or "${ReleaseStrategy.independent}"`);
     }
     const releasePackages = (0,dist.getStringRecordValue)('RELEASE_PACKAGES', environmentVariables) || undefined;
     return {
         releaseVersion,
         repoUrl,
         workspaceRoot,
+        versioningStrategy,
         releaseStrategy,
         releasePackages,
     };
@@ -11020,13 +11035,13 @@ const getReleasePackages = () => {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 async function getReleaseNotes() {
-    const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } = parseEnvironmentVariables();
+    const { releaseVersion, repoUrl, workspaceRoot, versioningStrategy, releaseStrategy, } = parseEnvironmentVariables();
     const rawRootManifest = await (0,dist.getPackageManifest)(workspaceRoot);
     const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, workspaceRoot);
     let releaseNotes;
     if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), releaseStrategy);
+        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), versioningStrategy, releaseStrategy);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
@@ -11036,7 +11051,18 @@ async function getReleaseNotes() {
     if (!releaseNotes) {
         throw new Error('The computed release notes are empty.');
     }
+    if (releaseStrategy === ReleaseStrategy.independent) {
+        (0,core.exportVariable)('RELEASE_NOTES', releaseNotes);
+        return;
+    }
     (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+}
+async function getReleaseNotesForMonorepoWithIndependentReleases(repoUrl) {
+    const releaseNotes = {};
+    for (const [packageName, { path, version }] of Object.entries(getReleasePackages())) {
+        releaseNotes[packageName] = await getPackageReleaseNotes(version, repoUrl, path);
+    }
+    return JSON.stringify(releaseNotes);
 }
 async function getReleaseNotesForMonorepoWithIndependentVersions(repoUrl) {
     let releaseNotes = '';
@@ -11071,11 +11097,14 @@ async function getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoU
  * @param rootManifest - The parsed package.json file of the root directory.
  * @returns The release notes for all packages included in the release.
  */
-async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
-    const releaseNotes = versioningStrategy === INDEPENDENT
-        ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
-        : await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
-    return releaseNotes;
+async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy, releaseStrategy) {
+    if (versioningStrategy === VersioningStrategy.fixed) {
+        return await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
+    }
+    if (releaseStrategy === ReleaseStrategy.independent) {
+        return await getReleaseNotesForMonorepoWithIndependentReleases(repoUrl);
+    }
+    return await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl);
 }
 /**
  * Uses
