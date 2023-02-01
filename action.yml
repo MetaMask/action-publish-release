@@ -1,9 +1,17 @@
 name: 'Publish Release'
 description: 'Publish the release'
 
+inputs:
+  npm-registry:
+    description: 'The URL of the NPM registry that Yarn commands will use to access packages.'
+    required: false
+  npm-token:
+    description: 'The auth token associated with the registry that Yarn commands will use to access packages.'
+    required: false
+
 outputs:
   release-version:
-    description: 'The version of the release'
+    description: 'The version of the release.'
     value: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
 
 runs:
@@ -30,6 +38,9 @@ runs:
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/get-release-packages.sh
+      env:
+        YARN_NPM_REGISTRY_SERVER: ${{ inputs.npm-registry }}
+        YARN_NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
