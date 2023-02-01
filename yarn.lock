@@ -536,10 +536,10 @@
     glob "^7.1.7"
     semver "^7.3.5"
 
-"@metamask/auto-changelog@^2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-2.4.0.tgz#d249034a5010060e4db2addfc27863787fe4546c"
-  integrity sha512-6kIeKT4vy18dKUQEIsfIwVGBHDcLO3jBZB0klRDD+CayAqjh3Rcpi/AXr6NPI+c0rF802vAbqMX+/KFaU3scVg==
+"@metamask/auto-changelog@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-3.1.0.tgz#d4d6bc7b9a1244a2e6a8ff1f818540b6491d8d88"
+  integrity sha512-o+4XljQzTvd46ML+PRyCNv3B9EbFf6JjaaueB2+v/aWSf97pp6FmjEXSPwaUzQQhl9GkaZj8himpanT62Nv9Aw==
   dependencies:
     diff "^5.0.0"
     execa "^5.1.1"
