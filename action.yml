@@ -12,7 +12,12 @@ runs:
     - id: get-version-strategy
       shell: bash
       run: |
-        RELEASE_STRATEGY=$(jq --raw-output ".versioningStrategy" "release.config.json" || echo "fixed")
+        VERSIONING_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output '.versioningStrategy // "fixed"' "release.config.json" || echo "fixed")
+        echo "VERSIONING_STRATEGY=$VERSIONING_STRATEGY" >> "$GITHUB_OUTPUT"
+    - id: get-release-strategy
+      shell: bash
+      run: |
+        RELEASE_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output ".releaseStrategy" // "combined"' "release.config.json" || echo "combined")
         echo "RELEASE_STRATEGY=$RELEASE_STRATEGY" >> "$GITHUB_OUTPUT"
     - id: get-release-version
       shell: bash
@@ -21,7 +26,7 @@ runs:
       shell: bash
       run: echo "REPOSITORY_URL=$(jq --raw-output '.repository.url' package.json)" >> "$GITHUB_OUTPUT"
     - id: get-release-packages
-      if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
+      if: steps.get-version-strategy.outputs.VERSIONING_STRATEGY == 'independent'
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/get-release-packages.sh
@@ -31,7 +36,8 @@ runs:
       shell: bash
       run: node ${{ github.action_path }}/dist/index.js
       env:
-        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
+        VERSIONING_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSIONING_STRATEGY }}
+        RELEASE_STRATEGY: ${{ steps.get-release-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         REPOSITORY_URL: ${{ steps.get-repository-url.outputs.REPOSITORY_URL }}
         RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
@@ -40,6 +46,7 @@ runs:
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh
       env:
-        RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
+        VERSIONING_STRATEGY: ${{ steps.get-version-strategy.outputs.VERSIONING_STRATEGY }}
+        RELEASE_STRATEGY: ${{ steps.get-release-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}

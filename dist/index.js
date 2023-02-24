@@ -837,6 +837,13 @@ const changelogDescription = `All notable changes to this project will be docume
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
 // Stringification helpers
+/**
+ * Stringify a changelog category section.
+ *
+ * @param category - The title of the changelog category.
+ * @param changes - The changes included in this category.
+ * @returns The stringified category section.
+ */
 function stringifyCategory(category, changes) {
     const categoryHeader = `### ${category}`;
     if (changes.length === 0) {
@@ -847,6 +854,16 @@ function stringifyCategory(category, changes) {
         .join('\n');
     return `${categoryHeader}\n${changeDescriptions}`;
 }
+/**
+ * Stringify a changelog release section.
+ *
+ * @param version - The release version.
+ * @param categories - The categories of changes included in this release.
+ * @param options - Additional release options.
+ * @param options.date - The date of the release.
+ * @param options.status - The status of the release (e.g., "DEPRECATED").
+ * @returns The stringified release section.
+ */
 function stringifyRelease(version, categories, { date, status } = {}) {
     const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${status ? ` [${status}]` : ''}`;
     const categorizedChanges = constants_1.orderedChangeCategories
@@ -861,6 +878,13 @@ function stringifyRelease(version, categories, { date, status } = {}) {
     }
     return `${releaseHeader}\n${categorizedChanges}`;
 }
+/**
+ * Stringify a set of changelog release sections.
+ *
+ * @param releases - The releases to stringify.
+ * @param changes - The set of changes to include, organized by release.
+ * @returns The stringified set of release sections.
+ */
 function stringifyReleases(releases, changes) {
     const stringifiedUnreleased = stringifyRelease(constants_1.unreleased, changes[constants_1.unreleased]);
     const stringifiedReleases = releases.map(({ version, date, status }) => {
@@ -869,16 +893,48 @@ function stringifyReleases(releases, changes) {
     });
     return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
 }
+/**
+ * Return the given URL with a trailing slash. It is returned unaltered if it
+ * already has a trailing slash.
+ *
+ * @param url - The URL string.
+ * @returns The URL string with a trailing slash.
+ */
 function withTrailingSlash(url) {
     return url.endsWith('/') ? url : `${url}/`;
 }
+/**
+ * Get the GitHub URL for comparing two git commits.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param firstRef - A reference (e.g., commit hash, tag, etc.) to the first commit to compare.
+ * @param secondRef - A reference (e.g., commit hash, tag, etc.) to the second commit to compare.
+ * @returns The comparison URL for the two given commits.
+ */
 function getCompareUrl(repoUrl, firstRef, secondRef) {
     return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
 }
+/**
+ * Get a GitHub tag URL.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tag - The tag name.
+ * @returns The URL for the given tag.
+ */
 function getTagUrl(repoUrl, tag) {
     return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
 }
-function stringifyLinkReferenceDefinitions(repoUrl, releases) {
+/**
+ * Get a stringified list of link definitions for the given set of releases. The first release is
+ * linked to the corresponding tag, and each subsequent release is linked to a comparison with the
+ * previous release.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @returns The stringified release link definitions.
+ */
+function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases) {
     // A list of release versions in descending SemVer order
     const descendingSemverVersions = releases
         .map(({ version }) => version)
@@ -900,7 +956,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
     // If there have not been any releases yet, the repo URL is used directly as
     // the link definition.
     const unreleasedLinkReferenceDefinition = `[${constants_1.unreleased}]: ${hasReleases
-        ? getCompareUrl(repoUrl, `v${latestSemverVersion}`, 'HEAD')
+        ? getCompareUrl(repoUrl, `${tagPrefix}${latestSemverVersion}`, 'HEAD')
         : withTrailingSlash(repoUrl)}`;
     // The "previous" release that should be used for comparison is not always
     // the most recent release chronologically. The _highest_ version that is
@@ -910,7 +966,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
         .map(({ version }) => {
         let diffUrl;
         if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-            diffUrl = getTagUrl(repoUrl, `v${version}`);
+            diffUrl = getTagUrl(repoUrl, `${tagPrefix}${version}`);
         }
         else {
             const versionIndex = chronologicalVersions.indexOf(version);
@@ -920,8 +976,8 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
                 return semver_1.default.gt(version, releaseVersion);
             });
             diffUrl = previousVersion
-                ? getCompareUrl(repoUrl, `v${previousVersion}`, `v${version}`)
-                : getTagUrl(repoUrl, `v${version}`);
+                ? getCompareUrl(repoUrl, `${tagPrefix}${previousVersion}`, `${tagPrefix}${version}`)
+                : getTagUrl(repoUrl, `${tagPrefix}${version}`);
         }
         return `[${version}]: ${diffUrl}`;
     })
@@ -939,28 +995,30 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
  */
 class Changelog {
     /**
-     * Construct an empty changelog
+     * Construct an empty changelog.
      *
-     * @param options
-     * @param options.repoUrl - The GitHub repository URL for the current project
+     * @param options - Changelog options.
+     * @param options.repoUrl - The GitHub repository URL for the current project.
+     * @param options.tagPrefix - The prefix used in tags before the version number.
      */
-    constructor({ repoUrl }) {
+    constructor({ repoUrl, tagPrefix = 'v', }) {
         this._releases = [];
         this._changes = { [constants_1.unreleased]: {} };
         this._repoUrl = repoUrl;
+        this._tagPrefix = tagPrefix;
     }
     /**
      * Add a release to the changelog.
      *
-     * @param options
+     * @param options - Release options.
      * @param options.addToStart - Determines whether the change is added to the
      * top or bottom of the list of changes in this category. This defaults to
      * `true` because changes should be in reverse-chronological order. This
      * should be set to `false` when parsing a changelog top-to-bottom.
      * @param options.date - An ISO-8601 formatted date, representing the release
      * date.
-     * @param options.status - The status of the release (e.g. 'WITHDRAWN',
-     * 'DEPRECATED')
+     * @param options.status - The status of the release (e.g., 'WITHDRAWN',
+     * 'DEPRECATED').
      * @param options.version - The version of the current release, which should
      * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
      */
@@ -986,7 +1044,7 @@ class Changelog {
     /**
      * Add a change to the changelog.
      *
-     * @param options
+     * @param options - Change options.
      * @param options.addToStart - Determines whether the change is added to the
      * top or bottom of the list of changes in this category. This defaults to
      * `true` because changes should be in reverse-chronological order. This
@@ -1093,7 +1151,7 @@ class Changelog {
         return this._changes[version];
     }
     /**
-     * Gets all changes that have not yet been released
+     * Gets all changes that have not yet been released.
      *
      * @returns The changes that have not yet been released.
      */
@@ -1111,7 +1169,7 @@ ${changelogDescription}
 
 ${stringifyReleases(this._releases, this._changes)}
 
-${stringifyLinkReferenceDefinitions(this._repoUrl, this._releases)}`;
+${stringifyLinkReferenceDefinitions(this._repoUrl, this._tagPrefix, this._releases)}`;
     }
 }
 exports.default = Changelog;
@@ -1224,12 +1282,13 @@ const changelog_1 = __importDefault(__nccwpck_require__(1610));
 /**
  * Creates a new empty changelog.
  *
- * @param options
+ * @param options - Changelog options.
  * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  * @returns The initial changelog text.
  */
-function createEmptyChangelog({ repoUrl }) {
-    const changelog = new changelog_1.default({ repoUrl });
+function createEmptyChangelog({ repoUrl, tagPrefix = 'v', }) {
+    const changelog = new changelog_1.default({ repoUrl, tagPrefix });
     return changelog.toString();
 }
 exports.createEmptyChangelog = createEmptyChangelog;
@@ -1247,25 +1306,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.parseChangelog = void 0;
+const semver_1 = __importDefault(__nccwpck_require__(1383));
 const changelog_1 = __importDefault(__nccwpck_require__(1610));
 const constants_1 = __nccwpck_require__(1373);
+/**
+ * Truncate the given string at 80 characters.
+ *
+ * @param line - The string to truncate.
+ * @returns The truncated string.
+ */
 function truncated(line) {
     return line.length > 80 ? `${line.slice(0, 80)}...` : line;
 }
+/**
+ * Returns whether the given string is recognized as a valid change category.
+ *
+ * @param category - The string to validate.
+ * @returns Whether the given string is a valid change category.
+ */
 function isValidChangeCategory(category) {
     return constants_1.ChangeCategory[category] !== undefined;
 }
 /**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
- * @param options
- * @param options.changelogContent - The changelog to parse
+ *
+ * @param options - Options.
+ * @param options.changelogContent - The changelog to parse.
  * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  * @returns A changelog instance that reflects the changelog text provided.
  */
-function parseChangelog({ changelogContent, repoUrl, }) {
+function parseChangelog({ changelogContent, repoUrl, tagPrefix = 'v', }) {
     const changelogLines = changelogContent.split('\n');
-    const changelog = new changelog_1.default({ repoUrl });
+    const changelog = new changelog_1.default({ repoUrl, tagPrefix });
     const unreleasedHeaderIndex = changelogLines.indexOf(`## [${constants_1.unreleased}]`);
     if (unreleasedHeaderIndex === -1) {
         throw new Error(`Failed to find ${constants_1.unreleased} header`);
@@ -1285,7 +1359,7 @@ function parseChangelog({ changelogContent, repoUrl, }) {
      *
      * This is required because change entries can span multiple lines.
      *
-     * @param options
+     * @param options - Options.
      * @param options.removeTrailingNewline - Indicates that the trailing newline
      * is not a part of the change description, and should therefore be removed.
      */
@@ -1312,9 +1386,12 @@ function parseChangelog({ changelogContent, repoUrl, }) {
     }
     for (const line of contentfulChangelogLines) {
         if (line.startsWith('## [')) {
-            const results = line.match(/^## \[(\d+\.\d+\.\d+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u);
+            const results = line.match(/^## \[([^[\]]+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u);
             if (results === null) {
                 throw new Error(`Malformed release header: '${truncated(line)}'`);
+            }
+            if (semver_1.default.valid(results[1]) === null) {
+                throw new Error(`Invalid SemVer version in release header: '${truncated(line)}'`);
             }
             // Trailing newline removed because the release section is expected to
             // be prefixed by a newline.
@@ -1388,21 +1465,45 @@ const assert_1 = __nccwpck_require__(2357);
 const execa_1 = __importDefault(__nccwpck_require__(5447));
 const parse_changelog_1 = __nccwpck_require__(7607);
 const constants_1 = __nccwpck_require__(1373);
-async function getMostRecentTag() {
-    const revListArgs = ['rev-list', '--tags', '--max-count=1', '--date-order'];
-    const results = await runCommand('git', revListArgs);
-    if (results.length === 0) {
+/**
+ * Get the most recent tag for a project.
+ *
+ * @param options - Options.
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @returns The most recent tag.
+ */
+async function getMostRecentTag({ tagPrefixes, }) {
+    let mostRecentTagCommitHash = null;
+    for (const tagPrefix of tagPrefixes) {
+        const revListArgs = [
+            'rev-list',
+            `--tags=${tagPrefix}*`,
+            '--max-count=1',
+            '--date-order',
+        ];
+        const results = await runCommand('git', revListArgs);
+        if (results.length) {
+            mostRecentTagCommitHash = results[0];
+            break;
+        }
+    }
+    if (mostRecentTagCommitHash === null) {
         return null;
     }
-    const [mostRecentTagCommitHash] = results;
     const [mostRecentTag] = await runCommand('git', [
         'describe',
         '--tags',
         mostRecentTagCommitHash,
     ]);
-    assert_1.strict.equal(mostRecentTag === null || mostRecentTag === void 0 ? void 0 : mostRecentTag[0], 'v', 'Most recent tag should start with v');
     return mostRecentTag;
 }
+/**
+ * Get commit details for each given commit hash.
+ *
+ * @param commitHashes - The list of commit hashes.
+ * @returns Commit details for each commit, including description and PR number (if present).
+ */
 async function getCommits(commitHashes) {
     var _a;
     const commits = [];
@@ -1444,6 +1545,12 @@ async function getCommits(commitHashes) {
     }
     return commits;
 }
+/**
+ * Get all change descriptions from a changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All commit descriptions included in the given changelog.
+ */
 function getAllChangeDescriptions(changelog) {
     const releases = changelog.getReleases();
     const changeDescriptions = Object.values(changelog.getUnreleasedChanges()).flat();
@@ -1452,6 +1559,12 @@ function getAllChangeDescriptions(changelog) {
     }
     return changeDescriptions;
 }
+/**
+ * Get all pull request numbers included in the given changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All pull request numbers included in the given changelog.
+ */
 function getAllLoggedPrNumbers(changelog) {
     const changeDescriptions = getAllChangeDescriptions(changelog);
     const prNumbersWithChangelogEntries = [];
@@ -1463,6 +1576,13 @@ function getAllLoggedPrNumbers(changelog) {
     }
     return prNumbersWithChangelogEntries;
 }
+/**
+ * Get all commit hashes included in the given commit range.
+ *
+ * @param commitRange - The commit range.
+ * @param rootDirectory - The project root directory.
+ * @returns A list of commit hashes for the given range.
+ */
 async function getCommitHashesInRange(commitRange, rootDirectory) {
     const revListArgs = ['rev-list', commitRange];
     if (rootDirectory) {
@@ -1473,8 +1593,9 @@ async function getCommitHashesInRange(commitRange, rootDirectory) {
 /**
  * Update a changelog with any commits made since the last release. Commits for
  * PRs that are already included in the changelog are omitted.
- * @param options
- * @param options.changelogContent - The current changelog
+ *
+ * @param options - Update options.
+ * @param options.changelogContent - The current changelog.
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current project.
@@ -1486,17 +1607,26 @@ async function getCommitHashesInRange(commitRange, rootDirectory) {
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
- * @returns The updated changelog text
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @returns The updated changelog text.
  */
-async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, }) {
+async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, tagPrefixes = ['v'], }) {
     if (isReleaseCandidate && !currentVersion) {
         throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
     }
-    const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    const changelog = (0, parse_changelog_1.parseChangelog)({
+        changelogContent,
+        repoUrl,
+        tagPrefix: tagPrefixes[0],
+    });
     // Ensure we have all tags on remote
     await runCommand('git', ['fetch', '--tags']);
-    const mostRecentTag = await getMostRecentTag();
-    if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
+    const mostRecentTag = await getMostRecentTag({
+        tagPrefixes,
+    });
+    if (isReleaseCandidate &&
+        mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
         throw new Error(`Current version already has tag, which is unexpected for a release candidate.`);
     }
     const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
@@ -1549,7 +1679,7 @@ exports.updateChangelog = updateChangelog;
  * @returns An array of the non-empty lines returned by the command.
  */
 async function runCommand(command, args) {
-    return (await execa_1.default(command, [...args])).stdout
+    return (await (0, execa_1.default)(command, [...args])).stdout
         .trim()
         .split('\n')
         .filter((line) => line !== '');
@@ -1593,7 +1723,9 @@ exports.UncategorizedChangesError = UncategorizedChangesError;
  */
 class MissingCurrentVersionError extends InvalidChangelogError {
     /**
-     * @param currentVersion - The current version
+     * Construct a changelog missing version error.
+     *
+     * @param currentVersion - The current version.
      */
     constructor(currentVersion) {
         super(`Current version missing from changelog: '${currentVersion}'`);
@@ -1605,7 +1737,9 @@ exports.MissingCurrentVersionError = MissingCurrentVersionError;
  */
 class ChangelogFormattingError extends InvalidChangelogError {
     /**
-     * @param options
+     * Construct a changelog formatting error.
+     *
+     * @param options - Error options.
      * @param options.validChangelog - The string contents of the well-formatted
      * changelog.
      * @param options.invalidChangelog - The string contents of the malformed
@@ -1623,8 +1757,8 @@ exports.ChangelogFormattingError = ChangelogFormattingError;
 /**
  * Validates that a changelog is well-formatted.
  *
- * @param options
- * @param options.changelogContent - The current changelog
+ * @param options - Validation options.
+ * @param options.changelogContent - The current changelog.
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current
@@ -1633,6 +1767,7 @@ exports.ChangelogFormattingError = ChangelogFormattingError;
  * the midst of release preparation or not. If this is set, this command will
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -1643,9 +1778,9 @@ exports.ChangelogFormattingError = ChangelogFormattingError;
  * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
-function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, }) {
+function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, tagPrefix = 'v', }) {
     var _a, _b;
-    const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    const changelog = (0, parse_changelog_1.parseChangelog)({ changelogContent, repoUrl, tagPrefix });
     const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
     const releaseChanges = currentVersion
         ? changelog.getReleaseChanges(currentVersion)
@@ -10805,8 +10940,16 @@ var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/constants.js
-const FIXED = 'fixed';
-const INDEPENDENT = 'independent';
+var VersioningStrategy;
+(function (VersioningStrategy) {
+    VersioningStrategy["independent"] = "independent";
+    VersioningStrategy["fixed"] = "fixed";
+})(VersioningStrategy || (VersioningStrategy = {}));
+var ReleaseStrategy;
+(function (ReleaseStrategy) {
+    ReleaseStrategy["combined"] = "combined";
+    ReleaseStrategy["independent"] = "independent";
+})(ReleaseStrategy || (ReleaseStrategy = {}));
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/utils.js
 
@@ -10822,7 +10965,9 @@ const isValidUrl = (str) => {
     return url.protocol === `https:`;
 };
 const removeGitEx = (url) => url.substring(0, url.lastIndexOf('.git'));
-const fixedOrIndependent = (value) => value === FIXED || value === INDEPENDENT;
+const isValidVersioningStrategy = (value) => value === VersioningStrategy.independent ||
+    value === VersioningStrategy.fixed;
+const isValidReleaseStrategy = (value) => value === ReleaseStrategy.combined || value === ReleaseStrategy.independent;
 /**
  * Utility function for parsing expected environment variables.
  *
@@ -10845,15 +10990,20 @@ function parseEnvironmentVariables(environmentVariables = process.env) {
         throw new Error('process.env.REPOSITORY_URL must be a valid URL.');
     }
     const repoUrl = removeGitEx(repositoryUrl);
+    const versioningStrategy = (0,dist.getStringRecordValue)('VERSIONING_STRATEGY', environmentVariables);
+    if (!isValidVersioningStrategy(versioningStrategy)) {
+        throw new Error(`process.env.VERSIONING_STRATEGY must be one of "${VersioningStrategy.fixed}" or "${VersioningStrategy.independent}"`);
+    }
     const releaseStrategy = (0,dist.getStringRecordValue)('RELEASE_STRATEGY', environmentVariables);
-    if (!fixedOrIndependent(releaseStrategy)) {
-        throw new Error(`process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`);
+    if (!isValidReleaseStrategy(releaseStrategy)) {
+        throw new Error(`process.env.RELEASE_STRATEGY must be one of "${ReleaseStrategy.combined}" or "${ReleaseStrategy.independent}"`);
     }
     const releasePackages = (0,dist.getStringRecordValue)('RELEASE_PACKAGES', environmentVariables) || undefined;
     return {
         releaseVersion,
         repoUrl,
         workspaceRoot,
+        versioningStrategy,
         releaseStrategy,
         releasePackages,
     };
@@ -10885,13 +11035,13 @@ const getReleasePackages = () => {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 async function getReleaseNotes() {
-    const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } = parseEnvironmentVariables();
+    const { releaseVersion, repoUrl, workspaceRoot, versioningStrategy, releaseStrategy, } = parseEnvironmentVariables();
     const rawRootManifest = await (0,dist.getPackageManifest)(workspaceRoot);
     const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, workspaceRoot);
     let releaseNotes;
     if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), releaseStrategy);
+        releaseNotes = await getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceRoot), versioningStrategy, releaseStrategy);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
@@ -10901,7 +11051,18 @@ async function getReleaseNotes() {
     if (!releaseNotes) {
         throw new Error('The computed release notes are empty.');
     }
+    if (releaseStrategy === ReleaseStrategy.independent) {
+        (0,core.exportVariable)('RELEASE_NOTES', releaseNotes);
+        return;
+    }
     (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+}
+async function getReleaseNotesForMonorepoWithIndependentReleases(repoUrl) {
+    const releaseNotes = {};
+    for (const [packageName, { path, version }] of Object.entries(getReleasePackages())) {
+        releaseNotes[packageName] = await getPackageReleaseNotes(version, repoUrl, path);
+    }
+    return JSON.stringify(releaseNotes);
 }
 async function getReleaseNotesForMonorepoWithIndependentVersions(repoUrl) {
     let releaseNotes = '';
@@ -10936,11 +11097,14 @@ async function getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoU
  * @param rootManifest - The parsed package.json file of the root directory.
  * @returns The release notes for all packages included in the release.
  */
-async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy) {
-    const releaseNotes = versioningStrategy === INDEPENDENT
-        ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
-        : await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
-    return releaseNotes;
+async function getMonorepoReleaseNotes(releaseVersion, repoUrl, workspaceRoot, rootManifest, versioningStrategy, releaseStrategy) {
+    if (versioningStrategy === VersioningStrategy.fixed) {
+        return await getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest);
+    }
+    if (releaseStrategy === ReleaseStrategy.independent) {
+        return await getReleaseNotesForMonorepoWithIndependentReleases(repoUrl);
+    }
+    return await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl);
 }
 /**
  * Uses
