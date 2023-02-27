@@ -27,7 +27,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issue = exports.issueCommand = void 0;
-const os = __importStar(__nccwpck_require__(2087));
+const os = __importStar(__nccwpck_require__(2037));
 const utils_1 = __nccwpck_require__(5278);
 /**
  * Commands
@@ -138,8 +138,8 @@ exports.getState = exports.saveState = exports.group = exports.endGroup = export
 const command_1 = __nccwpck_require__(7351);
 const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(5278);
-const os = __importStar(__nccwpck_require__(2087));
-const path = __importStar(__nccwpck_require__(5622));
+const os = __importStar(__nccwpck_require__(2037));
+const path = __importStar(__nccwpck_require__(1017));
 /**
  * The code to exit an action
  */
@@ -415,8 +415,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issueCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const fs = __importStar(__nccwpck_require__(5747));
-const os = __importStar(__nccwpck_require__(2087));
+const fs = __importStar(__nccwpck_require__(7147));
+const os = __importStar(__nccwpck_require__(2037));
 const utils_1 = __nccwpck_require__(5278);
 function issueCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
@@ -469,7 +469,7 @@ exports.toCommandValue = toCommandValue;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.writeJsonFile = exports.readJsonObjectFile = void 0;
-const fs_1 = __nccwpck_require__(5747);
+const fs_1 = __nccwpck_require__(7147);
 /**
  * Reads the assumed JSON file at the given path, attempts to parse it, and
  * returns the resulting object.
@@ -592,8 +592,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getWorkspaceLocations = exports.validateMonorepoPackageManifest = exports.validatePolyrepoPackageManifest = exports.validatePackageManifestName = exports.validatePackageManifestVersion = exports.getPackageManifest = exports.ManifestFieldNames = exports.ManifestDependencyFieldNames = void 0;
-const path_1 = __importDefault(__nccwpck_require__(5622));
-const util_1 = __nccwpck_require__(1669);
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const util_1 = __nccwpck_require__(3837);
 const glob_1 = __importDefault(__nccwpck_require__(1957));
 const misc_utils_1 = __nccwpck_require__(279);
 const file_utils_1 = __nccwpck_require__(4208);
@@ -1172,7 +1172,7 @@ ${stringifyReleases(this._releases, this._changes)}
 ${stringifyLinkReferenceDefinitions(this._repoUrl, this._tagPrefix, this._releases)}`;
     }
 }
-exports.default = Changelog;
+exports["default"] = Changelog;
 //# sourceMappingURL=changelog.js.map
 
 /***/ }),
@@ -1461,7 +1461,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updateChangelog = void 0;
-const assert_1 = __nccwpck_require__(2357);
+const assert_1 = __nccwpck_require__(9491);
 const execa_1 = __importDefault(__nccwpck_require__(5447));
 const parse_changelog_1 = __nccwpck_require__(7607);
 const constants_1 = __nccwpck_require__(1373);
@@ -2119,7 +2119,7 @@ var isArray = Array.isArray || function (xs) {
 "use strict";
 
 
-const cp = __nccwpck_require__(3129);
+const cp = __nccwpck_require__(2081);
 const parse = __nccwpck_require__(6855);
 const enoent = __nccwpck_require__(4101);
 
@@ -2233,7 +2233,7 @@ module.exports = {
 "use strict";
 
 
-const path = __nccwpck_require__(5622);
+const path = __nccwpck_require__(1017);
 const resolveCommand = __nccwpck_require__(7274);
 const escape = __nccwpck_require__(4274);
 const readShebang = __nccwpck_require__(1252);
@@ -2385,7 +2385,7 @@ module.exports.argument = escapeArgument;
 "use strict";
 
 
-const fs = __nccwpck_require__(5747);
+const fs = __nccwpck_require__(7147);
 const shebangCommand = __nccwpck_require__(7032);
 
 function readShebang(command) {
@@ -2416,7 +2416,7 @@ module.exports = readShebang;
 "use strict";
 
 
-const path = __nccwpck_require__(5622);
+const path = __nccwpck_require__(1017);
 const which = __nccwpck_require__(4207);
 const getPathKey = __nccwpck_require__(9060);
 
@@ -2489,7 +2489,7 @@ const pathKey = (options = {}) => {
 
 module.exports = pathKey;
 // TODO: Remove this for the next major release
-module.exports.default = pathKey;
+module.exports["default"] = pathKey;
 
 
 /***/ }),
@@ -2499,8 +2499,8 @@ module.exports.default = pathKey;
 
 "use strict";
 
-const path = __nccwpck_require__(5622);
-const childProcess = __nccwpck_require__(3129);
+const path = __nccwpck_require__(1017);
+const childProcess = __nccwpck_require__(2081);
 const crossSpawn = __nccwpck_require__(2746);
 const stripFinalNewline = __nccwpck_require__(8174);
 const npmRunPath = __nccwpck_require__(502);
@@ -2931,7 +2931,7 @@ module.exports = makeError;
 
 "use strict";
 
-const os = __nccwpck_require__(2087);
+const os = __nccwpck_require__(2037);
 const onExit = __nccwpck_require__(4931);
 
 const DEFAULT_FORCE_KILL_TIMEOUT = 1000 * 5;
@@ -3278,7 +3278,7 @@ realpath.realpathSync = realpathSync
 realpath.monkeypatch = monkeypatch
 realpath.unmonkeypatch = unmonkeypatch
 
-var fs = __nccwpck_require__(5747)
+var fs = __nccwpck_require__(7147)
 var origRealpath = fs.realpath
 var origRealpathSync = fs.realpathSync
 
@@ -3365,9 +3365,9 @@ function unmonkeypatch () {
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var pathModule = __nccwpck_require__(5622);
+var pathModule = __nccwpck_require__(1017);
 var isWindows = process.platform === 'win32';
-var fs = __nccwpck_require__(5747);
+var fs = __nccwpck_require__(7147);
 
 // JavaScript implementation of realpath, ported from node pre-v6
 
@@ -3656,7 +3656,7 @@ exports.realpath = function realpath(p, cache, cb) {
 
 "use strict";
 
-const {PassThrough: PassThroughStream} = __nccwpck_require__(2413);
+const {PassThrough: PassThroughStream} = __nccwpck_require__(2781);
 
 module.exports = options => {
 	options = {...options};
@@ -3716,9 +3716,9 @@ module.exports = options => {
 
 "use strict";
 
-const {constants: BufferConstants} = __nccwpck_require__(4293);
-const stream = __nccwpck_require__(2413);
-const {promisify} = __nccwpck_require__(1669);
+const {constants: BufferConstants} = __nccwpck_require__(4300);
+const stream = __nccwpck_require__(2781);
+const {promisify} = __nccwpck_require__(3837);
 const bufferStream = __nccwpck_require__(1585);
 
 const streamPipelinePromisified = promisify(stream.pipeline);
@@ -3795,7 +3795,7 @@ function ownProp (obj, field) {
   return Object.prototype.hasOwnProperty.call(obj, field)
 }
 
-var path = __nccwpck_require__(5622)
+var path = __nccwpck_require__(1017)
 var minimatch = __nccwpck_require__(3973)
 var isAbsolute = __nccwpck_require__(8714)
 var Minimatch = minimatch.Minimatch
@@ -4066,21 +4066,21 @@ function childrenIgnored (self, path) {
 
 module.exports = glob
 
-var fs = __nccwpck_require__(5747)
+var fs = __nccwpck_require__(7147)
 var rp = __nccwpck_require__(6863)
 var minimatch = __nccwpck_require__(3973)
 var Minimatch = minimatch.Minimatch
 var inherits = __nccwpck_require__(4124)
-var EE = __nccwpck_require__(8614).EventEmitter
-var path = __nccwpck_require__(5622)
-var assert = __nccwpck_require__(2357)
+var EE = (__nccwpck_require__(2361).EventEmitter)
+var path = __nccwpck_require__(1017)
+var assert = __nccwpck_require__(9491)
 var isAbsolute = __nccwpck_require__(8714)
 var globSync = __nccwpck_require__(9010)
 var common = __nccwpck_require__(7625)
 var setopts = common.setopts
 var ownProp = common.ownProp
 var inflight = __nccwpck_require__(2492)
-var util = __nccwpck_require__(1669)
+var util = __nccwpck_require__(3837)
 var childrenIgnored = common.childrenIgnored
 var isIgnored = common.isIgnored
 
@@ -4822,14 +4822,14 @@ Glob.prototype._stat2 = function (f, abs, er, stat, cb) {
 module.exports = globSync
 globSync.GlobSync = GlobSync
 
-var fs = __nccwpck_require__(5747)
+var fs = __nccwpck_require__(7147)
 var rp = __nccwpck_require__(6863)
 var minimatch = __nccwpck_require__(3973)
 var Minimatch = minimatch.Minimatch
-var Glob = __nccwpck_require__(1957).Glob
-var util = __nccwpck_require__(1669)
-var path = __nccwpck_require__(5622)
-var assert = __nccwpck_require__(2357)
+var Glob = (__nccwpck_require__(1957).Glob)
+var util = __nccwpck_require__(3837)
+var path = __nccwpck_require__(1017)
+var assert = __nccwpck_require__(9491)
 var isAbsolute = __nccwpck_require__(8714)
 var common = __nccwpck_require__(7625)
 var setopts = common.setopts
@@ -5591,7 +5591,7 @@ standard:"other"}];exports.SIGNALS=SIGNALS;
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
-Object.defineProperty(exports, "__esModule", ({value:true}));exports.signalsByNumber=exports.signalsByName=void 0;var _os=__nccwpck_require__(2087);
+Object.defineProperty(exports, "__esModule", ({value:true}));exports.signalsByNumber=exports.signalsByName=void 0;var _os=__nccwpck_require__(2037);
 
 var _signals=__nccwpck_require__(6435);
 var _realtime=__nccwpck_require__(5295);
@@ -5695,7 +5695,7 @@ const SIGRTMAX=64;exports.SIGRTMAX=SIGRTMAX;
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
-Object.defineProperty(exports, "__esModule", ({value:true}));exports.getSignals=void 0;var _os=__nccwpck_require__(2087);
+Object.defineProperty(exports, "__esModule", ({value:true}));exports.getSignals=void 0;var _os=__nccwpck_require__(2037);
 
 var _core=__nccwpck_require__(8213);
 var _realtime=__nccwpck_require__(5295);
@@ -5798,7 +5798,7 @@ function slice (args) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 try {
-  var util = __nccwpck_require__(1669);
+  var util = __nccwpck_require__(3837);
   /* istanbul ignore next */
   if (typeof util.inherits !== 'function') throw '';
   module.exports = util.inherits;
@@ -5884,7 +5884,7 @@ module.exports = isStream;
 /***/ 7126:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-var fs = __nccwpck_require__(5747)
+var fs = __nccwpck_require__(7147)
 var core
 if (process.platform === 'win32' || global.TESTING_WINDOWS) {
   core = __nccwpck_require__(2001)
@@ -5951,7 +5951,7 @@ function sync (path, options) {
 module.exports = isexe
 isexe.sync = sync
 
-var fs = __nccwpck_require__(5747)
+var fs = __nccwpck_require__(7147)
 
 function isexe (path, options, cb) {
   fs.stat(path, function (er, stat) {
@@ -5999,7 +5999,7 @@ function checkMode (stat, options) {
 module.exports = isexe
 isexe.sync = sync
 
-var fs = __nccwpck_require__(5747)
+var fs = __nccwpck_require__(7147)
 
 function checkPathExt (path, options) {
   var pathext = options.pathExt !== undefined ?
@@ -6390,7 +6390,7 @@ module.exports = LRUCache
 "use strict";
 
 
-const { PassThrough } = __nccwpck_require__(2413);
+const { PassThrough } = __nccwpck_require__(2781);
 
 module.exports = function (/*streams...*/) {
   var sources = []
@@ -6449,7 +6449,7 @@ const mimicFn = (to, from) => {
 
 module.exports = mimicFn;
 // TODO: Remove this for the next major release
-module.exports.default = mimicFn;
+module.exports["default"] = mimicFn;
 
 
 /***/ }),
@@ -6462,7 +6462,7 @@ minimatch.Minimatch = Minimatch
 
 var path = { sep: '/' }
 try {
-  path = __nccwpck_require__(5622)
+  path = __nccwpck_require__(1017)
 } catch (er) {}
 
 var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {}
@@ -7389,7 +7389,7 @@ function regExpEscape (s) {
 
 "use strict";
 
-const path = __nccwpck_require__(5622);
+const path = __nccwpck_require__(1017);
 const pathKey = __nccwpck_require__(7278);
 
 const npmRunPath = options => {
@@ -7419,7 +7419,7 @@ const npmRunPath = options => {
 
 module.exports = npmRunPath;
 // TODO: Remove this for the next major release
-module.exports.default = npmRunPath;
+module.exports["default"] = npmRunPath;
 
 module.exports.env = options => {
 	options = {
@@ -7458,7 +7458,7 @@ const pathKey = (options = {}) => {
 
 module.exports = pathKey;
 // TODO: Remove this for the next major release
-module.exports.default = pathKey;
+module.exports["default"] = pathKey;
 
 
 /***/ }),
@@ -7551,7 +7551,7 @@ const onetime = (function_, options = {}) => {
 
 module.exports = onetime;
 // TODO: Remove this for the next major release
-module.exports.default = onetime;
+module.exports["default"] = onetime;
 
 module.exports.callCount = function_ => {
 	if (!calledFunctions.has(function_)) {
@@ -8971,10 +8971,10 @@ module.exports = {
   re: internalRe.re,
   src: internalRe.src,
   tokens: internalRe.t,
-  SEMVER_SPEC_VERSION: __nccwpck_require__(2293).SEMVER_SPEC_VERSION,
+  SEMVER_SPEC_VERSION: (__nccwpck_require__(2293).SEMVER_SPEC_VERSION),
   SemVer: __nccwpck_require__(8088),
-  compareIdentifiers: __nccwpck_require__(2463).compareIdentifiers,
-  rcompareIdentifiers: __nccwpck_require__(2463).rcompareIdentifiers,
+  compareIdentifiers: (__nccwpck_require__(2463).compareIdentifiers),
+  rcompareIdentifiers: (__nccwpck_require__(2463).rcompareIdentifiers),
   parse: __nccwpck_require__(5925),
   valid: __nccwpck_require__(9601),
   clean: __nccwpck_require__(8848),
@@ -9903,11 +9903,11 @@ module.exports = /^#!(.*)/;
 // Note: since nyc uses this module to output coverage, any lines
 // that are in the direct sync flow of nyc's outputCoverage are
 // ignored, since we can never get coverage for them.
-var assert = __nccwpck_require__(2357)
+var assert = __nccwpck_require__(9491)
 var signals = __nccwpck_require__(3710)
 var isWin = /^win/i.test(process.platform)
 
-var EE = __nccwpck_require__(8614)
+var EE = __nccwpck_require__(2361)
 /* istanbul ignore if */
 if (typeof EE !== 'function') {
   EE = EE.EventEmitter
@@ -10158,7 +10158,7 @@ const isWindows = process.platform === 'win32' ||
     process.env.OSTYPE === 'cygwin' ||
     process.env.OSTYPE === 'msys'
 
-const path = __nccwpck_require__(5622)
+const path = __nccwpck_require__(1017)
 const COLON = isWindows ? ';' : ':'
 const isexe = __nccwpck_require__(7126)
 
@@ -10773,75 +10773,75 @@ try {
 
 /***/ }),
 
-/***/ 2357:
+/***/ 9491:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("assert");;
+module.exports = require("assert");
 
 /***/ }),
 
-/***/ 4293:
+/***/ 4300:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("buffer");;
+module.exports = require("buffer");
 
 /***/ }),
 
-/***/ 3129:
+/***/ 2081:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("child_process");;
+module.exports = require("child_process");
 
 /***/ }),
 
-/***/ 8614:
+/***/ 2361:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("events");;
+module.exports = require("events");
 
 /***/ }),
 
-/***/ 5747:
+/***/ 7147:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("fs");;
+module.exports = require("fs");
 
 /***/ }),
 
-/***/ 2087:
+/***/ 2037:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("os");;
+module.exports = require("os");
 
 /***/ }),
 
-/***/ 5622:
+/***/ 1017:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("path");;
+module.exports = require("path");
 
 /***/ }),
 
-/***/ 2413:
+/***/ 2781:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("stream");;
+module.exports = require("stream");
 
 /***/ }),
 
-/***/ 1669:
+/***/ 3837:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("util");;
+module.exports = require("util");
 
 /***/ })
 
@@ -10920,7 +10920,9 @@ module.exports = require("util");;
 /******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
@@ -10931,9 +10933,9 @@ __nccwpck_require__.r(__webpack_exports__);
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(5747);
+var external_fs_ = __nccwpck_require__(7147);
 // EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(5622);
+var external_path_ = __nccwpck_require__(1017);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: ./node_modules/@metamask/action-utils/dist/index.js
 var dist = __nccwpck_require__(1281);
