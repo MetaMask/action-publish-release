@@ -818,10 +818,10 @@
     "@typescript-eslint/types" "4.25.0"
     eslint-visitor-keys "^2.0.0"
 
-"@vercel/ncc@^0.28.3":
-  version "0.28.5"
-  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.28.5.tgz#6d735379f81b70b708a9c3d2196507b2a841824f"
-  integrity sha512-ZSwD4EDCon2EsnPZ2/Qcigx4N2DiuBLV/rDnF04giEPFuDeBeUDdnSTyYYfX8KNic/prrJuS1vUEmAOHmj+fRg==
+"@vercel/ncc@^0.36.1":
+  version "0.36.1"
+  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.36.1.tgz#d4c01fdbbe909d128d1bf11c7f8b5431654c5b95"
+  integrity sha512-S4cL7Taa9yb5qbv+6wLgiKVZ03Qfkc4jGRuiUQMQ8HGBD5pcNRnHeYM33zBvJE4/zJGjJJ8GScB+WmTsn9mORw==
 
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
