@@ -3,7 +3,7 @@ description: 'Publish the release'
 
 outputs:
   release-version:
-    description: 'The version of the release'
+    description: "The version associated with the new release, derived from the primary package's version."
     value: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
 
 runs:
