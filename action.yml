@@ -17,7 +17,7 @@ runs:
     - id: get-release-strategy
       shell: bash
       run: |
-        RELEASE_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output '.releaseStrategy" // "combined"' "release.config.json" || echo "combined")
+        RELEASE_STRATEGY=$([[ -f "release.config.json" ]] && jq --raw-output '.releaseStrategy // "combined"' "release.config.json" || echo "combined")
         echo "RELEASE_STRATEGY=$RELEASE_STRATEGY" >> "$GITHUB_OUTPUT"
     - id: get-release-version
       shell: bash
