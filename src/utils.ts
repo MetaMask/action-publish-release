@@ -4,7 +4,7 @@ import {
   isValidSemver,
 } from '@metamask/action-utils';
 
-import { VersioningStrategy, ReleaseStrategy } from './constants';
+import { FIXED, INDEPENDENT } from './constants';
 
 interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The root of the workspace running this action
@@ -14,11 +14,8 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   // The version to be released,
   // this is set from the repository `package.json` key: .version
   RELEASE_VERSION?: string;
-  // versioning strategy
-  // this is set from the repository `release.config.json` key: .versioningStrategy
-  VERSIONING_STRATEGY?: string;
   // release strategy
-  // this is set from the repository `release.config.json` key: .releaseStrategy
+  // this is set from the repository `release.config.json` key: .versioningStrategy
   RELEASE_STRATEGY?: string;
   // this is a json list of the updated packages
   RELEASE_PACKAGES?: string;
@@ -39,7 +36,6 @@ interface ParsedEnvironmentVariables {
   releaseVersion: string;
   repoUrl: string;
   workspaceRoot: string;
-  versioningStrategy: string;
   releaseStrategy: string;
   releasePackages: string | undefined;
 }
@@ -59,12 +55,8 @@ const isValidUrl = (str: string): boolean => {
 const removeGitEx = (url: string): string =>
   url.substring(0, url.lastIndexOf('.git'));
 
-const isValidVersioningStrategy = (value: string) =>
-  value === VersioningStrategy.independent ||
-  value === VersioningStrategy.fixed;
-
-const isValidReleaseStrategy = (value: string) =>
-  value === ReleaseStrategy.combined || value === ReleaseStrategy.independent;
+const fixedOrIndependent = (value: string) =>
+  value === FIXED || value === INDEPENDENT;
 
 /**
  * Utility function for parsing expected environment variables.
@@ -107,25 +99,14 @@ export function parseEnvironmentVariables(
 
   const repoUrl = removeGitEx(repositoryUrl);
 
-  const versioningStrategy = getStringRecordValue(
-    'VERSIONING_STRATEGY',
-    environmentVariables,
-  );
-
-  if (!isValidVersioningStrategy(versioningStrategy)) {
-    throw new Error(
-      `process.env.VERSIONING_STRATEGY must be one of "${VersioningStrategy.fixed}" or "${VersioningStrategy.independent}"`,
-    );
-  }
-
   const releaseStrategy = getStringRecordValue(
     'RELEASE_STRATEGY',
     environmentVariables,
   );
 
-  if (!isValidReleaseStrategy(releaseStrategy)) {
+  if (!fixedOrIndependent(releaseStrategy)) {
     throw new Error(
-      `process.env.RELEASE_STRATEGY must be one of "${ReleaseStrategy.combined}" or "${ReleaseStrategy.independent}"`,
+      `process.env.RELEASE_STRATEGY must be one of "${FIXED}" or "${INDEPENDENT}"`,
     );
   }
 
@@ -136,7 +117,6 @@ export function parseEnvironmentVariables(
     releaseVersion,
     repoUrl,
     workspaceRoot,
-    versioningStrategy,
     releaseStrategy,
     releasePackages,
   };
