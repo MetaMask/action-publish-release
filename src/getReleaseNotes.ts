@@ -12,11 +12,7 @@ import {
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
 import { parseEnvironmentVariables } from './utils';
-import {
-  ReleaseStrategy,
-  PackageRecord,
-  VersioningStrategy,
-} from './constants';
+import { INDEPENDENT, PackageRecord } from './constants';
 
 export const getReleasePackages = (): Record<string, PackageRecord> => {
   const { releasePackages } = parseEnvironmentVariables();
@@ -37,13 +33,8 @@ export const getReleasePackages = (): Record<string, PackageRecord> => {
  * @see getPackageManifest - For details on polyrepo workflow.
  */
 export async function getReleaseNotes() {
-  const {
-    releaseVersion,
-    repoUrl,
-    workspaceRoot,
-    versioningStrategy,
-    releaseStrategy,
-  } = parseEnvironmentVariables();
+  const { releaseVersion, repoUrl, workspaceRoot, releaseStrategy } =
+    parseEnvironmentVariables();
 
   const rawRootManifest = await getPackageManifest(workspaceRoot);
   const rootManifest = validatePackageManifestVersion(
@@ -62,7 +53,6 @@ export async function getReleaseNotes() {
       repoUrl,
       workspaceRoot,
       validateMonorepoPackageManifest(rootManifest, workspaceRoot),
-      versioningStrategy,
       releaseStrategy,
     );
   } else {
@@ -81,29 +71,7 @@ export async function getReleaseNotes() {
   if (!releaseNotes) {
     throw new Error('The computed release notes are empty.');
   }
-
-  if (releaseStrategy === ReleaseStrategy.independent) {
-    exportActionVariable('RELEASE_NOTES', releaseNotes);
-    return;
-  }
-
   exportActionVariable('RELEASE_NOTES', releaseNotes.concat('\n\n'));
-}
-
-async function getReleaseNotesForMonorepoWithIndependentReleases(
-  repoUrl: string,
-): Promise<string> {
-  const releaseNotes: Record<string, string> = {};
-  for (const [packageName, { path, version }] of Object.entries(
-    getReleasePackages(),
-  )) {
-    releaseNotes[packageName] = await getPackageReleaseNotes(
-      version,
-      repoUrl,
-      path,
-    );
-  }
-  return JSON.stringify(releaseNotes);
 }
 
 async function getReleaseNotesForMonorepoWithIndependentVersions(
@@ -181,22 +149,18 @@ async function getMonorepoReleaseNotes(
   workspaceRoot: string,
   rootManifest: MonorepoPackageManifest,
   versioningStrategy: string,
-  releaseStrategy: string,
 ): Promise<string> {
-  if (versioningStrategy === VersioningStrategy.fixed) {
-    return await getReleaseNotesForMonorepoWithFixedVersions(
-      releaseVersion,
-      repoUrl,
-      workspaceRoot,
-      rootManifest,
-    );
-  }
+  const releaseNotes =
+    versioningStrategy === INDEPENDENT
+      ? await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl)
+      : await getReleaseNotesForMonorepoWithFixedVersions(
+          releaseVersion,
+          repoUrl,
+          workspaceRoot,
+          rootManifest,
+        );
 
-  if (releaseStrategy === ReleaseStrategy.independent) {
-    return await getReleaseNotesForMonorepoWithIndependentReleases(repoUrl);
-  }
-
-  return await getReleaseNotesForMonorepoWithIndependentVersions(repoUrl);
+  return releaseNotes;
 }
 
 /**
