@@ -7,20 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.0.0]
-### Uncategorized
-- Revert "3.0.0 (#75)" ([#75](https://github.com/MetaMask/action-publish-release/pull/75))
-- 3.0.0 ([#75](https://github.com/MetaMask/action-publish-release/pull/75))
-- Fix mismatched quotes ([#73](https://github.com/MetaMask/action-publish-release/pull/73))
-- Revert "3.0.0 (#71)" ([#71](https://github.com/MetaMask/action-publish-release/pull/71))
-- 3.0.0 ([#71](https://github.com/MetaMask/action-publish-release/pull/71))
-- Bring README up to date ([#58](https://github.com/MetaMask/action-publish-release/pull/58))
-- devDeps: @vercel/ncc@0.28.5->0.36.1 ([#67](https://github.com/MetaMask/action-publish-release/pull/67))
-- Create independent releases per workspace ([#66](https://github.com/MetaMask/action-publish-release/pull/66))
-- deps: bump @metamask/auto-changelog@2.6.1->3.1.0 ([#65](https://github.com/MetaMask/action-publish-release/pull/65))
-- handle undefined versioningStrategy ([#60](https://github.com/MetaMask/action-publish-release/pull/60))
-- update minimum nodejs version to 14.0.0 ([#64](https://github.com/MetaMask/action-publish-release/pull/64))
-- ci: list dirty filenames when failing build ([#62](https://github.com/MetaMask/action-publish-release/pull/62))
-- Bump @metask/auto-changelog from 2.4.0 to 2.6.1 ([#63](https://github.com/MetaMask/action-publish-release/pull/63))
+### Changed
+- **BREAKING**: Bump minimum Node.js version to 14 ([#64](https://github.com/MetaMask/action-publish-release/pull/64))
+
+### Fixed
+- Handle undefined `versioningStrategy` ([#60](https://github.com/MetaMask/action-publish-release/pull/60))
 
 ## [2.1.0]
 ### Added
