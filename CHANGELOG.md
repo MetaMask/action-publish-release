@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0]
+### Uncategorized
+- Bring README up to date ([#58](https://github.com/MetaMask/action-publish-release/pull/58))
+- devDeps: @vercel/ncc@0.28.5->0.36.1 ([#67](https://github.com/MetaMask/action-publish-release/pull/67))
+- Create independent releases per workspace ([#66](https://github.com/MetaMask/action-publish-release/pull/66))
+- deps: bump @metamask/auto-changelog@2.6.1->3.1.0 ([#65](https://github.com/MetaMask/action-publish-release/pull/65))
+- handle undefined versioningStrategy ([#60](https://github.com/MetaMask/action-publish-release/pull/60))
+- update minimum nodejs version to 14.0.0 ([#64](https://github.com/MetaMask/action-publish-release/pull/64))
+- ci: list dirty filenames when failing build ([#62](https://github.com/MetaMask/action-publish-release/pull/62))
+- Bump @metask/auto-changelog from 2.4.0 to 2.6.1 ([#63](https://github.com/MetaMask/action-publish-release/pull/63))
+
 ## [2.1.0]
 ### Added
 - Support monorepos with independent versions ([#51](https://github.com/MetaMask/action-publish-release/pull/51))
@@ -90,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/MetaMask/action-publish-release/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/MetaMask/action-publish-release/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...v2.0.1
