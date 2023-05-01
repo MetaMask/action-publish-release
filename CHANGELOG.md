@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0]
+### Changed
+- **BREAKING**: Bump minimum Node.js version to 14 ([#64](https://github.com/MetaMask/action-publish-release/pull/64))
+
+### Added
+- Create independent releases per workspace ([#66](https://github.com/MetaMask/action-publish-release/pull/66))
+
+### Fixed
+- Handle undefined `versioningStrategy` ([#60](https://github.com/MetaMask/action-publish-release/pull/60))
+
 ## [2.1.0]
 ### Added
 - Support monorepos with independent versions ([#51](https://github.com/MetaMask/action-publish-release/pull/51))
@@ -90,7 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/MetaMask/action-publish-release/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/MetaMask/action-publish-release/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/MetaMask/action-publish-release/compare/v2.0.0...v2.0.1
