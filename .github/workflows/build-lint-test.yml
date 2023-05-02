@@ -22,19 +22,19 @@ jobs:
     steps:
       - name: Get Latest Version from npm
         id: latestrelease
-        run: echo "releasever=$(npm view MetaMask/snaps-skunkworks version --workspaces=false)" >> "$GITHUB_OUTPUT"
+        run: echo "releasever=$(npm view MetaMask/snaps-monorepo version --workspaces=false)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v3
         with:
-          repository: MetaMask/snaps-skunkworks
+          repository: MetaMask/snaps-monorepo
           ref: v${{ steps.latestrelease.outputs.releasever }}
-          path: skunkworks
+          path: snaps-monorepo
       - uses: actions/checkout@v3
         with:
           path: action-publish-release
       - name: Get Packages
         id: get-packages
         run: |
-          cd skunkworks || exit
+          cd snaps-monorepo || exit
           WORKSPACES=$(yarn workspaces list --verbose --json)
           PUBLIC_PACKAGES=()
           PRIVATE_PACKAGE=()
@@ -85,7 +85,7 @@ jobs:
             jq --arg version "$NEW_VERSION" '.version = $version' "$MANIFEST" > "$MANIFEST_TEMP"
             mv "$MANIFEST_TEMP" "$MANIFEST"
           }
-          cd skunkworks || exit
+          cd snaps-monorepo || exit
           IFS="," read -r -a RELEASE_PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
           for i in {0..1}
           do
