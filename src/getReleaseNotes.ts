@@ -67,27 +67,28 @@ export async function getReleaseNotes() {
     );
   }
 
-  releaseNotes = releaseNotes.trim();
-  if (!releaseNotes) {
+  const trimmedReleaseNotes = releaseNotes.trim();
+  if (!trimmedReleaseNotes) {
     throw new Error('The computed release notes are empty.');
   }
-  exportActionVariable('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+  exportActionVariable('RELEASE_NOTES', trimmedReleaseNotes);
 }
 
 async function getReleaseNotesForMonorepoWithIndependentVersions(
   repoUrl: string,
-) {
-  let releaseNotes = '';
+): Promise<string> {
+  const releaseNotesParts = [];
+
   for (const [packageName, { path, version }] of Object.entries(
     getReleasePackages(),
   )) {
-    releaseNotes = releaseNotes.concat(
-      `## ${packageName}\n\n`,
+    releaseNotesParts.push(
+      `## ${packageName} ${version}`,
       await getPackageReleaseNotes(version, repoUrl, path),
-      '\n\n',
     );
   }
-  return releaseNotes;
+
+  return releaseNotesParts.join('\n\n');
 }
 
 async function getReleaseNotesForMonorepoWithFixedVersions(
@@ -95,13 +96,14 @@ async function getReleaseNotesForMonorepoWithFixedVersions(
   repoUrl: string,
   workspaceRoot: string,
   rootManifest: MonorepoPackageManifest,
-) {
+): Promise<string> {
   const workspaceLocations = await getWorkspaceLocations(
     rootManifest.workspaces,
     workspaceRoot,
   );
 
-  let releaseNotes = '';
+  const releaseNotesParts = [];
+
   for (const workspaceLocation of workspaceLocations) {
     const completeWorkspacePath = pathUtils.join(
       workspaceRoot,
@@ -116,18 +118,18 @@ async function getReleaseNotesForMonorepoWithFixedVersions(
       );
 
     if (packageVersion === releaseVersion) {
-      releaseNotes = releaseNotes.concat(
-        `## ${packageName}\n\n`,
+      releaseNotesParts.push(
+        `## ${packageName} ${releaseVersion}`,
         await getPackageReleaseNotes(
           releaseVersion,
           repoUrl,
           completeWorkspacePath,
         ),
-        '\n\n',
       );
     }
   }
-  return releaseNotes;
+
+  return releaseNotesParts.join('\n\n');
 }
 
 /**
