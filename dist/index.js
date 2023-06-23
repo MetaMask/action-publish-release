@@ -11034,31 +11034,31 @@ async function getReleaseNotes() {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
         releaseNotes = await getPackageReleaseNotes(releaseVersion, repoUrl, workspaceRoot);
     }
-    releaseNotes = releaseNotes.trim();
-    if (!releaseNotes) {
+    const trimmedReleaseNotes = releaseNotes.trim();
+    if (!trimmedReleaseNotes) {
         throw new Error('The computed release notes are empty.');
     }
-    (0,core.exportVariable)('RELEASE_NOTES', releaseNotes.concat('\n\n'));
+    (0,core.exportVariable)('RELEASE_NOTES', trimmedReleaseNotes);
 }
 async function getReleaseNotesForMonorepoWithIndependentVersions(repoUrl) {
-    let releaseNotes = '';
+    const releaseNotesParts = [];
     for (const [packageName, { path, version }] of Object.entries(getReleasePackages())) {
-        releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(version, repoUrl, path), '\n\n');
+        releaseNotesParts.push(`## ${packageName} ${version}`, await getPackageReleaseNotes(version, repoUrl, path));
     }
-    return releaseNotes;
+    return releaseNotesParts.join('\n\n');
 }
 async function getReleaseNotesForMonorepoWithFixedVersions(releaseVersion, repoUrl, workspaceRoot, rootManifest) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(rootManifest.workspaces, workspaceRoot);
-    let releaseNotes = '';
+    const releaseNotesParts = [];
     for (const workspaceLocation of workspaceLocations) {
         const completeWorkspacePath = external_path_default().join(workspaceRoot, workspaceLocation);
         const rawPackageManifest = await (0,dist.getPackageManifest)(completeWorkspacePath);
         const { name: packageName, version: packageVersion } = (0,dist.validatePolyrepoPackageManifest)(rawPackageManifest, completeWorkspacePath);
         if (packageVersion === releaseVersion) {
-            releaseNotes = releaseNotes.concat(`## ${packageName}\n\n`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath), '\n\n');
+            releaseNotesParts.push(`## ${packageName}`, await getPackageReleaseNotes(releaseVersion, repoUrl, completeWorkspacePath));
         }
     }
-    return releaseNotes;
+    return releaseNotesParts.join('\n\n');
 }
 /**
  * Gets the combined release notes for all packages in the monorepo that are
