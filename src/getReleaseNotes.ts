@@ -119,7 +119,7 @@ async function getReleaseNotesForMonorepoWithFixedVersions(
 
     if (packageVersion === releaseVersion) {
       releaseNotesParts.push(
-        `## ${packageName} ${releaseVersion}`,
+        `## ${packageName}`,
         await getPackageReleaseNotes(
           releaseVersion,
           repoUrl,

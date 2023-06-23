@@ -165,7 +165,7 @@ describe('getReleaseNotes', () => {
     const mockRepoUrl = 'https://github.com/Org/Name';
     const mockVersion = '1.0.0';
     const mockWorkspaces = ['a', 'b', 'c'];
-    const mockChangelog = 'a changelog';
+    const mockChangelog = 'changelog';
     const mockVersionStrategy = 'fixed';
 
     parseEnvVariablesMock.mockImplementationOnce(() => {
@@ -214,10 +214,8 @@ describe('getReleaseNotes', () => {
       return {
         // getStringifiedRelease returns a string whose first line is a markdown
         // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
-        getStringifiedRelease(version: string) {
-          return `## Header\nrelease ${version} for ${changelogContent.slice(
-            -1,
-          )}`;
+        getStringifiedRelease(_version: string) {
+          return `## Header\n${changelogContent}`;
         },
       };
     });
@@ -247,11 +245,11 @@ describe('getReleaseNotes', () => {
     );
     expect(parseChangelogMock).toHaveBeenCalledTimes(2);
     expect(parseChangelogMock).toHaveBeenNthCalledWith(1, {
-      changelogContent: 'a changelog for a',
+      changelogContent: 'changelog for a',
       repoUrl: mockRepoUrl,
     });
     expect(parseChangelogMock).toHaveBeenNthCalledWith(2, {
-      changelogContent: 'a changelog for c',
+      changelogContent: 'changelog for c',
       repoUrl: mockRepoUrl,
     });
 
@@ -260,13 +258,13 @@ describe('getReleaseNotes', () => {
     expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
       `
-## a 1.0.0
+## a
 
-release 1.0.0 for a
+changelog for a
 
-## c 1.0.0
+## c
 
-release 1.0.0 for c
+changelog for c
       `.trim(),
     );
   });
