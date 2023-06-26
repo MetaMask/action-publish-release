@@ -1,3 +1,4 @@
+import assert from 'assert';
 import fs from 'fs';
 import * as actionsCore from '@actions/core';
 import * as autoChangelog from '@metamask/auto-changelog';
@@ -40,20 +41,6 @@ jest.mock('./utils', () => {
     parseEnvironmentVariables: jest.fn(),
   };
 });
-
-const parseChangelogMockImplementation = ({
-  changelogContent,
-}: {
-  changelogContent: string;
-}) => {
-  return {
-    // getStringifiedRelease returns a string whose first line is a markdown
-    // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
-    getStringifiedRelease(version: string) {
-      return `## Header\nrelease ${version} for ${changelogContent.slice(-1)}`;
-    },
-  };
-};
 
 describe('getReleasePackages', () => {
   let parseEnvVariablesMock: jest.SpyInstance;
@@ -169,7 +156,7 @@ describe('getReleaseNotes', () => {
     expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
     expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
-      `${mockReleaseBody}\n\n`,
+      mockReleaseBody,
     );
   });
 
@@ -178,7 +165,7 @@ describe('getReleaseNotes', () => {
     const mockRepoUrl = 'https://github.com/Org/Name';
     const mockVersion = '1.0.0';
     const mockWorkspaces = ['a', 'b', 'c'];
-    const mockChangelog = 'a changelog';
+    const mockChangelog = 'changelog';
     const mockVersionStrategy = 'fixed';
 
     parseEnvVariablesMock.mockImplementationOnce(() => {
@@ -216,14 +203,22 @@ describe('getReleaseNotes', () => {
       });
 
     // Return a different changelog for each package/workspace
-    readFileMock.mockImplementation(
-      async (path: string) =>
-        `${mockChangelog} for ${path.charAt(
-          path.indexOf('/CHANGELOG.md') - 1,
-        )}`,
-    );
+    readFileMock.mockImplementation(async (path: string) => {
+      const match = path.match(/^foo\/packages\/([^/]+)\/CHANGELOG.md$/u);
+      assert(match, 'Failed to extract package name');
+      const packageName = match[1];
+      return `${mockChangelog} for ${packageName}`;
+    });
 
-    parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
+    parseChangelogMock.mockImplementation(({ changelogContent }) => {
+      return {
+        // getStringifiedRelease returns a string whose first line is a markdown
+        // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
+        getStringifiedRelease(_version: string) {
+          return `## Header\n${changelogContent}`;
+        },
+      };
+    });
 
     await releaseNotesUtils.getReleaseNotes();
 
@@ -250,11 +245,11 @@ describe('getReleaseNotes', () => {
     );
     expect(parseChangelogMock).toHaveBeenCalledTimes(2);
     expect(parseChangelogMock).toHaveBeenNthCalledWith(1, {
-      changelogContent: 'a changelog for a',
+      changelogContent: 'changelog for a',
       repoUrl: mockRepoUrl,
     });
     expect(parseChangelogMock).toHaveBeenNthCalledWith(2, {
-      changelogContent: 'a changelog for c',
+      changelogContent: 'changelog for c',
       repoUrl: mockRepoUrl,
     });
 
@@ -262,7 +257,15 @@ describe('getReleaseNotes', () => {
     expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
     expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
-      `## a\n\nrelease 1.0.0 for a\n\n## c\n\nrelease 1.0.0 for c\n\n`,
+      `
+## a
+
+changelog for a
+
+## c
+
+changelog for c
+      `.trim(),
     );
   });
 
@@ -317,12 +320,27 @@ describe('getReleaseNotes', () => {
 
     // Return a different changelog for each package/workspace
     readFileMock.mockImplementation(async (path: string) => {
-      return `${mockChangelog} for ${path.charAt(
-        path.indexOf('/CHANGELOG.md') - 1,
-      )}`;
+      const match = path.match(/^packages\/([^/]+)\/CHANGELOG.md$/u);
+      assert(match, 'Failed to extract package name');
+      const packageName = match[1];
+      return `${mockChangelog} for ${packageName}`;
     });
 
-    parseChangelogMock.mockImplementation(parseChangelogMockImplementation);
+    parseChangelogMock.mockImplementation(({ changelogContent }) => {
+      const match = changelogContent.match(
+        new RegExp(`^${mockChangelog} for (.+)$`, 'u'),
+      );
+      assert(match, 'Failed to extract package name');
+      const packageName = match[1];
+
+      return {
+        // getStringifiedRelease returns a string whose first line is a markdown
+        // e.g. "## 1.0.0\n". This is stripped by getReleaseNotes.
+        getStringifiedRelease(version: string) {
+          return `## Header\nrelease ${version} for ${packageName}`;
+        },
+      };
+    });
 
     await releaseNotesUtils.getReleaseNotes();
 
@@ -348,7 +366,15 @@ describe('getReleaseNotes', () => {
     expect(exportActionVariableMock).toHaveBeenCalledTimes(1);
     expect(exportActionVariableMock).toHaveBeenCalledWith(
       'RELEASE_NOTES',
-      `## @metamask/base-controller\n\nrelease 0.3.0 for r\n\n## @metamask/controller-utils\n\nrelease 0.7.1 for s\n\n`,
+      `
+## @metamask/base-controller 0.3.0
+
+release 0.3.0 for base-controller
+
+## @metamask/controller-utils 0.7.1
+
+release 0.7.1 for controller-utils
+      `.trim(),
     );
   });
 
