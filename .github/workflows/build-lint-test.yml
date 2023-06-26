@@ -20,13 +20,10 @@ jobs:
   updated-packages-test:
     runs-on: ubuntu-20.04
     steps:
-      - name: Get Latest Version from npm
-        id: latestrelease
-        run: echo "releasever=$(npm view MetaMask/snaps-skunkworks version --workspaces=false)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v3
         with:
           repository: MetaMask/snaps-skunkworks
-          ref: v${{ steps.latestrelease.outputs.releasever }}
+          ref: v0.32.2
           path: skunkworks
       - uses: actions/checkout@v3
         with:
