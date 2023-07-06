@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0]
+### Uncategorized
+- List package versions in releases for monorepos with independent versioning ([#79](https://github.com/MetaMask/action-publish-release/pull/79))
+- Update tests to freeze snaps repo to 0.32.2 ([#80](https://github.com/MetaMask/action-publish-release/pull/80))
+
 ## [3.0.0]
 ### Changed
 - **BREAKING**: Bump minimum Node.js version to 14 ([#64](https://github.com/MetaMask/action-publish-release/pull/64))
@@ -97,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/MetaMask/action-publish-release/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/MetaMask/action-publish-release/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/MetaMask/action-publish-release/compare/v2.0.1...v2.0.2
