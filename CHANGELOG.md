@@ -7,9 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.1.0]
-### Uncategorized
+### Added
 - List package versions in releases for monorepos with independent versioning ([#79](https://github.com/MetaMask/action-publish-release/pull/79))
-- Update tests to freeze snaps repo to 0.32.2 ([#80](https://github.com/MetaMask/action-publish-release/pull/80))
 
 ## [3.0.0]
 ### Changed
