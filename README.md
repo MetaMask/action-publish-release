@@ -19,12 +19,16 @@ To use this action, you must grant `GITHUB_TOKEN` write access for your reposito
 Add the following to a job's list of steps:
 
 ```yaml
-- uses: MetaMask/action-publish-release@v2
+- uses: MetaMask/action-publish-release@v3
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## API
+
+### Inputs
+
+- **`npm-tag`**. The NPM tag to use when checking for the latest published version of a package. Defaults to `latest`.
 
 ### Outputs
 
