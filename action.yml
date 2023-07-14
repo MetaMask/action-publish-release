@@ -1,6 +1,12 @@
 name: 'Publish Release'
 description: 'Publish the release'
 
+inputs:
+  npm-tag:
+    description: 'The NPM tag to use when checking for the latest published version of a package. Defaults to `latest`.'
+    required: false
+    default: 'latest'
+
 outputs:
   release-version:
     description: "The version associated with the new release, derived from the primary package's version."
@@ -24,7 +30,7 @@ runs:
       if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
       shell: bash
       run: |
-        ${{ github.action_path }}/scripts/get-release-packages.sh
+        ${{ github.action_path }}/scripts/get-release-packages.sh ${{ inputs.npm-tag }}
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
