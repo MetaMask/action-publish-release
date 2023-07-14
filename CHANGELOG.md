@@ -7,9 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.2.0]
-### Uncategorized
-- Fix Yarn v1 compatibility ([#83](https://github.com/MetaMask/action-publish-release/pull/83))
-- Add `npm-tag` input to use when checking latest version ([#82](https://github.com/MetaMask/action-publish-release/pull/82))
+### Added
+- Add `npm-tag` input to use when checking latest version ([#82](https://github.com/MetaMask/action-publish-release/pull/82), [#83](https://github.com/MetaMask/action-publish-release/pull/83))
 
 ## [3.1.0]
 ### Added
