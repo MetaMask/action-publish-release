@@ -527,10 +527,10 @@
   resolved "https://registry.yarnpkg.com/@lavamoat/preinstall-always-fail/-/preinstall-always-fail-1.0.0.tgz#e78a6e3d9e212a4fef869ec37d4f5fb498dea373"
   integrity sha512-vD2DcC0ffJj1w2y1Lu0OU39wHmlPEd2tCDW04Bm6Kf4LyRnCHCezTsS8yzeSJ+4so7XP+TITuR5FGJRWxPb+GA==
 
-"@metamask/action-utils@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@metamask/action-utils/-/action-utils-0.0.2.tgz#8f296089f2111766f677a7c26ca85b04d797f908"
-  integrity sha512-N6wgHc4aHMjBdRCx66bYpOgIl+Sq9qTX9wKnZX5OOvwQQIqZ4It2IH36y/xSQyLFJ8u8asTSP7kq0FtDh0pMzw==
+"@metamask/action-utils@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@metamask/action-utils/-/action-utils-1.0.0.tgz#d15c017f7c2bd35c1e29d822fffe2d6177de6c56"
+  integrity sha512-ppibg/dsMZdbSl9xq32zD8D0j6QSO6o9j8XIOMPEGSk3B4Wo3tfTCdux4dNnSomtpXliPMFQ76VdUQVb4gG5jQ==
   dependencies:
     "@types/semver" "^7.3.6"
     glob "^7.1.7"
