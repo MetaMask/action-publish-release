@@ -755,11 +755,34 @@ function getManifestErrorMessagePrefix(invalidField, manifest, manifestDirPath) 
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
  * @param rootDir - The monorepo root directory.
+ * @param recursive - Whether to search recursively.
  * @returns The location of each workspace directory relative to the root directory
  */
-async function getWorkspaceLocations(workspaces, rootDir) {
-    const resolvedWorkspaces = await Promise.all(workspaces.map((pattern) => glob(pattern, { cwd: rootDir })));
-    return resolvedWorkspaces.flat();
+async function getWorkspaceLocations(workspaces, rootDir, recursive = false, prefix = '') {
+    const resolvedWorkspaces = await workspaces.reduce(async (promise, pattern) => {
+        const array = await promise;
+        const matches = (await glob(pattern, { cwd: rootDir })).map((match) => path_1.default.join(prefix, match));
+        return [...array, ...matches];
+    }, Promise.resolve([]));
+    if (recursive) {
+        // This reads all the package JSON files in each workspace, checks if they are a monorepo, and
+        // recursively calls `getWorkspaceLocations` if they are.
+        const resolvedSubWorkspaces = await resolvedWorkspaces.reduce(async (promise, workspacePath) => {
+            const array = await promise;
+            const rawManifest = await getPackageManifest(workspacePath);
+            if (ManifestFieldNames.Workspaces in rawManifest) {
+                const manifest = validatePackageManifestVersion(rawManifest, workspacePath);
+                const monorepoManifest = validateMonorepoPackageManifest(manifest, workspacePath);
+                return [
+                    ...array,
+                    ...(await getWorkspaceLocations(monorepoManifest[ManifestFieldNames.Workspaces], workspacePath, recursive, workspacePath)),
+                ];
+            }
+            return array;
+        }, Promise.resolve(resolvedWorkspaces));
+        return resolvedSubWorkspaces;
+    }
+    return resolvedWorkspaces;
 }
 exports.getWorkspaceLocations = getWorkspaceLocations;
 //# sourceMappingURL=package-utils.js.map
