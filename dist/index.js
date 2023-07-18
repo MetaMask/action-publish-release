@@ -848,9 +848,21 @@ exports.isMajorSemverDiff = isMajorSemverDiff;
 
 "use strict";
 
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _Changelog_releases, _Changelog_changes, _Changelog_repoUrl, _Changelog_tagPrefix;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const semver_1 = __importDefault(__nccwpck_require__(1383));
 const constants_1 = __nccwpck_require__(1373);
@@ -1025,10 +1037,14 @@ class Changelog {
      * @param options.tagPrefix - The prefix used in tags before the version number.
      */
     constructor({ repoUrl, tagPrefix = 'v', }) {
-        this._releases = [];
-        this._changes = { [constants_1.unreleased]: {} };
-        this._repoUrl = repoUrl;
-        this._tagPrefix = tagPrefix;
+        _Changelog_releases.set(this, void 0);
+        _Changelog_changes.set(this, void 0);
+        _Changelog_repoUrl.set(this, void 0);
+        _Changelog_tagPrefix.set(this, void 0);
+        __classPrivateFieldSet(this, _Changelog_releases, [], "f");
+        __classPrivateFieldSet(this, _Changelog_changes, { [constants_1.unreleased]: {} }, "f");
+        __classPrivateFieldSet(this, _Changelog_repoUrl, repoUrl, "f");
+        __classPrivateFieldSet(this, _Changelog_tagPrefix, tagPrefix, "f");
     }
     /**
      * Add a release to the changelog.
@@ -1052,16 +1068,16 @@ class Changelog {
         else if (semver_1.default.valid(version) === null) {
             throw new Error(`Not a valid semver version: '${version}'`);
         }
-        else if (this._changes[version]) {
+        else if (__classPrivateFieldGet(this, _Changelog_changes, "f")[version]) {
             throw new Error(`Release already exists: '${version}'`);
         }
-        this._changes[version] = {};
+        __classPrivateFieldGet(this, _Changelog_changes, "f")[version] = {};
         const newRelease = { version, date, status };
         if (addToStart) {
-            this._releases.unshift(newRelease);
+            __classPrivateFieldGet(this, _Changelog_releases, "f").unshift(newRelease);
         }
         else {
-            this._releases.push(newRelease);
+            __classPrivateFieldGet(this, _Changelog_releases, "f").push(newRelease);
         }
     }
     /**
@@ -1087,12 +1103,12 @@ class Changelog {
         else if (!description) {
             throw new Error('Description required');
         }
-        else if (version !== undefined && !this._changes[version]) {
+        else if (version !== undefined && !__classPrivateFieldGet(this, _Changelog_changes, "f")[version]) {
             throw new Error(`Specified release version does not exist: '${version}'`);
         }
         const release = version
-            ? this._changes[version]
-            : this._changes[constants_1.unreleased];
+            ? __classPrivateFieldGet(this, _Changelog_changes, "f")[version]
+            : __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
         if (!release[category]) {
             release[category] = [];
         }
@@ -1114,11 +1130,11 @@ class Changelog {
      * @param version - The release version to migrate unreleased changes to.
      */
     migrateUnreleasedChangesToRelease(version) {
-        const releaseChanges = this._changes[version];
+        const releaseChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
         if (!releaseChanges) {
             throw new Error(`Specified release version does not exist: '${version}'`);
         }
-        const unreleasedChanges = this._changes[constants_1.unreleased];
+        const unreleasedChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
         for (const category of Object.keys(unreleasedChanges)) {
             if (releaseChanges[category]) {
                 releaseChanges[category] = [
@@ -1130,7 +1146,7 @@ class Changelog {
                 releaseChanges[category] = unreleasedChanges[category];
             }
         }
-        this._changes[constants_1.unreleased] = {};
+        __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased] = {};
     }
     /**
      * Gets the metadata for all releases.
@@ -1138,7 +1154,7 @@ class Changelog {
      * @returns The metadata for each release.
      */
     getReleases() {
-        return this._releases;
+        return __classPrivateFieldGet(this, _Changelog_releases, "f");
     }
     /**
      * Gets the release of the given version.
@@ -1171,7 +1187,7 @@ class Changelog {
      * @returns The changes included in the given released.
      */
     getReleaseChanges(version) {
-        return this._changes[version];
+        return __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
     }
     /**
      * Gets all changes that have not yet been released.
@@ -1179,7 +1195,7 @@ class Changelog {
      * @returns The changes that have not yet been released.
      */
     getUnreleasedChanges() {
-        return this._changes[constants_1.unreleased];
+        return __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
     }
     /**
      * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
@@ -1190,12 +1206,13 @@ class Changelog {
         return `${changelogTitle}
 ${changelogDescription}
 
-${stringifyReleases(this._releases, this._changes)}
+${stringifyReleases(__classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_changes, "f"))}
 
-${stringifyLinkReferenceDefinitions(this._repoUrl, this._tagPrefix, this._releases)}`;
+${stringifyLinkReferenceDefinitions(__classPrivateFieldGet(this, _Changelog_repoUrl, "f"), __classPrivateFieldGet(this, _Changelog_tagPrefix, "f"), __classPrivateFieldGet(this, _Changelog_releases, "f"))}`;
     }
 }
 exports["default"] = Changelog;
+_Changelog_releases = new WeakMap(), _Changelog_changes = new WeakMap(), _Changelog_repoUrl = new WeakMap(), _Changelog_tagPrefix = new WeakMap();
 //# sourceMappingURL=changelog.js.map
 
 /***/ }),
@@ -1486,8 +1503,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updateChangelog = void 0;
 const assert_1 = __nccwpck_require__(9491);
 const execa_1 = __importDefault(__nccwpck_require__(5447));
-const parse_changelog_1 = __nccwpck_require__(7607);
 const constants_1 = __nccwpck_require__(1373);
+const parse_changelog_1 = __nccwpck_require__(7607);
 /**
  * Get the most recent tag for a project.
  *
@@ -1528,7 +1545,7 @@ async function getMostRecentTag({ tagPrefixes, }) {
  * @returns Commit details for each commit, including description and PR number (if present).
  */
 async function getCommits(commitHashes) {
-    var _a;
+    var _a, _b;
     const commits = [];
     for (const commitHash of commitHashes) {
         const [subject] = await runCommand('git', [
@@ -1544,7 +1561,7 @@ async function getCommits(commitHashes) {
         if (matchResults) {
             // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
             prNumber = matchResults[1];
-            description = ((_a = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _a === void 0 ? void 0 : _a[1]) || '';
+            description = (_b = (_a = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : '';
         }
         else {
             // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
@@ -1592,7 +1609,9 @@ function getAllLoggedPrNumbers(changelog) {
     const changeDescriptions = getAllChangeDescriptions(changelog);
     const prNumbersWithChangelogEntries = [];
     for (const description of changeDescriptions) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        if (!description) {
+            continue;
+        }
         const matchResults = description.matchAll(/\[#(\d+)\]/gu);
         const prNumbers = Array.from(matchResults, (result) => result[1]);
         prNumbersWithChangelogEntries.push(...prNumbers);
@@ -1649,7 +1668,7 @@ async function updateChangelog({ changelogContent, currentVersion, repoUrl, isRe
         tagPrefixes,
     });
     if (isReleaseCandidate &&
-        mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
+        mostRecentTag === `${tagPrefixes[0]}${currentVersion || ''}`) {
         throw new Error(`Current version already has tag, which is unexpected for a release candidate.`);
     }
     const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
