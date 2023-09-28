@@ -39,7 +39,7 @@ jobs:
           while read -r location name; do
             if [[ "$name" != "root" ]]; then
               PRIVATE=$(jq --raw-output '.private' "$location/package.json")
-              if [[ "$PRIVATE" != true && "${#PUBLIC_PACKAGES[@]}" -ne 3 ]]; then
+              if [[ "$PRIVATE" != true && "${#PUBLIC_PACKAGES[@]}" -ne 4 ]]; then
                 PUBLIC_PACKAGES+=("$location")
               fi
               if [[ "$PRIVATE" == true && "${#PRIVATE_PACKAGE[@]}" -ne 1 ]]; then
@@ -54,6 +54,11 @@ jobs:
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
         run: |
+          # Update the version in a package.json manifest file
+          #
+          # $1 - The path to the root directory for the package
+          # $2 - The operation to perform (either "bump", "unbump", or a
+          #      specific version)
           function update_manifest() {
             MANIFEST="${1}/package.json"
             MANIFEST_TEMP="${MANIFEST}_temp"
@@ -76,9 +81,11 @@ jobs:
                 # e.g. 1.2.10 -> 1.2.9
                 NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH - 1))"
               fi
-            else
+            elif [[ "$2" == "bump" ]]; then
               # e.g. 1.0.0 -> 1.0.1
               NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+            else
+              NEW_VERSION="$2"
             fi
             echo "Updated version: ${NEW_VERSION}"
             jq --arg version "$NEW_VERSION" '.version = $version' "$MANIFEST" > "$MANIFEST_TEMP"
@@ -86,12 +93,15 @@ jobs:
           }
           cd skunkworks || exit
           IFS="," read -r -a RELEASE_PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
-          for i in {0..1}
-          do
-            update_manifest "${RELEASE_PACKAGES[$i]}" "bump"
-          done
+          # These four packages are public and at version 0.32.2
+          # They all have published v0.32.1 versions, but no published 0.32.3
+          # version.
+          update_manifest "${RELEASE_PACKAGES[0]}" "bump"
+          update_manifest "${RELEASE_PACKAGES[1]}" "bump"
           update_manifest "${RELEASE_PACKAGES[2]}" "unbump"
-          update_manifest "${RELEASE_PACKAGES[3]}" "bump"
+          update_manifest "${RELEASE_PACKAGES[3]}" "0.0.0"
+          # This last package is the private examples package
+          update_manifest "${RELEASE_PACKAGES[4]}" "bump"
           ../action-publish-release/scripts/get-release-packages.sh
       - name: Get modified RELEASE_PACKAGES lengths
         id: get-modified-updated-packages-length
