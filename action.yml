@@ -3,7 +3,7 @@ description: 'Publish the release'
 
 inputs:
   npm-tag:
-    description: '(Deprecated) This option is ignored, and will be removed in a future release'
+    description: '(Deprecated) This option is no longer used, and will be removed in a future release'
     required: false
     default: 'latest'
 
