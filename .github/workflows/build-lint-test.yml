@@ -97,8 +97,10 @@ jobs:
           echo "length=$(echo '${{ steps.modify-get-release-packages.outputs.RELEASE_PACKAGES }}' | jq '.packages | length')" >> "$GITHUB_OUTPUT"
       - name: Verify modified RELEASE_PACKAGES lengths
         run: |
-          if [[ ${{ steps.get-modified-updated-packages-length.outputs.length }} -ne 3 ]]; then
-            echo "modified RELEASE_PACKAGES is an unexpected length"
+          LENGTH="${{ steps.get-modified-updated-packages-length.outputs.length }}"
+          EXPECTED_LENGTH="3"
+          if [[ $LENGTH -ne 3 ]]; then
+            echo "modified RELEASE_PACKAGES has length '${LENGTH}', expected length '${EXPECTED_LENGTH}'"
             exit 1
           fi;
 
