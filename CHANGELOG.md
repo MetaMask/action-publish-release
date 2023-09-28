@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1]
+### Uncategorized
+- fix: skip packages with version 0.0.0 ([#89](https://github.com/MetaMask/action-publish-release/pull/89))
+- fix: Don't attempt publishing non-latest published versions ([#91](https://github.com/MetaMask/action-publish-release/pull/91))
+- Bump @metamask/action-utils from 0.0.2 to 1.0.0 ([#87](https://github.com/MetaMask/action-publish-release/pull/87))
+
 ## [3.2.0]
 ### Added
 - Add optional `npm-tag` input to use when checking latest version ([#82](https://github.com/MetaMask/action-publish-release/pull/82), [#83](https://github.com/MetaMask/action-publish-release/pull/83))
@@ -105,7 +111,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.1...HEAD
+[3.2.1]: https://github.com/MetaMask/action-publish-release/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/MetaMask/action-publish-release/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/MetaMask/action-publish-release/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/MetaMask/action-publish-release/compare/v2.1.0...v3.0.0
