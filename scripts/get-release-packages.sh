@@ -11,7 +11,8 @@ set -o pipefail
 # be published, then prints that filtered list.
 #
 # A package will be published if it cannot be found on the npm registry at the
-# current version.
+# current version. Packages with the version "0.0.0" are skipped as well; they
+# are assumed to not be ready for publishing.
 # ============================================================================
 
 # JSON string of packages to publish
@@ -39,7 +40,7 @@ workspaces=$(yarn workspaces list --verbose --json)
 while read -r location name; do
   MANIFEST="$location/package.json"
   read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
-  if [[ "$PRIVATE" != "true" ]]; then
+  if [[ "$PRIVATE" != "true" && "$CURRENT_PACKAGE_VERSION" != '0.0.0' ]]; then
     # Get the package name as a way to test whether this version is published already
     PUBLISHED_PACKAGE_NAME=$(npm view "$name@$CURRENT_PACKAGE_VERSION" name || echo '')
     # If the package name is not set, it implies this version has not been published yet
