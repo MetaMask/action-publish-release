@@ -5,7 +5,14 @@ set -e
 set -u
 set -o pipefail
 
-tag="${1:-latest}"
+# ============================================================================
+# This script determines which packages to publish in a monorepo. It filters
+# the collection of package metadata passed in to include just the packages to
+# be published, then prints that filtered list.
+#
+# A package will be published if it cannot be found on the npm registry at the
+# current version.
+# ============================================================================
 
 # JSON string of packages to publish
 # shape is as follows:
@@ -33,8 +40,10 @@ while read -r location name; do
   MANIFEST="$location/package.json"
   read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
   if [[ "$PRIVATE" != "true" ]]; then
-    LATEST_PACKAGE_VERSION=$(npm view "$name" dist-tags --workspaces false --json | jq --raw-output --arg tag "$tag" '.[$tag]' || echo "")
-    if [ "$LATEST_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]; then
+    # Get the package name as a way to test whether this version is published already
+    PUBLISHED_PACKAGE_NAME=$(npm view "$name@$CURRENT_PACKAGE_VERSION" name || echo '')
+    # If the package name is not set, it implies this version has not been published yet
+    if [ -z "$PUBLISHED_PACKAGE_NAME" ]; then
       toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
