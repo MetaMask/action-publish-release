@@ -5,6 +5,14 @@ set -e
 set -u
 set -o pipefail
 
+# ============================================================================
+# This script determines which packages to publish in a monorepo. It filters
+# the collection of package metadata passed in to include just the packages to
+# be published, then prints that filtered list.
+#
+# A package will be published if it cannot be found on the npm registry.
+# ============================================================================
+
 # JSON string of packages to publish
 # shape is as follows:
 # {
