@@ -10,7 +10,8 @@ set -o pipefail
 # the collection of package metadata passed in to include just the packages to
 # be published, then prints that filtered list.
 #
-# A package will be published if it cannot be found on the npm registry.
+# A package will be published if it cannot be found on the npm registry at the
+# current version.
 # ============================================================================
 
 # JSON string of packages to publish
