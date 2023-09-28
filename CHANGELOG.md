@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.2.1]
-### Uncategorized
-- fix: skip packages with version 0.0.0 ([#89](https://github.com/MetaMask/action-publish-release/pull/89))
-- fix: Don't attempt publishing non-latest published versions ([#91](https://github.com/MetaMask/action-publish-release/pull/91))
-- Bump @metamask/action-utils from 0.0.2 to 1.0.0 ([#87](https://github.com/MetaMask/action-publish-release/pull/87))
+### Fixed
+- Skip packages with version 0.0.0 ([#89](https://github.com/MetaMask/action-publish-release/pull/89))
+- Don't attempt publishing published versions ([#91](https://github.com/MetaMask/action-publish-release/pull/91))
+  - Previously it would only compare the current package version with the `latest` version. It would incorrectly attempt publishing already-published non-`latest` versions
 
 ## [3.2.0]
 ### Added
