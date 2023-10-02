@@ -537,12 +537,13 @@
     semver "^7.3.5"
 
 "@metamask/auto-changelog@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-3.1.0.tgz#d4d6bc7b9a1244a2e6a8ff1f818540b6491d8d88"
-  integrity sha512-o+4XljQzTvd46ML+PRyCNv3B9EbFf6JjaaueB2+v/aWSf97pp6FmjEXSPwaUzQQhl9GkaZj8himpanT62Nv9Aw==
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-3.3.0.tgz#9b9c2c4e4f5d65d85abcb3d9f6eedc32ea4518fd"
+  integrity sha512-Azv5WhR8N6iFUqcVfogM+aqkj/vWNv7CXD9TeSdlE1eoKV/TVtDe/dhRz+SjFJ8KK3u1dBuIrYypb2qBTh8Q8A==
   dependencies:
     diff "^5.0.0"
     execa "^5.1.1"
+    prettier "^2.8.8"
     semver "^7.3.5"
     yargs "^17.0.1"
 
@@ -3959,10 +3960,10 @@ prettier-linter-helpers@^1.0.0:
   dependencies:
     fast-diff "^1.1.2"
 
-prettier@^2.2.1:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.3.0.tgz#b6a5bf1284026ae640f17f7ff5658a7567fc0d18"
-  integrity sha512-kXtO4s0Lz/DW/IJ9QdWhAf7/NmPWQXkFr/r/WkR3vyI+0v8amTDxiaQSLzs8NBlytfLWX/7uQUMIW677yLKl4w==
+prettier@^2.2.1, prettier@^2.8.8:
+  version "2.8.8"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.8.8.tgz#e8c5d7e98a4305ffe3de2e1fc4aca1a71c28b1da"
+  integrity sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==
 
 pretty-format@^26.0.0, pretty-format@^26.6.2:
   version "26.6.2"
