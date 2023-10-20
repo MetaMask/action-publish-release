@@ -46,6 +46,7 @@ runs:
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh
       env:
+        RELEASE_COMMIT_ID: ${{ github.sha }}
         RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
         RELEASE_PACKAGES: ${{ steps.get-release-packages.outputs.RELEASE_PACKAGES }}
