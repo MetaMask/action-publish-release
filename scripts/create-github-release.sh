@@ -4,6 +4,11 @@ set -x
 set -e
 set -o pipefail
 
+if [[ -z $RELEASE_COMMIT_ID ]]; then
+  echo "Error: No release commit ID specified."
+  exit 1
+fi
+
 if [[ -z $RELEASE_NOTES ]]; then
   echo "Error: RELEASE_NOTES environment variable not set."
   exit 1
@@ -33,7 +38,8 @@ fi
 gh release create \
   "v$RELEASE_VERSION" \
   --title "$RELEASE_VERSION" \
-  --notes "$RELEASE_NOTES"
+  --notes "$RELEASE_NOTES" \
+  --target "$RELEASE_COMMIT_ID"
 
 if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS ]]; then
   echo "independent versioning strategy"
