@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.2]
+### Fixed
+- Pin the Git tag created in the action to the commit that ran the action, not `main` ([#96](https://github.com/MetaMask/action-publish-release/pull/96))
+
 ## [3.2.1]
 ### Fixed
 - Skip packages with version 0.0.0 ([#89](https://github.com/MetaMask/action-publish-release/pull/89))
@@ -111,7 +115,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.1...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.2...HEAD
+[3.2.2]: https://github.com/MetaMask/action-publish-release/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/MetaMask/action-publish-release/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/MetaMask/action-publish-release/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/MetaMask/action-publish-release/compare/v3.0.0...v3.1.0
