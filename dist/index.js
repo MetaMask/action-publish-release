@@ -862,10 +862,29 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Changelog_releases, _Changelog_changes, _Changelog_repoUrl, _Changelog_tagPrefix, _Changelog_formatter;
+var _Changelog_releases, _Changelog_changes, _Changelog_repoUrl, _Changelog_tagPrefix, _Changelog_formatter, _Changelog_packageRename;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getKnownPropertyNames = void 0;
 const semver_1 = __importDefault(__nccwpck_require__(1383));
 const constants_1 = __nccwpck_require__(1373);
+/**
+ * `Object.getOwnPropertyNames()` is intentionally generic: it returns the
+ * immediate property names of an object, but it cannot make guarantees about
+ * the contents of that object, so the type of the property names is merely
+ * `string[]`. While this is technically accurate, it is also unnecessary if we
+ * have an object with a type that we own (such as an enum).
+ *
+ * IMPORTANT: This is copied from `@metamask/utils` in order to avoid a circular
+ * dependency between this package and `@metamask/utils`.
+ *
+ * @param object - The plain object.
+ * @returns The own property names of the object which are assigned a type
+ * derived from the object itself.
+ */
+function getKnownPropertyNames(object) {
+    return Object.getOwnPropertyNames(object);
+}
+exports.getKnownPropertyNames = getKnownPropertyNames;
 const changelogTitle = '# Changelog';
 const changelogDescription = `All notable changes to this project will be documented in this file.
 
@@ -904,7 +923,8 @@ function stringifyRelease(version, categories, { date, status } = {}) {
     const categorizedChanges = constants_1.orderedChangeCategories
         .filter((category) => categories[category])
         .map((category) => {
-        const changes = categories[category];
+        var _a;
+        const changes = (_a = categories[category]) !== null && _a !== void 0 ? _a : [];
         return stringifyCategory(category, changes);
     })
         .join('\n\n');
@@ -967,19 +987,25 @@ function getTagUrl(repoUrl, tag) {
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties
+ * An optional, which is required only in case of package renamed.
  * @returns The stringified release link definitions.
  */
-function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases) {
-    // A list of release versions in descending SemVer order
-    const descendingSemverVersions = releases
-        .map(({ version }) => version)
-        .sort((a, b) => {
-        return semver_1.default.gt(a, b) ? -1 : 1;
-    });
-    const latestSemverVersion = descendingSemverVersions[0];
-    // A list of release versions in chronological order
-    const chronologicalVersions = releases.map(({ version }) => version);
-    const hasReleases = chronologicalVersions.length > 0;
+function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename) {
+    const unreleasedLinkReferenceDefinition = getUnreleasedLinkReferenceDefinition(repoUrl, tagPrefix, releases, packageRename);
+    const releaseLinkReferenceDefinitions = getReleaseLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename).join('\n');
+    return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${releases.length > 0 ? '\n' : ''}`;
+}
+/**
+ * Get a string of unreleased link reference definition.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties.
+ * @returns A unreleased link reference definition string.
+ */
+function getUnreleasedLinkReferenceDefinition(repoUrl, tagPrefix, releases, packageRename) {
     // The "Unreleased" section represents all changes made since the *highest*
     // release, not the most recent release. This is to accomodate patch releases
     // of older versions that don't represent the latest set of changes.
@@ -990,18 +1016,47 @@ function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases) {
     //
     // If there have not been any releases yet, the repo URL is used directly as
     // the link definition.
-    const unreleasedLinkReferenceDefinition = `[${constants_1.unreleased}]: ${hasReleases
-        ? getCompareUrl(repoUrl, `${tagPrefix}${latestSemverVersion}`, 'HEAD')
+    // A list of release versions in descending SemVer order
+    const descendingSemverVersions = releases
+        .map(({ version }) => version)
+        .sort((a, b) => {
+        return semver_1.default.gt(a, b) ? -1 : 1;
+    });
+    const latestSemverVersion = descendingSemverVersions[0];
+    const hasReleases = descendingSemverVersions.length > 0;
+    // if there is a package renamed, the tag prefix before the rename will be considered for compare
+    // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...HEAD
+    const tagPrefixToCompare = packageRename && packageRename.versionBeforeRename === latestSemverVersion
+        ? packageRename.tagPrefixBeforeRename
+        : tagPrefix;
+    return `[${constants_1.unreleased}]: ${hasReleases
+        ? getCompareUrl(repoUrl, `${tagPrefixToCompare}${latestSemverVersion}`, 'HEAD')
         : withTrailingSlash(repoUrl)}`;
+}
+/**
+ * Get a list of release link reference definitions.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties.
+ * @returns A list of release link reference definitions.
+ */
+function getReleaseLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename) {
     // The "previous" release that should be used for comparison is not always
     // the most recent release chronologically. The _highest_ version that is
     // lower than the current release is used as the previous release, so that
     // patch releases on older releases can be accomodated.
-    const releaseLinkReferenceDefinitions = releases
-        .map(({ version }) => {
+    const chronologicalVersions = releases.map(({ version }) => version);
+    let tagPrefixToCompare = tagPrefix;
+    const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
         let diffUrl;
+        // once the version matches with versionBeforeRename, rest of the lines in changelog will be assumed as migrated tags
+        if (packageRename && packageRename.versionBeforeRename === version) {
+            tagPrefixToCompare = packageRename.tagPrefixBeforeRename;
+        }
         if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-            diffUrl = getTagUrl(repoUrl, `${tagPrefix}${version}`);
+            diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
         }
         else {
             const versionIndex = chronologicalVersions.indexOf(version);
@@ -1010,14 +1065,28 @@ function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases) {
                 .find((releaseVersion) => {
                 return semver_1.default.gt(version, releaseVersion);
             });
-            diffUrl = previousVersion
-                ? getCompareUrl(repoUrl, `${tagPrefix}${previousVersion}`, `${tagPrefix}${version}`)
-                : getTagUrl(repoUrl, `${tagPrefix}${version}`);
+            if (previousVersion) {
+                if (packageRename &&
+                    packageRename.versionBeforeRename === previousVersion) {
+                    // The package was renamed at this version
+                    // (the tag prefix holds the new name).
+                    diffUrl = getCompareUrl(repoUrl, `${packageRename.tagPrefixBeforeRename}${previousVersion}`, `${tagPrefix}${version}`);
+                }
+                else {
+                    // If the package was ever renamed, it was not renamed at this version,
+                    // so use either the old tag prefix or the new tag prefix.
+                    // If the package was never renamed, use the tag prefix as it is.
+                    diffUrl = getCompareUrl(repoUrl, `${tagPrefixToCompare}${previousVersion}`, `${tagPrefixToCompare}${version}`);
+                }
+            }
+            else {
+                // This is the smallest release.
+                diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+            }
         }
         return `[${version}]: ${diffUrl}`;
-    })
-        .join('\n');
-    return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${releases.length > 0 ? '\n' : ''}`;
+    });
+    return releaseLinkReferenceDefinitions;
 }
 /**
  * A changelog that complies with the
@@ -1036,18 +1105,22 @@ class Changelog {
      * @param options.repoUrl - The GitHub repository URL for the current project.
      * @param options.tagPrefix - The prefix used in tags before the version number.
      * @param options.formatter - A function that formats the changelog string.
+     * @param options.packageRename - The package rename properties.
+     * An optional, which is required only in case of package renamed.
      */
-    constructor({ repoUrl, tagPrefix = 'v', formatter = (changelog) => changelog, }) {
+    constructor({ repoUrl, tagPrefix = 'v', formatter = (changelog) => changelog, packageRename, }) {
         _Changelog_releases.set(this, void 0);
         _Changelog_changes.set(this, void 0);
         _Changelog_repoUrl.set(this, void 0);
         _Changelog_tagPrefix.set(this, void 0);
         _Changelog_formatter.set(this, void 0);
+        _Changelog_packageRename.set(this, void 0);
         __classPrivateFieldSet(this, _Changelog_releases, [], "f");
         __classPrivateFieldSet(this, _Changelog_changes, { [constants_1.unreleased]: {} }, "f");
         __classPrivateFieldSet(this, _Changelog_repoUrl, repoUrl, "f");
         __classPrivateFieldSet(this, _Changelog_tagPrefix, tagPrefix, "f");
         __classPrivateFieldSet(this, _Changelog_formatter, formatter, "f");
+        __classPrivateFieldSet(this, _Changelog_packageRename, packageRename, "f");
     }
     /**
      * Add a release to the changelog.
@@ -1133,16 +1206,17 @@ class Changelog {
      * @param version - The release version to migrate unreleased changes to.
      */
     migrateUnreleasedChangesToRelease(version) {
+        var _a, _b;
         const releaseChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
         if (!releaseChanges) {
             throw new Error(`Specified release version does not exist: '${version}'`);
         }
         const unreleasedChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
-        for (const category of Object.keys(unreleasedChanges)) {
+        for (const category of getKnownPropertyNames(unreleasedChanges)) {
             if (releaseChanges[category]) {
                 releaseChanges[category] = [
-                    ...unreleasedChanges[category],
-                    ...releaseChanges[category],
+                    ...((_a = unreleasedChanges[category]) !== null && _a !== void 0 ? _a : []),
+                    ...((_b = releaseChanges[category]) !== null && _b !== void 0 ? _b : []),
                 ];
             }
             else {
@@ -1211,12 +1285,12 @@ ${changelogDescription}
 
 ${stringifyReleases(__classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_changes, "f"))}
 
-${stringifyLinkReferenceDefinitions(__classPrivateFieldGet(this, _Changelog_repoUrl, "f"), __classPrivateFieldGet(this, _Changelog_tagPrefix, "f"), __classPrivateFieldGet(this, _Changelog_releases, "f"))}`;
+${stringifyLinkReferenceDefinitions(__classPrivateFieldGet(this, _Changelog_repoUrl, "f"), __classPrivateFieldGet(this, _Changelog_tagPrefix, "f"), __classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_packageRename, "f"))}`;
         return __classPrivateFieldGet(this, _Changelog_formatter, "f").call(this, changelog);
     }
 }
 exports["default"] = Changelog;
-_Changelog_releases = new WeakMap(), _Changelog_changes = new WeakMap(), _Changelog_repoUrl = new WeakMap(), _Changelog_tagPrefix = new WeakMap(), _Changelog_formatter = new WeakMap();
+_Changelog_releases = new WeakMap(), _Changelog_changes = new WeakMap(), _Changelog_repoUrl = new WeakMap(), _Changelog_tagPrefix = new WeakMap(), _Changelog_formatter = new WeakMap(), _Changelog_packageRename = new WeakMap();
 //# sourceMappingURL=changelog.js.map
 
 /***/ }),
@@ -1380,11 +1454,18 @@ function isValidChangeCategory(category) {
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties
+ * An optional, which is required only in case of package renamed.
  * @returns A changelog instance that reflects the changelog text provided.
  */
-function parseChangelog({ changelogContent, repoUrl, tagPrefix = 'v', formatter = undefined, }) {
+function parseChangelog({ changelogContent, repoUrl, tagPrefix = 'v', formatter = undefined, packageRename, }) {
     const changelogLines = changelogContent.split('\n');
-    const changelog = new changelog_1.default({ repoUrl, tagPrefix, formatter });
+    const changelog = new changelog_1.default({
+        repoUrl,
+        tagPrefix,
+        formatter,
+        packageRename,
+    });
     const unreleasedHeaderIndex = changelogLines.indexOf(`## [${constants_1.unreleased}]`);
     if (unreleasedHeaderIndex === -1) {
         throw new Error(`Failed to find ${constants_1.unreleased} header`);
@@ -1660,9 +1741,6 @@ async function getCommitHashesInRange(commitRange, rootDirectory) {
  * @returns The updated changelog text.
  */
 async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, tagPrefixes = ['v'], formatter = undefined, }) {
-    if (isReleaseCandidate && !currentVersion) {
-        throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
-    }
     const changelog = (0, parse_changelog_1.parseChangelog)({
         changelogContent,
         repoUrl,
@@ -1674,10 +1752,6 @@ async function updateChangelog({ changelogContent, currentVersion, repoUrl, isRe
     const mostRecentTag = await getMostRecentTag({
         tagPrefixes,
     });
-    if (isReleaseCandidate &&
-        mostRecentTag === `${tagPrefixes[0]}${currentVersion || ''}`) {
-        throw new Error(`Current version already has tag, which is unexpected for a release candidate.`);
-    }
     const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
     const commitsHashesSinceLastRelease = await getCommitHashesInRange(commitRange, projectRootDirectory);
     const commits = await getCommits(commitsHashesSinceLastRelease);
@@ -1688,33 +1762,36 @@ async function updateChangelog({ changelogContent, currentVersion, repoUrl, isRe
         (!isReleaseCandidate || hasUnreleasedChanges)) {
         return undefined;
     }
-    // Ensure release header exists, if necessary
-    if (isReleaseCandidate &&
-        !changelog
+    if (isReleaseCandidate) {
+        if (!currentVersion) {
+            throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
+        }
+        if (mostRecentTag === `${tagPrefixes[0]}${currentVersion !== null && currentVersion !== void 0 ? currentVersion : ''}`) {
+            throw new Error(`Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`);
+        }
+        // Ensure release header exists, if necessary
+        if (!changelog
             .getReleases()
             .find((release) => release.version === currentVersion)) {
-        // Typecast: currentVersion will be defined here due to type guard at the
-        // top of this function.
-        changelog.addRelease({ version: currentVersion });
-    }
-    if (isReleaseCandidate && hasUnreleasedChanges) {
-        // Typecast: currentVersion will be defined here due to type guard at the
-        // top of this function.
-        changelog.migrateUnreleasedChangesToRelease(currentVersion);
-    }
-    const newChangeEntries = newCommits.map(({ prNumber, description }) => {
-        if (prNumber) {
-            const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-            return `${description} ${suffix}`;
+            changelog.addRelease({ version: currentVersion });
         }
-        return description;
-    });
-    for (const description of newChangeEntries.reverse()) {
-        changelog.addChange({
-            version: isReleaseCandidate ? currentVersion : undefined,
-            category: constants_1.ChangeCategory.Uncategorized,
-            description,
+        if (hasUnreleasedChanges) {
+            changelog.migrateUnreleasedChangesToRelease(currentVersion);
+        }
+        const newChangeEntries = newCommits.map(({ prNumber, description }) => {
+            if (prNumber) {
+                const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+                return `${description} ${suffix}`;
+            }
+            return description;
         });
+        for (const description of newChangeEntries.reverse()) {
+            changelog.addChange({
+                version: isReleaseCandidate ? currentVersion : undefined,
+                category: constants_1.ChangeCategory.Uncategorized,
+                description,
+            });
+        }
     }
     return changelog.toString();
 }
@@ -1818,6 +1895,8 @@ exports.ChangelogFormattingError = ChangelogFormattingError;
  * header, and that there are no unreleased changes present.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -1828,13 +1907,14 @@ exports.ChangelogFormattingError = ChangelogFormattingError;
  * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
-function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, tagPrefix = 'v', formatter = undefined, }) {
+function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, tagPrefix = 'v', formatter = undefined, packageRename, }) {
     var _a, _b;
     const changelog = (0, parse_changelog_1.parseChangelog)({
         changelogContent,
         repoUrl,
         tagPrefix,
         formatter,
+        packageRename,
     });
     const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
     const releaseChanges = currentVersion
