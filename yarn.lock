@@ -528,9 +528,9 @@
   integrity sha512-vD2DcC0ffJj1w2y1Lu0OU39wHmlPEd2tCDW04Bm6Kf4LyRnCHCezTsS8yzeSJ+4so7XP+TITuR5FGJRWxPb+GA==
 
 "@metamask/action-utils@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/action-utils/-/action-utils-1.0.0.tgz#d15c017f7c2bd35c1e29d822fffe2d6177de6c56"
-  integrity sha512-ppibg/dsMZdbSl9xq32zD8D0j6QSO6o9j8XIOMPEGSk3B4Wo3tfTCdux4dNnSomtpXliPMFQ76VdUQVb4gG5jQ==
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@metamask/action-utils/-/action-utils-1.1.0.tgz#034113307cbd74acb6b7fbb5066a0909f340a7dd"
+  integrity sha512-voVQRiWgof+6GQLv3CsjDsTbjuN4fztSuFQ6Dop2y9M7F7ghEiAk9fQUvJlxfSezMBLYZpBWz05vAU5D3x+Z+Q==
   dependencies:
     "@types/semver" "^7.3.6"
     glob "^7.1.7"
