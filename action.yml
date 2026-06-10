@@ -31,6 +31,8 @@ runs:
       shell: bash
       run: |
         ${{ github.action_path }}/scripts/get-release-packages.sh
+      env:
+        GH_TOKEN: ${{ env.GITHUB_TOKEN || github.token }}
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes

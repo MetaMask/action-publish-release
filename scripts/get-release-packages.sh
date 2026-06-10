@@ -6,13 +6,14 @@ set -u
 set -o pipefail
 
 # ============================================================================
-# This script determines which packages to publish in a monorepo. It filters
-# the collection of package metadata passed in to include just the packages to
-# be published, then prints that filtered list.
+# This script determines which packages are part of the current release in a
+# monorepo. A package is considered part of the release if its version in the
+# current commit differs from its version in the parent commit (this also
+# covers brand-new packages, which have no previous version). Private packages
+# and packages at version "0.0.0" are skipped.
 #
-# A package will be published if it cannot be found on the npm registry at the
-# current version. Packages with the version "0.0.0" are skipped as well; they
-# are assumed to not be ready for publishing.
+# The previous manifest is fetched via the GitHub contents API so this works
+# even when the repository is checked out at the default shallow depth.
 # ============================================================================
 
 # JSON string of packages to publish
@@ -37,14 +38,17 @@ len="${#toPublish}"
 
 workspaces=$(yarn workspaces list --verbose --json)
 
+PARENT_SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA" --jq '.parents[0].sha')
+
 while read -r location name; do
   MANIFEST="$location/package.json"
   read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
   if [[ "$PRIVATE" != "true" && "$CURRENT_PACKAGE_VERSION" != '0.0.0' ]]; then
-    # Get the package name as a way to test whether this version is published already
-    PUBLISHED_PACKAGE_NAME=$(npm view "$name@$CURRENT_PACKAGE_VERSION" name || echo '')
-    # If the package name is not set, it implies this version has not been published yet
-    if [ -z "$PUBLISHED_PACKAGE_NAME" ]; then
+    # Fetch the manifest at the parent commit. A missing file (e.g. a new
+    # package) yields an empty previous version, which will differ from the
+    # current version and so the package will be included.
+    PREVIOUS_PACKAGE_VERSION=$(gh api "repos/$GITHUB_REPOSITORY/contents/$MANIFEST?ref=$PARENT_SHA" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | jq --raw-output '.version' 2>/dev/null || echo '')
+    if [[ "$PREVIOUS_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]]; then
       toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
