@@ -53,6 +53,8 @@ jobs:
           echo "RELEASE_PACKAGES=$RELEASE_PACKAGES_FORMATTED" >> "$GITHUB_OUTPUT"
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Update the version in a package.json manifest file
           #
