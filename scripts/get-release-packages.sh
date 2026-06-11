@@ -38,7 +38,14 @@ len="${#toPublish}"
 
 workspaces=$(yarn workspaces list --verbose --json)
 
-PARENT_SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA" --jq '.parents[0].sha')
+# PARENT_REPOSITORY and PARENT_SHA can be overridden via environment variables
+# to point the previous-manifest lookup at a different repo or commit. This is
+# primarily a hook for the integration tests in this repo; in normal use the
+# parent commit of the workflow's SHA is used.
+PARENT_REPOSITORY="${PARENT_REPOSITORY:-$GITHUB_REPOSITORY}"
+if [[ -z "${PARENT_SHA:-}" ]]; then
+  PARENT_SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA" --jq '.parents[0].sha')
+fi
 
 while read -r location name; do
   MANIFEST="$location/package.json"
@@ -47,7 +54,7 @@ while read -r location name; do
     # Fetch the manifest at the parent commit. A missing file (e.g. a new
     # package) yields an empty previous version, which will differ from the
     # current version and so the package will be included.
-    PREVIOUS_PACKAGE_VERSION=$(gh api "repos/$GITHUB_REPOSITORY/contents/$MANIFEST?ref=$PARENT_SHA" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | jq --raw-output '.version' 2>/dev/null || echo '')
+    PREVIOUS_PACKAGE_VERSION=$(gh api "repos/$PARENT_REPOSITORY/contents/$MANIFEST?ref=$PARENT_SHA" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | jq --raw-output '.version' 2>/dev/null || echo '')
     if [[ "$PREVIOUS_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]]; then
       toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi

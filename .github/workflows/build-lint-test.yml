@@ -55,6 +55,11 @@ jobs:
         id: modify-get-release-packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Point the script's previous-manifest lookup at the upstream
+          # snaps-skunkworks repo at the tag we checked out, so the diff is
+          # taken against the manifests as they existed at v0.32.2.
+          PARENT_REPOSITORY: MetaMask/snaps-skunkworks
+          PARENT_SHA: v0.32.2
         run: |
           # Update the version in a package.json manifest file
           #
@@ -95,12 +100,12 @@ jobs:
           }
           cd skunkworks || exit
           IFS="," read -r -a RELEASE_PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
-          # These four packages are public and at version 0.32.2
-          # They all have published v0.32.1 versions, but no published 0.32.3
-          # version.
+          # These four packages are public and at version 0.32.2.
+          # Two are bumped (included), one is left unchanged (excluded
+          # because the version matches the parent), and one is set to
+          # 0.0.0 (excluded by the 0.0.0 rule).
           update_manifest "${RELEASE_PACKAGES[0]}" "bump"
           update_manifest "${RELEASE_PACKAGES[1]}" "bump"
-          update_manifest "${RELEASE_PACKAGES[2]}" "unbump"
           update_manifest "${RELEASE_PACKAGES[3]}" "0.0.0"
           # This last package is the private examples package
           update_manifest "${RELEASE_PACKAGES[4]}" "bump"
