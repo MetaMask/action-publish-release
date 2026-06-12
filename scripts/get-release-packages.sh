@@ -7,13 +7,12 @@ set -o pipefail
 
 # ============================================================================
 # This script determines which packages are part of the current release in a
-# monorepo. A package is considered part of the release if its version in the
-# current commit differs from its version in the parent commit (this also
-# covers brand-new packages, which have no previous version). Private packages
-# and packages at version "0.0.0" are skipped.
+# monorepo. A package is considered part of the release if no git tag of the
+# form "<name>@<version>" already exists for its current manifest version.
+# Private packages and packages at version "0.0.0" are skipped.
 #
-# The previous manifest is fetched via the GitHub contents API so this works
-# even when the repository is checked out at the default shallow depth.
+# Tag existence is queried via the GitHub API, so the workflow does not need
+# to fetch tags locally or use a deep checkout.
 # ============================================================================
 
 # JSON string of packages to publish
@@ -38,24 +37,14 @@ len="${#toPublish}"
 
 workspaces=$(yarn workspaces list --verbose --json)
 
-# PARENT_REPOSITORY and PARENT_SHA can be overridden via environment variables
-# to point the previous-manifest lookup at a different repo or commit. This is
-# primarily a hook for the integration tests in this repo; in normal use the
-# parent commit of the workflow's SHA is used.
-PARENT_REPOSITORY="${PARENT_REPOSITORY:-$GITHUB_REPOSITORY}"
-if [[ -z "${PARENT_SHA:-}" ]]; then
-  PARENT_SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA" --jq '.parents[0].sha')
-fi
-
 while read -r location name; do
   MANIFEST="$location/package.json"
   read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
   if [[ "$PRIVATE" != "true" && "$CURRENT_PACKAGE_VERSION" != '0.0.0' ]]; then
-    # Fetch the manifest at the parent commit. A missing file (e.g. a new
-    # package) yields an empty previous version, which will differ from the
-    # current version and so the package will be included.
-    PREVIOUS_PACKAGE_VERSION=$(gh api "repos/$PARENT_REPOSITORY/contents/$MANIFEST?ref=$PARENT_SHA" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | jq --raw-output '.version' 2>/dev/null || echo '')
-    if [[ "$PREVIOUS_PACKAGE_VERSION" != "$CURRENT_PACKAGE_VERSION" ]]; then
+    # Skip the package if a release tag already exists for its current
+    # version. A non-existent tag (404) means this version has not been
+    # released yet, so include it.
+    if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$name@$CURRENT_PACKAGE_VERSION" --silent 2>/dev/null; then
       toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
