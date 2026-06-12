@@ -6,13 +6,13 @@ set -u
 set -o pipefail
 
 # ============================================================================
-# This script determines which packages to publish in a monorepo. It filters
-# the collection of package metadata passed in to include just the packages to
-# be published, then prints that filtered list.
+# This script determines which packages are part of the current release in a
+# monorepo. A package is considered part of the release if no git tag of the
+# form "<name>@<version>" already exists for its current manifest version.
+# Private packages and packages at version "0.0.0" are skipped.
 #
-# A package will be published if it cannot be found on the npm registry at the
-# current version. Packages with the version "0.0.0" are skipped as well; they
-# are assumed to not be ready for publishing.
+# Tag existence is queried via the GitHub API, so the workflow does not need
+# to fetch tags locally or use a deep checkout.
 # ============================================================================
 
 # JSON string of packages to publish
@@ -37,14 +37,20 @@ len="${#toPublish}"
 
 workspaces=$(yarn workspaces list --verbose --json)
 
+# Repository to look up release tags in. Defaults to the current workflow's
+# repository; can be overridden via the RELEASE_TAGS_REPOSITORY env var
+# (used by the integration tests to point at a fixture repo, since GitHub
+# Actions does not allow overriding GITHUB_REPOSITORY at the step level).
+TAGS_REPOSITORY="${RELEASE_TAGS_REPOSITORY:-$GITHUB_REPOSITORY}"
+
 while read -r location name; do
   MANIFEST="$location/package.json"
   read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
   if [[ "$PRIVATE" != "true" && "$CURRENT_PACKAGE_VERSION" != '0.0.0' ]]; then
-    # Get the package name as a way to test whether this version is published already
-    PUBLISHED_PACKAGE_NAME=$(npm view "$name@$CURRENT_PACKAGE_VERSION" name || echo '')
-    # If the package name is not set, it implies this version has not been published yet
-    if [ -z "$PUBLISHED_PACKAGE_NAME" ]; then
+    # Skip the package if a release tag already exists for its current
+    # version. A non-existent tag (404) means this version has not been
+    # released yet, so include it.
+    if ! gh api "repos/$TAGS_REPOSITORY/git/ref/tags/$name@$CURRENT_PACKAGE_VERSION" --silent 2>/dev/null; then
       toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi

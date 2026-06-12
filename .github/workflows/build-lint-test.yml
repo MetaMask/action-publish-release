@@ -22,16 +22,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          repository: MetaMask/snaps-skunkworks
-          ref: v0.32.2
-          path: skunkworks
+          repository: MetaMask/snaps
+          ref: v120.0.0
+          path: snaps
       - uses: actions/checkout@v3
         with:
           path: action-publish-release
       - name: Get Packages
         id: get-packages
         run: |
-          cd skunkworks || exit
+          cd snaps || exit
           WORKSPACES=$(yarn workspaces list --verbose --json)
           PUBLIC_PACKAGES=()
           PRIVATE_PACKAGE=()
@@ -53,6 +53,13 @@ jobs:
           echo "RELEASE_PACKAGES=$RELEASE_PACKAGES_FORMATTED" >> "$GITHUB_OUTPUT"
       - name: Modify + Get RELEASE_PACKAGES lengths
         id: modify-get-release-packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Point the script's release-tag lookup at the checked-out
+          # MetaMask/snaps repo (which has the `<name>@<version>` tag
+          # history) rather than this repo. GITHUB_REPOSITORY itself can't
+          # be overridden at the step level, hence the dedicated var.
+          RELEASE_TAGS_REPOSITORY: MetaMask/snaps
         run: |
           # Update the version in a package.json manifest file
           #
@@ -71,11 +78,11 @@ jobs:
             if [[ "$2" == "unbump" ]]; then
               if [[ "$PATCH" == "0" ]]; then
                 if [[ "$MINOR" == "0" ]]; then
-                  # e.g. 10.0.0 -> 9.9.9
-                  NEW_VERSION="$((MAJOR - 1)).9.9"
+                  # e.g. 10.0.0 -> 9.0.0
+                  NEW_VERSION="$((MAJOR - 1)).0.0"
                 else
-                  # e.g. 1.10.0 -> 1.9.9
-                  NEW_VERSION="${MAJOR}.$((MINOR - 1)).9"
+                  # e.g. 1.10.0 -> 1.9.0
+                  NEW_VERSION="${MAJOR}.$((MINOR - 1)).0"
                 fi
               else
                 # e.g. 1.2.10 -> 1.2.9
@@ -91,16 +98,18 @@ jobs:
             jq --arg version "$NEW_VERSION" '.version = $version' "$MANIFEST" > "$MANIFEST_TEMP"
             mv "$MANIFEST_TEMP" "$MANIFEST"
           }
-          cd skunkworks || exit
+          cd snaps || exit
           IFS="," read -r -a RELEASE_PACKAGES <<< "${{ steps.get-packages.outputs.RELEASE_PACKAGES }}"
-          # These four packages are public and at version 0.32.2
-          # They all have published v0.32.1 versions, but no published 0.32.3
-          # version.
+          # The first four packages are public; their current manifest
+          # versions all match release tags in MetaMask/snaps. Two are
+          # bumped to a version with no tag (included), one is unbumped
+          # to a previously-tagged version (excluded), and one is set to
+          # 0.0.0 (excluded by the 0.0.0 rule).
           update_manifest "${RELEASE_PACKAGES[0]}" "bump"
           update_manifest "${RELEASE_PACKAGES[1]}" "bump"
           update_manifest "${RELEASE_PACKAGES[2]}" "unbump"
           update_manifest "${RELEASE_PACKAGES[3]}" "0.0.0"
-          # This last package is the private examples package
+          # The fifth package is the private examples package.
           update_manifest "${RELEASE_PACKAGES[4]}" "bump"
           ../action-publish-release/scripts/get-release-packages.sh
       - name: Get modified RELEASE_PACKAGES lengths
