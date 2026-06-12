@@ -9,7 +9,7 @@ jobs:
   build-lint-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - run: corepack enable
       - run: yarn install --immutable
       - run: yarn build
@@ -20,12 +20,12 @@ jobs:
   updated-packages-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           repository: MetaMask/snaps
           ref: v120.0.0
           path: snaps
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           path: action-publish-release
       - run: corepack enable
