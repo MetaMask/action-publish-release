@@ -7,16 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.2.3]
-### Uncategorized
-- fix: determine release packages by tag existence on GitHub instead of NPM ([#116](https://github.com/MetaMask/action-publish-release/pull/116))
-- chore: Update codeowners to `MetaMask/core-platform` ([#118](https://github.com/MetaMask/action-publish-release/pull/118))
-- ci: use ubuntu-latest runner for CI jobs ([#117](https://github.com/MetaMask/action-publish-release/pull/117))
-- chore: add workflow_dispatch to security-code-scanner ([#111](https://github.com/MetaMask/action-publish-release/pull/111))
-- Update CODEOWNERS ([#108](https://github.com/MetaMask/action-publish-release/pull/108))
-- Enabling MetaMask security code scanner ([#104](https://github.com/MetaMask/action-publish-release/pull/104))
-- Add Shared Libraries team in codeowners file ([#103](https://github.com/MetaMask/action-publish-release/pull/103))
-- Bump @metamask/auto-changelog from 3.4.2 to 3.4.3 ([#101](https://github.com/MetaMask/action-publish-release/pull/101))
-- Bump @metamask/auto-changelog from 3.3.0 to 3.4.2 ([#98](https://github.com/MetaMask/action-publish-release/pull/98))
+### Fixed
+- Determine release packages by tag existence on GitHub instead of NPM ([#116](https://github.com/MetaMask/action-publish-release/pull/116))
+  - This fixes a bug where the action may fail if packages are published to NPM ahead of running the action.
 
 ## [3.2.2]
 ### Fixed
