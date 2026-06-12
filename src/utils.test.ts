@@ -11,7 +11,9 @@ describe('parseEnvironmentVariables', () => {
   });
 
   afterAll(() => {
-    if ('GITHUB_WORKSPACE' in process.env) {
+    if (originalGithubWorkspace === undefined) {
+      delete process.env.GITHUB_WORKSPACE;
+    } else {
       process.env.GITHUB_WORKSPACE = originalGithubWorkspace;
     }
   });
