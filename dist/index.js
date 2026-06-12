@@ -2553,7 +2553,7 @@ module.exports = readShebang;
 
 const path = __nccwpck_require__(1017);
 const which = __nccwpck_require__(4207);
-const getPathKey = __nccwpck_require__(9060);
+const getPathKey = __nccwpck_require__(539);
 
 function resolveCommandAttempt(parsed, withoutPathExt) {
     const env = parsed.options.env || process.env;
@@ -2601,30 +2601,6 @@ function resolveCommand(parsed) {
 }
 
 module.exports = resolveCommand;
-
-
-/***/ }),
-
-/***/ 9060:
-/***/ ((module) => {
-
-"use strict";
-
-
-const pathKey = (options = {}) => {
-	const environment = options.env || process.env;
-	const platform = options.platform || process.platform;
-
-	if (platform !== 'win32') {
-		return 'PATH';
-	}
-
-	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
-};
-
-module.exports = pathKey;
-// TODO: Remove this for the next major release
-module.exports["default"] = pathKey;
 
 
 /***/ }),
@@ -7525,7 +7501,7 @@ function regExpEscape (s) {
 "use strict";
 
 const path = __nccwpck_require__(1017);
-const pathKey = __nccwpck_require__(7278);
+const pathKey = __nccwpck_require__(539);
 
 const npmRunPath = options => {
 	options = {
@@ -7570,30 +7546,6 @@ module.exports.env = options => {
 
 	return env;
 };
-
-
-/***/ }),
-
-/***/ 7278:
-/***/ ((module) => {
-
-"use strict";
-
-
-const pathKey = (options = {}) => {
-	const environment = options.env || process.env;
-	const platform = options.platform || process.platform;
-
-	if (platform !== 'win32') {
-		return 'PATH';
-	}
-
-	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
-};
-
-module.exports = pathKey;
-// TODO: Remove this for the next major release
-module.exports["default"] = pathKey;
 
 
 /***/ }),
@@ -7723,6 +7675,30 @@ function win32(path) {
 module.exports = process.platform === 'win32' ? win32 : posix;
 module.exports.posix = posix;
 module.exports.win32 = win32;
+
+
+/***/ }),
+
+/***/ 539:
+/***/ ((module) => {
+
+"use strict";
+
+
+const pathKey = (options = {}) => {
+	const environment = options.env || process.env;
+	const platform = options.platform || process.platform;
+
+	if (platform !== 'win32') {
+		return 'PATH';
+	}
+
+	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
+};
+
+module.exports = pathKey;
+// TODO: Remove this for the next major release
+module.exports["default"] = pathKey;
 
 
 /***/ }),

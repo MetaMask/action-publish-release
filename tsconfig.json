@@ -2,17 +2,20 @@
   "compilerOptions": {
     "declaration": true,
     "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
     "inlineSources": true,
-    "lib": ["ES2020"],
+    "lib": ["ES2023"],
     "module": "ES6",
     "moduleResolution": "Node",
+    "noErrorTruncation": true,
+    "noUncheckedIndexedAccess": true,
     "outDir": "lib",
     "rootDir": "src",
     "sourceMap": true,
     "strict": true,
-    "target": "ES2019",
-    "typeRoots": ["node_modules/@types"]
+    "target": "ES2020"
   },
-  "exclude": ["src/**/*.test.ts"],
+  "exclude": ["./dist", "src/**/*.test.ts"],
   "include": ["src/**/*.ts"]
 }
