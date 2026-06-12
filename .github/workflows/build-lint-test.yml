@@ -55,10 +55,11 @@ jobs:
         id: modify-get-release-packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Override GITHUB_REPOSITORY so the script looks up release tags
-          # against the checked-out MetaMask/snaps repo (which has the
-          # `<name>@<version>` tag history) rather than this repo.
-          GITHUB_REPOSITORY: MetaMask/snaps
+          # Point the script's release-tag lookup at the checked-out
+          # MetaMask/snaps repo (which has the `<name>@<version>` tag
+          # history) rather than this repo. GITHUB_REPOSITORY itself can't
+          # be overridden at the step level, hence the dedicated var.
+          RELEASE_TAGS_REPOSITORY: MetaMask/snaps
         run: |
           # Update the version in a package.json manifest file
           #

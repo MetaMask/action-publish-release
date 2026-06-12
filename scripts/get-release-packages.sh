@@ -37,6 +37,12 @@ len="${#toPublish}"
 
 workspaces=$(yarn workspaces list --verbose --json)
 
+# Repository to look up release tags in. Defaults to the current workflow's
+# repository; can be overridden via the RELEASE_TAGS_REPOSITORY env var
+# (used by the integration tests to point at a fixture repo, since GitHub
+# Actions does not allow overriding GITHUB_REPOSITORY at the step level).
+TAGS_REPOSITORY="${RELEASE_TAGS_REPOSITORY:-$GITHUB_REPOSITORY}"
+
 while read -r location name; do
   MANIFEST="$location/package.json"
   read -r PRIVATE CURRENT_PACKAGE_VERSION < <(jq --raw-output '.private, .version' "$MANIFEST" | xargs)
@@ -44,7 +50,7 @@ while read -r location name; do
     # Skip the package if a release tag already exists for its current
     # version. A non-existent tag (404) means this version has not been
     # released yet, so include it.
-    if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$name@$CURRENT_PACKAGE_VERSION" --silent 2>/dev/null; then
+    if ! gh api "repos/$TAGS_REPOSITORY/git/ref/tags/$name@$CURRENT_PACKAGE_VERSION" --silent 2>/dev/null; then
       toPublish+="\"$name\":{\"name\":"\"$name\"",\"path\":"\"$location\"",\"version\":"\"$CURRENT_PACKAGE_VERSION"\"},"
     fi
   fi
