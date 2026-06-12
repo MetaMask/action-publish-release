@@ -1950,284 +1950,6 @@ exports.validateChangelog = validateChangelog;
 
 /***/ }),
 
-/***/ 9417:
-/***/ ((module) => {
-
-"use strict";
-
-module.exports = balanced;
-function balanced(a, b, str) {
-  if (a instanceof RegExp) a = maybeMatch(a, str);
-  if (b instanceof RegExp) b = maybeMatch(b, str);
-
-  var r = range(a, b, str);
-
-  return r && {
-    start: r[0],
-    end: r[1],
-    pre: str.slice(0, r[0]),
-    body: str.slice(r[0] + a.length, r[1]),
-    post: str.slice(r[1] + b.length)
-  };
-}
-
-function maybeMatch(reg, str) {
-  var m = str.match(reg);
-  return m ? m[0] : null;
-}
-
-balanced.range = range;
-function range(a, b, str) {
-  var begs, beg, left, right, result;
-  var ai = str.indexOf(a);
-  var bi = str.indexOf(b, ai + 1);
-  var i = ai;
-
-  if (ai >= 0 && bi > 0) {
-    if(a===b) {
-      return [ai, bi];
-    }
-    begs = [];
-    left = str.length;
-
-    while (i >= 0 && !result) {
-      if (i == ai) {
-        begs.push(i);
-        ai = str.indexOf(a, i + 1);
-      } else if (begs.length == 1) {
-        result = [ begs.pop(), bi ];
-      } else {
-        beg = begs.pop();
-        if (beg < left) {
-          left = beg;
-          right = bi;
-        }
-
-        bi = str.indexOf(b, i + 1);
-      }
-
-      i = ai < bi && ai >= 0 ? ai : bi;
-    }
-
-    if (begs.length) {
-      result = [ left, right ];
-    }
-  }
-
-  return result;
-}
-
-
-/***/ }),
-
-/***/ 3717:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var concatMap = __nccwpck_require__(6891);
-var balanced = __nccwpck_require__(9417);
-
-module.exports = expandTop;
-
-var escSlash = '\0SLASH'+Math.random()+'\0';
-var escOpen = '\0OPEN'+Math.random()+'\0';
-var escClose = '\0CLOSE'+Math.random()+'\0';
-var escComma = '\0COMMA'+Math.random()+'\0';
-var escPeriod = '\0PERIOD'+Math.random()+'\0';
-
-function numeric(str) {
-  return parseInt(str, 10) == str
-    ? parseInt(str, 10)
-    : str.charCodeAt(0);
-}
-
-function escapeBraces(str) {
-  return str.split('\\\\').join(escSlash)
-            .split('\\{').join(escOpen)
-            .split('\\}').join(escClose)
-            .split('\\,').join(escComma)
-            .split('\\.').join(escPeriod);
-}
-
-function unescapeBraces(str) {
-  return str.split(escSlash).join('\\')
-            .split(escOpen).join('{')
-            .split(escClose).join('}')
-            .split(escComma).join(',')
-            .split(escPeriod).join('.');
-}
-
-
-// Basically just str.split(","), but handling cases
-// where we have nested braced sections, which should be
-// treated as individual members, like {a,{b,c},d}
-function parseCommaParts(str) {
-  if (!str)
-    return [''];
-
-  var parts = [];
-  var m = balanced('{', '}', str);
-
-  if (!m)
-    return str.split(',');
-
-  var pre = m.pre;
-  var body = m.body;
-  var post = m.post;
-  var p = pre.split(',');
-
-  p[p.length-1] += '{' + body + '}';
-  var postParts = parseCommaParts(post);
-  if (post.length) {
-    p[p.length-1] += postParts.shift();
-    p.push.apply(p, postParts);
-  }
-
-  parts.push.apply(parts, p);
-
-  return parts;
-}
-
-function expandTop(str) {
-  if (!str)
-    return [];
-
-  // I don't know why Bash 4.3 does this, but it does.
-  // Anything starting with {} will have the first two bytes preserved
-  // but *only* at the top level, so {},a}b will not expand to anything,
-  // but a{},b}c will be expanded to [a}c,abc].
-  // One could argue that this is a bug in Bash, but since the goal of
-  // this module is to match Bash's rules, we escape a leading {}
-  if (str.substr(0, 2) === '{}') {
-    str = '\\{\\}' + str.substr(2);
-  }
-
-  return expand(escapeBraces(str), true).map(unescapeBraces);
-}
-
-function identity(e) {
-  return e;
-}
-
-function embrace(str) {
-  return '{' + str + '}';
-}
-function isPadded(el) {
-  return /^-?0\d/.test(el);
-}
-
-function lte(i, y) {
-  return i <= y;
-}
-function gte(i, y) {
-  return i >= y;
-}
-
-function expand(str, isTop) {
-  var expansions = [];
-
-  var m = balanced('{', '}', str);
-  if (!m || /\$$/.test(m.pre)) return [str];
-
-  var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
-  var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
-  var isSequence = isNumericSequence || isAlphaSequence;
-  var isOptions = m.body.indexOf(',') >= 0;
-  if (!isSequence && !isOptions) {
-    // {a},b}
-    if (m.post.match(/,.*\}/)) {
-      str = m.pre + '{' + m.body + escClose + m.post;
-      return expand(str);
-    }
-    return [str];
-  }
-
-  var n;
-  if (isSequence) {
-    n = m.body.split(/\.\./);
-  } else {
-    n = parseCommaParts(m.body);
-    if (n.length === 1) {
-      // x{{a,b}}y ==> x{a}y x{b}y
-      n = expand(n[0], false).map(embrace);
-      if (n.length === 1) {
-        var post = m.post.length
-          ? expand(m.post, false)
-          : [''];
-        return post.map(function(p) {
-          return m.pre + n[0] + p;
-        });
-      }
-    }
-  }
-
-  // at this point, n is the parts, and we know it's not a comma set
-  // with a single entry.
-
-  // no need to expand pre, since it is guaranteed to be free of brace-sets
-  var pre = m.pre;
-  var post = m.post.length
-    ? expand(m.post, false)
-    : [''];
-
-  var N;
-
-  if (isSequence) {
-    var x = numeric(n[0]);
-    var y = numeric(n[1]);
-    var width = Math.max(n[0].length, n[1].length)
-    var incr = n.length == 3
-      ? Math.abs(numeric(n[2]))
-      : 1;
-    var test = lte;
-    var reverse = y < x;
-    if (reverse) {
-      incr *= -1;
-      test = gte;
-    }
-    var pad = n.some(isPadded);
-
-    N = [];
-
-    for (var i = x; test(i, y); i += incr) {
-      var c;
-      if (isAlphaSequence) {
-        c = String.fromCharCode(i);
-        if (c === '\\')
-          c = '';
-      } else {
-        c = String(i);
-        if (pad) {
-          var need = width - c.length;
-          if (need > 0) {
-            var z = new Array(need + 1).join('0');
-            if (i < 0)
-              c = '-' + z + c.slice(1);
-            else
-              c = z + c;
-          }
-        }
-      }
-      N.push(c);
-    }
-  } else {
-    N = concatMap(n, function(el) { return expand(el, false) });
-  }
-
-  for (var j = 0; j < N.length; j++) {
-    for (var k = 0; k < post.length; k++) {
-      var expansion = pre + N[j] + post[k];
-      if (!isTop || isSequence || expansion)
-        expansions.push(expansion);
-    }
-  }
-
-  return expansions;
-}
-
-
-
-/***/ }),
-
 /***/ 6891:
 /***/ ((module) => {
 
@@ -2552,7 +2274,7 @@ module.exports = readShebang;
 
 
 const path = __nccwpck_require__(1017);
-const which = __nccwpck_require__(4207);
+const which = __nccwpck_require__(9383);
 const getPathKey = __nccwpck_require__(539);
 
 function resolveCommandAttempt(parsed, withoutPathExt) {
@@ -2601,6 +2323,299 @@ function resolveCommand(parsed) {
 }
 
 module.exports = resolveCommand;
+
+
+/***/ }),
+
+/***/ 8267:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var fs = __nccwpck_require__(7147)
+var core
+if (process.platform === 'win32' || global.TESTING_WINDOWS) {
+  core = __nccwpck_require__(6813)
+} else {
+  core = __nccwpck_require__(8953)
+}
+
+module.exports = isexe
+isexe.sync = sync
+
+function isexe (path, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = {}
+  }
+
+  if (!cb) {
+    if (typeof Promise !== 'function') {
+      throw new TypeError('callback not provided')
+    }
+
+    return new Promise(function (resolve, reject) {
+      isexe(path, options || {}, function (er, is) {
+        if (er) {
+          reject(er)
+        } else {
+          resolve(is)
+        }
+      })
+    })
+  }
+
+  core(path, options || {}, function (er, is) {
+    // ignore EACCES because that just means we aren't allowed to run it
+    if (er) {
+      if (er.code === 'EACCES' || options && options.ignoreErrors) {
+        er = null
+        is = false
+      }
+    }
+    cb(er, is)
+  })
+}
+
+function sync (path, options) {
+  // my kingdom for a filtered catch
+  try {
+    return core.sync(path, options || {})
+  } catch (er) {
+    if (options && options.ignoreErrors || er.code === 'EACCES') {
+      return false
+    } else {
+      throw er
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 8953:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __nccwpck_require__(7147)
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), options)
+}
+
+function checkStat (stat, options) {
+  return stat.isFile() && checkMode(stat, options)
+}
+
+function checkMode (stat, options) {
+  var mod = stat.mode
+  var uid = stat.uid
+  var gid = stat.gid
+
+  var myUid = options.uid !== undefined ?
+    options.uid : process.getuid && process.getuid()
+  var myGid = options.gid !== undefined ?
+    options.gid : process.getgid && process.getgid()
+
+  var u = parseInt('100', 8)
+  var g = parseInt('010', 8)
+  var o = parseInt('001', 8)
+  var ug = u | g
+
+  var ret = (mod & o) ||
+    (mod & g) && gid === myGid ||
+    (mod & u) && uid === myUid ||
+    (mod & ug) && myUid === 0
+
+  return ret
+}
+
+
+/***/ }),
+
+/***/ 6813:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __nccwpck_require__(7147)
+
+function checkPathExt (path, options) {
+  var pathext = options.pathExt !== undefined ?
+    options.pathExt : process.env.PATHEXT
+
+  if (!pathext) {
+    return true
+  }
+
+  pathext = pathext.split(';')
+  if (pathext.indexOf('') !== -1) {
+    return true
+  }
+  for (var i = 0; i < pathext.length; i++) {
+    var p = pathext[i].toLowerCase()
+    if (p && path.substr(-p.length).toLowerCase() === p) {
+      return true
+    }
+  }
+  return false
+}
+
+function checkStat (stat, path, options) {
+  if (!stat.isSymbolicLink() && !stat.isFile()) {
+    return false
+  }
+  return checkPathExt(path, options)
+}
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, path, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), path, options)
+}
+
+
+/***/ }),
+
+/***/ 9383:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const isWindows = process.platform === 'win32' ||
+    process.env.OSTYPE === 'cygwin' ||
+    process.env.OSTYPE === 'msys'
+
+const path = __nccwpck_require__(1017)
+const COLON = isWindows ? ';' : ':'
+const isexe = __nccwpck_require__(8267)
+
+const getNotFoundError = (cmd) =>
+  Object.assign(new Error(`not found: ${cmd}`), { code: 'ENOENT' })
+
+const getPathInfo = (cmd, opt) => {
+  const colon = opt.colon || COLON
+
+  // If it has a slash, then we don't bother searching the pathenv.
+  // just check the file itself, and that's it.
+  const pathEnv = cmd.match(/\//) || isWindows && cmd.match(/\\/) ? ['']
+    : (
+      [
+        // windows always checks the cwd first
+        ...(isWindows ? [process.cwd()] : []),
+        ...(opt.path || process.env.PATH ||
+          /* istanbul ignore next: very unusual */ '').split(colon),
+      ]
+    )
+  const pathExtExe = isWindows
+    ? opt.pathExt || process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM'
+    : ''
+  const pathExt = isWindows ? pathExtExe.split(colon) : ['']
+
+  if (isWindows) {
+    if (cmd.indexOf('.') !== -1 && pathExt[0] !== '')
+      pathExt.unshift('')
+  }
+
+  return {
+    pathEnv,
+    pathExt,
+    pathExtExe,
+  }
+}
+
+const which = (cmd, opt, cb) => {
+  if (typeof opt === 'function') {
+    cb = opt
+    opt = {}
+  }
+  if (!opt)
+    opt = {}
+
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+  const found = []
+
+  const step = i => new Promise((resolve, reject) => {
+    if (i === pathEnv.length)
+      return opt.all && found.length ? resolve(found)
+        : reject(getNotFoundError(cmd))
+
+    const ppRaw = pathEnv[i]
+    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
+
+    const pCmd = path.join(pathPart, cmd)
+    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
+      : pCmd
+
+    resolve(subStep(p, i, 0))
+  })
+
+  const subStep = (p, i, ii) => new Promise((resolve, reject) => {
+    if (ii === pathExt.length)
+      return resolve(step(i + 1))
+    const ext = pathExt[ii]
+    isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
+      if (!er && is) {
+        if (opt.all)
+          found.push(p + ext)
+        else
+          return resolve(p + ext)
+      }
+      return resolve(subStep(p, i, ii + 1))
+    })
+  })
+
+  return cb ? step(0).then(res => cb(null, res), cb) : step(0)
+}
+
+const whichSync = (cmd, opt) => {
+  opt = opt || {}
+
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+  const found = []
+
+  for (let i = 0; i < pathEnv.length; i ++) {
+    const ppRaw = pathEnv[i]
+    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
+
+    const pCmd = path.join(pathPart, cmd)
+    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
+      : pCmd
+
+    for (let j = 0; j < pathExt.length; j ++) {
+      const cur = p + pathExt[j]
+      try {
+        const is = isexe.sync(cur, { pathExt: pathExtExe })
+        if (is) {
+          if (opt.all)
+            found.push(cur)
+          else
+            return cur
+        }
+      } catch (ex) {}
+    }
+  }
+
+  if (opt.all && found.length)
+    return found
+
+  if (opt.nothrow)
+    return null
+
+  throw getNotFoundError(cmd)
+}
+
+module.exports = which
+which.sync = whichSync
 
 
 /***/ }),
@@ -5992,509 +6007,6 @@ module.exports = isStream;
 
 /***/ }),
 
-/***/ 7126:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var fs = __nccwpck_require__(7147)
-var core
-if (process.platform === 'win32' || global.TESTING_WINDOWS) {
-  core = __nccwpck_require__(2001)
-} else {
-  core = __nccwpck_require__(9728)
-}
-
-module.exports = isexe
-isexe.sync = sync
-
-function isexe (path, options, cb) {
-  if (typeof options === 'function') {
-    cb = options
-    options = {}
-  }
-
-  if (!cb) {
-    if (typeof Promise !== 'function') {
-      throw new TypeError('callback not provided')
-    }
-
-    return new Promise(function (resolve, reject) {
-      isexe(path, options || {}, function (er, is) {
-        if (er) {
-          reject(er)
-        } else {
-          resolve(is)
-        }
-      })
-    })
-  }
-
-  core(path, options || {}, function (er, is) {
-    // ignore EACCES because that just means we aren't allowed to run it
-    if (er) {
-      if (er.code === 'EACCES' || options && options.ignoreErrors) {
-        er = null
-        is = false
-      }
-    }
-    cb(er, is)
-  })
-}
-
-function sync (path, options) {
-  // my kingdom for a filtered catch
-  try {
-    return core.sync(path, options || {})
-  } catch (er) {
-    if (options && options.ignoreErrors || er.code === 'EACCES') {
-      return false
-    } else {
-      throw er
-    }
-  }
-}
-
-
-/***/ }),
-
-/***/ 9728:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = isexe
-isexe.sync = sync
-
-var fs = __nccwpck_require__(7147)
-
-function isexe (path, options, cb) {
-  fs.stat(path, function (er, stat) {
-    cb(er, er ? false : checkStat(stat, options))
-  })
-}
-
-function sync (path, options) {
-  return checkStat(fs.statSync(path), options)
-}
-
-function checkStat (stat, options) {
-  return stat.isFile() && checkMode(stat, options)
-}
-
-function checkMode (stat, options) {
-  var mod = stat.mode
-  var uid = stat.uid
-  var gid = stat.gid
-
-  var myUid = options.uid !== undefined ?
-    options.uid : process.getuid && process.getuid()
-  var myGid = options.gid !== undefined ?
-    options.gid : process.getgid && process.getgid()
-
-  var u = parseInt('100', 8)
-  var g = parseInt('010', 8)
-  var o = parseInt('001', 8)
-  var ug = u | g
-
-  var ret = (mod & o) ||
-    (mod & g) && gid === myGid ||
-    (mod & u) && uid === myUid ||
-    (mod & ug) && myUid === 0
-
-  return ret
-}
-
-
-/***/ }),
-
-/***/ 2001:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = isexe
-isexe.sync = sync
-
-var fs = __nccwpck_require__(7147)
-
-function checkPathExt (path, options) {
-  var pathext = options.pathExt !== undefined ?
-    options.pathExt : process.env.PATHEXT
-
-  if (!pathext) {
-    return true
-  }
-
-  pathext = pathext.split(';')
-  if (pathext.indexOf('') !== -1) {
-    return true
-  }
-  for (var i = 0; i < pathext.length; i++) {
-    var p = pathext[i].toLowerCase()
-    if (p && path.substr(-p.length).toLowerCase() === p) {
-      return true
-    }
-  }
-  return false
-}
-
-function checkStat (stat, path, options) {
-  if (!stat.isSymbolicLink() && !stat.isFile()) {
-    return false
-  }
-  return checkPathExt(path, options)
-}
-
-function isexe (path, options, cb) {
-  fs.stat(path, function (er, stat) {
-    cb(er, er ? false : checkStat(stat, path, options))
-  })
-}
-
-function sync (path, options) {
-  return checkStat(fs.statSync(path), path, options)
-}
-
-
-/***/ }),
-
-/***/ 7129:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-// A linked list to keep track of recently-used-ness
-const Yallist = __nccwpck_require__(665)
-
-const MAX = Symbol('max')
-const LENGTH = Symbol('length')
-const LENGTH_CALCULATOR = Symbol('lengthCalculator')
-const ALLOW_STALE = Symbol('allowStale')
-const MAX_AGE = Symbol('maxAge')
-const DISPOSE = Symbol('dispose')
-const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
-const LRU_LIST = Symbol('lruList')
-const CACHE = Symbol('cache')
-const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
-
-const naiveLength = () => 1
-
-// lruList is a yallist where the head is the youngest
-// item, and the tail is the oldest.  the list contains the Hit
-// objects as the entries.
-// Each Hit object has a reference to its Yallist.Node.  This
-// never changes.
-//
-// cache is a Map (or PseudoMap) that matches the keys to
-// the Yallist.Node object.
-class LRUCache {
-  constructor (options) {
-    if (typeof options === 'number')
-      options = { max: options }
-
-    if (!options)
-      options = {}
-
-    if (options.max && (typeof options.max !== 'number' || options.max < 0))
-      throw new TypeError('max must be a non-negative number')
-    // Kind of weird to have a default max of Infinity, but oh well.
-    const max = this[MAX] = options.max || Infinity
-
-    const lc = options.length || naiveLength
-    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
-    this[ALLOW_STALE] = options.stale || false
-    if (options.maxAge && typeof options.maxAge !== 'number')
-      throw new TypeError('maxAge must be a number')
-    this[MAX_AGE] = options.maxAge || 0
-    this[DISPOSE] = options.dispose
-    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
-    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
-    this.reset()
-  }
-
-  // resize the cache when the max changes.
-  set max (mL) {
-    if (typeof mL !== 'number' || mL < 0)
-      throw new TypeError('max must be a non-negative number')
-
-    this[MAX] = mL || Infinity
-    trim(this)
-  }
-  get max () {
-    return this[MAX]
-  }
-
-  set allowStale (allowStale) {
-    this[ALLOW_STALE] = !!allowStale
-  }
-  get allowStale () {
-    return this[ALLOW_STALE]
-  }
-
-  set maxAge (mA) {
-    if (typeof mA !== 'number')
-      throw new TypeError('maxAge must be a non-negative number')
-
-    this[MAX_AGE] = mA
-    trim(this)
-  }
-  get maxAge () {
-    return this[MAX_AGE]
-  }
-
-  // resize the cache when the lengthCalculator changes.
-  set lengthCalculator (lC) {
-    if (typeof lC !== 'function')
-      lC = naiveLength
-
-    if (lC !== this[LENGTH_CALCULATOR]) {
-      this[LENGTH_CALCULATOR] = lC
-      this[LENGTH] = 0
-      this[LRU_LIST].forEach(hit => {
-        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
-        this[LENGTH] += hit.length
-      })
-    }
-    trim(this)
-  }
-  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
-
-  get length () { return this[LENGTH] }
-  get itemCount () { return this[LRU_LIST].length }
-
-  rforEach (fn, thisp) {
-    thisp = thisp || this
-    for (let walker = this[LRU_LIST].tail; walker !== null;) {
-      const prev = walker.prev
-      forEachStep(this, fn, walker, thisp)
-      walker = prev
-    }
-  }
-
-  forEach (fn, thisp) {
-    thisp = thisp || this
-    for (let walker = this[LRU_LIST].head; walker !== null;) {
-      const next = walker.next
-      forEachStep(this, fn, walker, thisp)
-      walker = next
-    }
-  }
-
-  keys () {
-    return this[LRU_LIST].toArray().map(k => k.key)
-  }
-
-  values () {
-    return this[LRU_LIST].toArray().map(k => k.value)
-  }
-
-  reset () {
-    if (this[DISPOSE] &&
-        this[LRU_LIST] &&
-        this[LRU_LIST].length) {
-      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
-    }
-
-    this[CACHE] = new Map() // hash of items by key
-    this[LRU_LIST] = new Yallist() // list of items in order of use recency
-    this[LENGTH] = 0 // length of items in the list
-  }
-
-  dump () {
-    return this[LRU_LIST].map(hit =>
-      isStale(this, hit) ? false : {
-        k: hit.key,
-        v: hit.value,
-        e: hit.now + (hit.maxAge || 0)
-      }).toArray().filter(h => h)
-  }
-
-  dumpLru () {
-    return this[LRU_LIST]
-  }
-
-  set (key, value, maxAge) {
-    maxAge = maxAge || this[MAX_AGE]
-
-    if (maxAge && typeof maxAge !== 'number')
-      throw new TypeError('maxAge must be a number')
-
-    const now = maxAge ? Date.now() : 0
-    const len = this[LENGTH_CALCULATOR](value, key)
-
-    if (this[CACHE].has(key)) {
-      if (len > this[MAX]) {
-        del(this, this[CACHE].get(key))
-        return false
-      }
-
-      const node = this[CACHE].get(key)
-      const item = node.value
-
-      // dispose of the old one before overwriting
-      // split out into 2 ifs for better coverage tracking
-      if (this[DISPOSE]) {
-        if (!this[NO_DISPOSE_ON_SET])
-          this[DISPOSE](key, item.value)
-      }
-
-      item.now = now
-      item.maxAge = maxAge
-      item.value = value
-      this[LENGTH] += len - item.length
-      item.length = len
-      this.get(key)
-      trim(this)
-      return true
-    }
-
-    const hit = new Entry(key, value, len, now, maxAge)
-
-    // oversized objects fall out of cache automatically.
-    if (hit.length > this[MAX]) {
-      if (this[DISPOSE])
-        this[DISPOSE](key, value)
-
-      return false
-    }
-
-    this[LENGTH] += hit.length
-    this[LRU_LIST].unshift(hit)
-    this[CACHE].set(key, this[LRU_LIST].head)
-    trim(this)
-    return true
-  }
-
-  has (key) {
-    if (!this[CACHE].has(key)) return false
-    const hit = this[CACHE].get(key).value
-    return !isStale(this, hit)
-  }
-
-  get (key) {
-    return get(this, key, true)
-  }
-
-  peek (key) {
-    return get(this, key, false)
-  }
-
-  pop () {
-    const node = this[LRU_LIST].tail
-    if (!node)
-      return null
-
-    del(this, node)
-    return node.value
-  }
-
-  del (key) {
-    del(this, this[CACHE].get(key))
-  }
-
-  load (arr) {
-    // reset the cache
-    this.reset()
-
-    const now = Date.now()
-    // A previous serialized cache has the most recent items first
-    for (let l = arr.length - 1; l >= 0; l--) {
-      const hit = arr[l]
-      const expiresAt = hit.e || 0
-      if (expiresAt === 0)
-        // the item was created without expiration in a non aged cache
-        this.set(hit.k, hit.v)
-      else {
-        const maxAge = expiresAt - now
-        // dont add already expired items
-        if (maxAge > 0) {
-          this.set(hit.k, hit.v, maxAge)
-        }
-      }
-    }
-  }
-
-  prune () {
-    this[CACHE].forEach((value, key) => get(this, key, false))
-  }
-}
-
-const get = (self, key, doUse) => {
-  const node = self[CACHE].get(key)
-  if (node) {
-    const hit = node.value
-    if (isStale(self, hit)) {
-      del(self, node)
-      if (!self[ALLOW_STALE])
-        return undefined
-    } else {
-      if (doUse) {
-        if (self[UPDATE_AGE_ON_GET])
-          node.value.now = Date.now()
-        self[LRU_LIST].unshiftNode(node)
-      }
-    }
-    return hit.value
-  }
-}
-
-const isStale = (self, hit) => {
-  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
-    return false
-
-  const diff = Date.now() - hit.now
-  return hit.maxAge ? diff > hit.maxAge
-    : self[MAX_AGE] && (diff > self[MAX_AGE])
-}
-
-const trim = self => {
-  if (self[LENGTH] > self[MAX]) {
-    for (let walker = self[LRU_LIST].tail;
-      self[LENGTH] > self[MAX] && walker !== null;) {
-      // We know that we're about to delete this one, and also
-      // what the next least recently used key will be, so just
-      // go ahead and set it now.
-      const prev = walker.prev
-      del(self, walker)
-      walker = prev
-    }
-  }
-}
-
-const del = (self, node) => {
-  if (node) {
-    const hit = node.value
-    if (self[DISPOSE])
-      self[DISPOSE](hit.key, hit.value)
-
-    self[LENGTH] -= hit.length
-    self[CACHE].delete(hit.key)
-    self[LRU_LIST].removeNode(node)
-  }
-}
-
-class Entry {
-  constructor (key, value, length, now, maxAge) {
-    this.key = key
-    this.value = value
-    this.length = length
-    this.now = now
-    this.maxAge = maxAge || 0
-  }
-}
-
-const forEachStep = (self, fn, node, thisp) => {
-  let hit = node.value
-  if (isStale(self, hit)) {
-    del(self, node)
-    if (!self[ALLOW_STALE])
-      hit = undefined
-  }
-  if (hit)
-    fn.call(thisp, hit.value, hit.key, self)
-}
-
-module.exports = LRUCache
-
-
-/***/ }),
-
 /***/ 2621:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -6577,7 +6089,7 @@ try {
 } catch (er) {}
 
 var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {}
-var expand = __nccwpck_require__(3717)
+var expand = __nccwpck_require__(8184)
 
 var plTypes = {
   '!': { open: '(?:(?!(?:', close: '))[^/]*?)'},
@@ -7495,6 +7007,284 @@ function regExpEscape (s) {
 
 /***/ }),
 
+/***/ 844:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = balanced;
+function balanced(a, b, str) {
+  if (a instanceof RegExp) a = maybeMatch(a, str);
+  if (b instanceof RegExp) b = maybeMatch(b, str);
+
+  var r = range(a, b, str);
+
+  return r && {
+    start: r[0],
+    end: r[1],
+    pre: str.slice(0, r[0]),
+    body: str.slice(r[0] + a.length, r[1]),
+    post: str.slice(r[1] + b.length)
+  };
+}
+
+function maybeMatch(reg, str) {
+  var m = str.match(reg);
+  return m ? m[0] : null;
+}
+
+balanced.range = range;
+function range(a, b, str) {
+  var begs, beg, left, right, result;
+  var ai = str.indexOf(a);
+  var bi = str.indexOf(b, ai + 1);
+  var i = ai;
+
+  if (ai >= 0 && bi > 0) {
+    if(a===b) {
+      return [ai, bi];
+    }
+    begs = [];
+    left = str.length;
+
+    while (i >= 0 && !result) {
+      if (i == ai) {
+        begs.push(i);
+        ai = str.indexOf(a, i + 1);
+      } else if (begs.length == 1) {
+        result = [ begs.pop(), bi ];
+      } else {
+        beg = begs.pop();
+        if (beg < left) {
+          left = beg;
+          right = bi;
+        }
+
+        bi = str.indexOf(b, i + 1);
+      }
+
+      i = ai < bi && ai >= 0 ? ai : bi;
+    }
+
+    if (begs.length) {
+      result = [ left, right ];
+    }
+  }
+
+  return result;
+}
+
+
+/***/ }),
+
+/***/ 8184:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var concatMap = __nccwpck_require__(6891);
+var balanced = __nccwpck_require__(844);
+
+module.exports = expandTop;
+
+var escSlash = '\0SLASH'+Math.random()+'\0';
+var escOpen = '\0OPEN'+Math.random()+'\0';
+var escClose = '\0CLOSE'+Math.random()+'\0';
+var escComma = '\0COMMA'+Math.random()+'\0';
+var escPeriod = '\0PERIOD'+Math.random()+'\0';
+
+function numeric(str) {
+  return parseInt(str, 10) == str
+    ? parseInt(str, 10)
+    : str.charCodeAt(0);
+}
+
+function escapeBraces(str) {
+  return str.split('\\\\').join(escSlash)
+            .split('\\{').join(escOpen)
+            .split('\\}').join(escClose)
+            .split('\\,').join(escComma)
+            .split('\\.').join(escPeriod);
+}
+
+function unescapeBraces(str) {
+  return str.split(escSlash).join('\\')
+            .split(escOpen).join('{')
+            .split(escClose).join('}')
+            .split(escComma).join(',')
+            .split(escPeriod).join('.');
+}
+
+
+// Basically just str.split(","), but handling cases
+// where we have nested braced sections, which should be
+// treated as individual members, like {a,{b,c},d}
+function parseCommaParts(str) {
+  if (!str)
+    return [''];
+
+  var parts = [];
+  var m = balanced('{', '}', str);
+
+  if (!m)
+    return str.split(',');
+
+  var pre = m.pre;
+  var body = m.body;
+  var post = m.post;
+  var p = pre.split(',');
+
+  p[p.length-1] += '{' + body + '}';
+  var postParts = parseCommaParts(post);
+  if (post.length) {
+    p[p.length-1] += postParts.shift();
+    p.push.apply(p, postParts);
+  }
+
+  parts.push.apply(parts, p);
+
+  return parts;
+}
+
+function expandTop(str) {
+  if (!str)
+    return [];
+
+  // I don't know why Bash 4.3 does this, but it does.
+  // Anything starting with {} will have the first two bytes preserved
+  // but *only* at the top level, so {},a}b will not expand to anything,
+  // but a{},b}c will be expanded to [a}c,abc].
+  // One could argue that this is a bug in Bash, but since the goal of
+  // this module is to match Bash's rules, we escape a leading {}
+  if (str.substr(0, 2) === '{}') {
+    str = '\\{\\}' + str.substr(2);
+  }
+
+  return expand(escapeBraces(str), true).map(unescapeBraces);
+}
+
+function identity(e) {
+  return e;
+}
+
+function embrace(str) {
+  return '{' + str + '}';
+}
+function isPadded(el) {
+  return /^-?0\d/.test(el);
+}
+
+function lte(i, y) {
+  return i <= y;
+}
+function gte(i, y) {
+  return i >= y;
+}
+
+function expand(str, isTop) {
+  var expansions = [];
+
+  var m = balanced('{', '}', str);
+  if (!m || /\$$/.test(m.pre)) return [str];
+
+  var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
+  var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
+  var isSequence = isNumericSequence || isAlphaSequence;
+  var isOptions = m.body.indexOf(',') >= 0;
+  if (!isSequence && !isOptions) {
+    // {a},b}
+    if (m.post.match(/,.*\}/)) {
+      str = m.pre + '{' + m.body + escClose + m.post;
+      return expand(str);
+    }
+    return [str];
+  }
+
+  var n;
+  if (isSequence) {
+    n = m.body.split(/\.\./);
+  } else {
+    n = parseCommaParts(m.body);
+    if (n.length === 1) {
+      // x{{a,b}}y ==> x{a}y x{b}y
+      n = expand(n[0], false).map(embrace);
+      if (n.length === 1) {
+        var post = m.post.length
+          ? expand(m.post, false)
+          : [''];
+        return post.map(function(p) {
+          return m.pre + n[0] + p;
+        });
+      }
+    }
+  }
+
+  // at this point, n is the parts, and we know it's not a comma set
+  // with a single entry.
+
+  // no need to expand pre, since it is guaranteed to be free of brace-sets
+  var pre = m.pre;
+  var post = m.post.length
+    ? expand(m.post, false)
+    : [''];
+
+  var N;
+
+  if (isSequence) {
+    var x = numeric(n[0]);
+    var y = numeric(n[1]);
+    var width = Math.max(n[0].length, n[1].length)
+    var incr = n.length == 3
+      ? Math.abs(numeric(n[2]))
+      : 1;
+    var test = lte;
+    var reverse = y < x;
+    if (reverse) {
+      incr *= -1;
+      test = gte;
+    }
+    var pad = n.some(isPadded);
+
+    N = [];
+
+    for (var i = x; test(i, y); i += incr) {
+      var c;
+      if (isAlphaSequence) {
+        c = String.fromCharCode(i);
+        if (c === '\\')
+          c = '';
+      } else {
+        c = String(i);
+        if (pad) {
+          var need = width - c.length;
+          if (need > 0) {
+            var z = new Array(need + 1).join('0');
+            if (i < 0)
+              c = '-' + z + c.slice(1);
+            else
+              c = z + c;
+          }
+        }
+      }
+      N.push(c);
+    }
+  } else {
+    N = concatMap(n, function(el) { return expand(el, false) });
+  }
+
+  for (var j = 0; j < N.length; j++) {
+    for (var k = 0; k < post.length; k++) {
+      var expansion = pre + N[j] + post[k];
+      if (!isTop || isSequence || expansion)
+        expansions.push(expansion);
+    }
+  }
+
+  return expansions;
+}
+
+
+
+/***/ }),
+
 /***/ 502:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -7706,12 +7496,16 @@ module.exports["default"] = pathKey;
 /***/ 1532:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const ANY = Symbol('SemVer ANY')
 // hoisted class for cyclic dependency
 class Comparator {
   static get ANY () {
     return ANY
   }
+
   constructor (comp, options) {
     options = parseOptions(options)
 
@@ -7723,6 +7517,7 @@ class Comparator {
       }
     }
 
+    comp = comp.trim().split(/\s+/).join(' ')
     debug('comparator', comp, options)
     this.options = options
     this.loose = !!options.loose
@@ -7785,13 +7580,6 @@ class Comparator {
       throw new TypeError('a Comparator is required')
     }
 
-    if (!options || typeof options !== 'object') {
-      options = {
-        loose: !!options,
-        includePrerelease: false
-      }
-    }
-
     if (this.operator === '') {
       if (this.value === '') {
         return true
@@ -7804,39 +7592,50 @@ class Comparator {
       return new Range(this.value, options).test(comp.semver)
     }
 
-    const sameDirectionIncreasing =
-      (this.operator === '>=' || this.operator === '>') &&
-      (comp.operator === '>=' || comp.operator === '>')
-    const sameDirectionDecreasing =
-      (this.operator === '<=' || this.operator === '<') &&
-      (comp.operator === '<=' || comp.operator === '<')
-    const sameSemVer = this.semver.version === comp.semver.version
-    const differentDirectionsInclusive =
-      (this.operator === '>=' || this.operator === '<=') &&
-      (comp.operator === '>=' || comp.operator === '<=')
-    const oppositeDirectionsLessThan =
-      cmp(this.semver, '<', comp.semver, options) &&
-      (this.operator === '>=' || this.operator === '>') &&
-        (comp.operator === '<=' || comp.operator === '<')
-    const oppositeDirectionsGreaterThan =
-      cmp(this.semver, '>', comp.semver, options) &&
-      (this.operator === '<=' || this.operator === '<') &&
-        (comp.operator === '>=' || comp.operator === '>')
+    options = parseOptions(options)
 
-    return (
-      sameDirectionIncreasing ||
-      sameDirectionDecreasing ||
-      (sameSemVer && differentDirectionsInclusive) ||
-      oppositeDirectionsLessThan ||
-      oppositeDirectionsGreaterThan
-    )
+    // Special cases where nothing can possibly be lower
+    if (options.includePrerelease &&
+      (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0')) {
+      return false
+    }
+    if (!options.includePrerelease &&
+      (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0'))) {
+      return false
+    }
+
+    // Same direction increasing (> or >=)
+    if (this.operator.startsWith('>') && comp.operator.startsWith('>')) {
+      return true
+    }
+    // Same direction decreasing (< or <=)
+    if (this.operator.startsWith('<') && comp.operator.startsWith('<')) {
+      return true
+    }
+    // same SemVer and both sides are inclusive (<= or >=)
+    if (
+      (this.semver.version === comp.semver.version) &&
+      this.operator.includes('=') && comp.operator.includes('=')) {
+      return true
+    }
+    // opposite directions less than
+    if (cmp(this.semver, '<', comp.semver, options) &&
+      this.operator.startsWith('>') && comp.operator.startsWith('<')) {
+      return true
+    }
+    // opposite directions greater than
+    if (cmp(this.semver, '>', comp.semver, options) &&
+      this.operator.startsWith('<') && comp.operator.startsWith('>')) {
+      return true
+    }
+    return false
   }
 }
 
 module.exports = Comparator
 
 const parseOptions = __nccwpck_require__(785)
-const {re, t} = __nccwpck_require__(9523)
+const { safeRe: re, t } = __nccwpck_require__(9523)
 const cmp = __nccwpck_require__(5098)
 const debug = __nccwpck_require__(427)
 const SemVer = __nccwpck_require__(8088)
@@ -7847,6 +7646,11 @@ const Range = __nccwpck_require__(9828)
 
 /***/ 9828:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const SPACE_CHARACTERS = /\s+/g
 
 // hoisted class for cyclic dependency
 class Range {
@@ -7868,7 +7672,7 @@ class Range {
       // just put it in the set and return
       this.raw = range.value
       this.set = [[range]]
-      this.format()
+      this.formatted = undefined
       return this
     }
 
@@ -7876,19 +7680,23 @@ class Range {
     this.loose = !!options.loose
     this.includePrerelease = !!options.includePrerelease
 
-    // First, split based on boolean or ||
-    this.raw = range
-    this.set = range
-      .split(/\s*\|\|\s*/)
+    // First reduce all whitespace as much as possible so we do not have to rely
+    // on potentially slow regexes like \s*. This is then stored and used for
+    // future error messages as well.
+    this.raw = range.trim().replace(SPACE_CHARACTERS, ' ')
+
+    // First, split on ||
+    this.set = this.raw
+      .split('||')
       // map the range to a 2d array of comparators
-      .map(range => this.parseRange(range.trim()))
+      .map(r => this.parseRange(r.trim()))
       // throw out any comparator lists that are empty
       // this generally means that it was not a valid range, which is allowed
       // in loose mode, but will still throw if the WHOLE range is invalid.
       .filter(c => c.length)
 
     if (!this.set.length) {
-      throw new TypeError(`Invalid SemVer Range: ${range}`)
+      throw new TypeError(`Invalid SemVer Range: ${this.raw}`)
     }
 
     // if we have any that are not the null set, throw out null sets.
@@ -7896,9 +7704,9 @@ class Range {
       // keep the first one, in case they're all null sets
       const first = this.set[0]
       this.set = this.set.filter(c => !isNullSet(c[0]))
-      if (this.set.length === 0)
+      if (this.set.length === 0) {
         this.set = [first]
-      else if (this.set.length > 1) {
+      } else if (this.set.length > 1) {
         // if we have any that are *, then the range is just *
         for (const c of this.set) {
           if (c.length === 1 && isAny(c[0])) {
@@ -7909,16 +7717,29 @@ class Range {
       }
     }
 
-    this.format()
+    this.formatted = undefined
+  }
+
+  get range () {
+    if (this.formatted === undefined) {
+      this.formatted = ''
+      for (let i = 0; i < this.set.length; i++) {
+        if (i > 0) {
+          this.formatted += '||'
+        }
+        const comps = this.set[i]
+        for (let k = 0; k < comps.length; k++) {
+          if (k > 0) {
+            this.formatted += ' '
+          }
+          this.formatted += comps[k].toString().trim()
+        }
+      }
+    }
+    return this.formatted
   }
 
   format () {
-    this.range = this.set
-      .map((comps) => {
-        return comps.join(' ').trim()
-      })
-      .join('||')
-      .trim()
     return this.range
   }
 
@@ -7927,61 +7748,72 @@ class Range {
   }
 
   parseRange (range) {
-    range = range.trim()
+    // strip build metadata so it can't bleed into the version
+    range = range.replace(BUILDSTRIPRE, '')
 
     // memoize range parsing for performance.
     // this is a very hot path, and fully deterministic.
-    const memoOpts = Object.keys(this.options).join(',')
-    const memoKey = `parseRange:${memoOpts}:${range}`
+    const memoOpts =
+      (this.options.includePrerelease && FLAG_INCLUDE_PRERELEASE) |
+      (this.options.loose && FLAG_LOOSE)
+    const memoKey = memoOpts + ':' + range
     const cached = cache.get(memoKey)
-    if (cached)
+    if (cached) {
       return cached
+    }
 
     const loose = this.options.loose
     // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
     const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE]
     range = range.replace(hr, hyphenReplace(this.options.includePrerelease))
     debug('hyphen replace', range)
+
     // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
     range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace)
-    debug('comparator trim', range, re[t.COMPARATORTRIM])
+    debug('comparator trim', range)
 
     // `~ 1.2.3` => `~1.2.3`
     range = range.replace(re[t.TILDETRIM], tildeTrimReplace)
+    debug('tilde trim', range)
 
     // `^ 1.2.3` => `^1.2.3`
     range = range.replace(re[t.CARETTRIM], caretTrimReplace)
-
-    // normalize spaces
-    range = range.split(/\s+/).join(' ')
+    debug('caret trim', range)
 
     // At this point, the range is completely trimmed and
     // ready to be split into comparators.
 
-    const compRe = loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
-    const rangeList = range
+    let rangeList = range
       .split(' ')
       .map(comp => parseComparator(comp, this.options))
       .join(' ')
       .split(/\s+/)
       // >=0.0.0 is equivalent to *
       .map(comp => replaceGTE0(comp, this.options))
+
+    if (loose) {
       // in loose mode, throw out any that are not valid comparators
-      .filter(this.options.loose ? comp => !!comp.match(compRe) : () => true)
-      .map(comp => new Comparator(comp, this.options))
+      rangeList = rangeList.filter(comp => {
+        debug('loose invalid filter', comp, this.options)
+        return !!comp.match(re[t.COMPARATORLOOSE])
+      })
+    }
+    debug('range list', rangeList)
 
     // if any comparators are the null set, then replace with JUST null set
     // if more than one comparator, remove any * comparators
     // also, don't include the same comparator more than once
-    const l = rangeList.length
     const rangeMap = new Map()
-    for (const comp of rangeList) {
-      if (isNullSet(comp))
+    const comparators = rangeList.map(comp => new Comparator(comp, this.options))
+    for (const comp of comparators) {
+      if (isNullSet(comp)) {
         return [comp]
+      }
       rangeMap.set(comp.value, comp)
     }
-    if (rangeMap.size > 1 && rangeMap.has(''))
+    if (rangeMap.size > 1 && rangeMap.has('')) {
       rangeMap.delete('')
+    }
 
     const result = [...rangeMap.values()]
     cache.set(memoKey, result)
@@ -8032,22 +7864,28 @@ class Range {
     return false
   }
 }
+
 module.exports = Range
 
-const LRU = __nccwpck_require__(7129)
-const cache = new LRU({ max: 1000 })
+const LRU = __nccwpck_require__(5339)
+const cache = new LRU()
 
 const parseOptions = __nccwpck_require__(785)
 const Comparator = __nccwpck_require__(1532)
 const debug = __nccwpck_require__(427)
 const SemVer = __nccwpck_require__(8088)
 const {
-  re,
+  safeRe: re,
+  src,
   t,
   comparatorTrimReplace,
   tildeTrimReplace,
-  caretTrimReplace
+  caretTrimReplace,
 } = __nccwpck_require__(9523)
+const { FLAG_INCLUDE_PRERELEASE, FLAG_LOOSE } = __nccwpck_require__(2293)
+
+// unbounded global build-metadata stripper used by parseRange
+const BUILDSTRIPRE = new RegExp(src[t.BUILD], 'g')
 
 const isNullSet = c => c.value === '<0.0.0-0'
 const isAny = c => c.value === ''
@@ -8074,6 +7912,7 @@ const isSatisfiable = (comparators, options) => {
 // already replaced the hyphen ranges
 // turn into a set of JUST comparators.
 const parseComparator = (comp, options) => {
+  comp = comp.replace(re[t.BUILD], '')
   debug('comp', comp, options)
   comp = replaceCarets(comp, options)
   debug('caret', comp)
@@ -8094,10 +7933,14 @@ const isX = id => !id || id.toLowerCase() === 'x' || id === '*'
 // ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
 // ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
 // ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
-const replaceTildes = (comp, options) =>
-  comp.trim().split(/\s+/).map((comp) => {
-    return replaceTilde(comp, options)
-  }).join(' ')
+// ~0.0.1 --> >=0.0.1 <0.1.0-0
+const replaceTildes = (comp, options) => {
+  return comp
+    .trim()
+    .split(/\s+/)
+    .map((c) => replaceTilde(c, options))
+    .join(' ')
+}
 
 const replaceTilde = (comp, options) => {
   const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE]
@@ -8133,10 +7976,15 @@ const replaceTilde = (comp, options) => {
 // ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
 // ^1.2.3 --> >=1.2.3 <2.0.0-0
 // ^1.2.0 --> >=1.2.0 <2.0.0-0
-const replaceCarets = (comp, options) =>
-  comp.trim().split(/\s+/).map((comp) => {
-    return replaceCaret(comp, options)
-  }).join(' ')
+// ^0.0.1 --> >=0.0.1 <0.0.2-0
+// ^0.1.0 --> >=0.1.0 <0.2.0-0
+const replaceCarets = (comp, options) => {
+  return comp
+    .trim()
+    .split(/\s+/)
+    .map((c) => replaceCaret(c, options))
+    .join(' ')
+}
 
 const replaceCaret = (comp, options) => {
   debug('caret', comp, options)
@@ -8175,10 +8023,10 @@ const replaceCaret = (comp, options) => {
       if (M === '0') {
         if (m === '0') {
           ret = `>=${M}.${m}.${p
-          }${z} <${M}.${m}.${+p + 1}-0`
+          } <${M}.${m}.${+p + 1}-0`
         } else {
           ret = `>=${M}.${m}.${p
-          }${z} <${M}.${+m + 1}.0-0`
+          } <${M}.${+m + 1}.0-0`
         }
       } else {
         ret = `>=${M}.${m}.${p
@@ -8193,9 +8041,10 @@ const replaceCaret = (comp, options) => {
 
 const replaceXRanges = (comp, options) => {
   debug('replaceXRanges', comp, options)
-  return comp.split(/\s+/).map((comp) => {
-    return replaceXRange(comp, options)
-  }).join(' ')
+  return comp
+    .split(/\s+/)
+    .map((c) => replaceXRange(c, options))
+    .join(' ')
 }
 
 const replaceXRange = (comp, options) => {
@@ -8255,8 +8104,9 @@ const replaceXRange = (comp, options) => {
         }
       }
 
-      if (gtlt === '<')
+      if (gtlt === '<') {
         pr = '-0'
+      }
 
       ret = `${gtlt + M}.${m}.${p}${pr}`
     } else if (xm) {
@@ -8277,12 +8127,15 @@ const replaceXRange = (comp, options) => {
 const replaceStars = (comp, options) => {
   debug('replaceStars', comp, options)
   // Looseness is ignored here.  star is always as loose as it gets!
-  return comp.trim().replace(re[t.STAR], '')
+  return comp
+    .trim()
+    .replace(re[t.STAR], '')
 }
 
 const replaceGTE0 = (comp, options) => {
   debug('replaceGTE0', comp, options)
-  return comp.trim()
+  return comp
+    .trim()
     .replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], '')
 }
 
@@ -8291,9 +8144,10 @@ const replaceGTE0 = (comp, options) => {
 // 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
 // 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
 // 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+// TODO build?
 const hyphenReplace = incPr => ($0,
   from, fM, fm, fp, fpr, fb,
-  to, tM, tm, tp, tpr, tb) => {
+  to, tM, tm, tp, tpr) => {
   if (isX(fM)) {
     from = ''
   } else if (isX(fm)) {
@@ -8320,7 +8174,7 @@ const hyphenReplace = incPr => ($0,
     to = `<=${to}`
   }
 
-  return (`${from} ${to}`).trim()
+  return `${from} ${to}`.trim()
 }
 
 const testSet = (set, version, options) => {
@@ -8365,25 +8219,44 @@ const testSet = (set, version, options) => {
 /***/ 8088:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const debug = __nccwpck_require__(427)
 const { MAX_LENGTH, MAX_SAFE_INTEGER } = __nccwpck_require__(2293)
-const { re, t } = __nccwpck_require__(9523)
+const { safeRe: re, t } = __nccwpck_require__(9523)
 
 const parseOptions = __nccwpck_require__(785)
 const { compareIdentifiers } = __nccwpck_require__(2463)
+
+const isPrereleaseIdentifier = (prerelease, identifier) => {
+  const identifiers = identifier.split('.')
+  if (identifiers.length > prerelease.length) {
+    return false
+  }
+
+  for (let i = 0; i < identifiers.length; i++) {
+    if (compareIdentifiers(prerelease[i], identifiers[i]) !== 0) {
+      return false
+    }
+  }
+
+  return true
+}
+
 class SemVer {
   constructor (version, options) {
     options = parseOptions(options)
 
     if (version instanceof SemVer) {
       if (version.loose === !!options.loose &&
-          version.includePrerelease === !!options.includePrerelease) {
+        version.includePrerelease === !!options.includePrerelease) {
         return version
       } else {
         version = version.version
       }
     } else if (typeof version !== 'string') {
-      throw new TypeError(`Invalid Version: ${version}`)
+      throw new TypeError(`Invalid version. Must be a string. Got type "${typeof version}".`)
     }
 
     if (version.length > MAX_LENGTH) {
@@ -8476,11 +8349,25 @@ class SemVer {
       other = new SemVer(other, this.options)
     }
 
-    return (
-      compareIdentifiers(this.major, other.major) ||
-      compareIdentifiers(this.minor, other.minor) ||
-      compareIdentifiers(this.patch, other.patch)
-    )
+    if (this.major < other.major) {
+      return -1
+    }
+    if (this.major > other.major) {
+      return 1
+    }
+    if (this.minor < other.minor) {
+      return -1
+    }
+    if (this.minor > other.minor) {
+      return 1
+    }
+    if (this.patch < other.patch) {
+      return -1
+    }
+    if (this.patch > other.patch) {
+      return 1
+    }
+    return 0
   }
 
   comparePre (other) {
@@ -8525,7 +8412,7 @@ class SemVer {
     do {
       const a = this.build[i]
       const b = other.build[i]
-      debug('prerelease compare', i, a, b)
+      debug('build compare', i, a, b)
       if (a === undefined && b === undefined) {
         return 0
       } else if (b === undefined) {
@@ -8542,36 +8429,55 @@ class SemVer {
 
   // preminor will bump the version up to the next minor release, and immediately
   // down to pre-release. premajor and prepatch work the same way.
-  inc (release, identifier) {
+  inc (release, identifier, identifierBase) {
+    if (release.startsWith('pre')) {
+      if (!identifier && identifierBase === false) {
+        throw new Error('invalid increment argument: identifier is empty')
+      }
+      // Avoid an invalid semver results
+      if (identifier) {
+        const match = `-${identifier}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE])
+        if (!match || match[1] !== identifier) {
+          throw new Error(`invalid identifier: ${identifier}`)
+        }
+      }
+    }
+
     switch (release) {
       case 'premajor':
         this.prerelease.length = 0
         this.patch = 0
         this.minor = 0
         this.major++
-        this.inc('pre', identifier)
+        this.inc('pre', identifier, identifierBase)
         break
       case 'preminor':
         this.prerelease.length = 0
         this.patch = 0
         this.minor++
-        this.inc('pre', identifier)
+        this.inc('pre', identifier, identifierBase)
         break
       case 'prepatch':
         // If this is already a prerelease, it will bump to the next version
         // drop any prereleases that might already exist, since they are not
         // relevant at this point.
         this.prerelease.length = 0
-        this.inc('patch', identifier)
-        this.inc('pre', identifier)
+        this.inc('patch', identifier, identifierBase)
+        this.inc('pre', identifier, identifierBase)
         break
       // If the input is a non-prerelease version, this acts the same as
       // prepatch.
       case 'prerelease':
         if (this.prerelease.length === 0) {
-          this.inc('patch', identifier)
+          this.inc('patch', identifier, identifierBase)
         }
-        this.inc('pre', identifier)
+        this.inc('pre', identifier, identifierBase)
+        break
+      case 'release':
+        if (this.prerelease.length === 0) {
+          throw new Error(`version ${this.raw} is not a prerelease`)
+        }
+        this.prerelease.length = 0
         break
 
       case 'major':
@@ -8613,9 +8519,11 @@ class SemVer {
         break
       // This probably shouldn't be used publicly.
       // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
-      case 'pre':
+      case 'pre': {
+        const base = Number(identifierBase) ? 1 : 0
+
         if (this.prerelease.length === 0) {
-          this.prerelease = [0]
+          this.prerelease = [base]
         } else {
           let i = this.prerelease.length
           while (--i >= 0) {
@@ -8626,27 +8534,37 @@ class SemVer {
           }
           if (i === -1) {
             // didn't increment anything
-            this.prerelease.push(0)
+            if (identifier === this.prerelease.join('.') && identifierBase === false) {
+              throw new Error('invalid increment argument: identifier already exists')
+            }
+            this.prerelease.push(base)
           }
         }
         if (identifier) {
           // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
           // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
-          if (this.prerelease[0] === identifier) {
-            if (isNaN(this.prerelease[1])) {
-              this.prerelease = [identifier, 0]
+          let prerelease = [identifier, base]
+          if (identifierBase === false) {
+            prerelease = [identifier]
+          }
+          if (isPrereleaseIdentifier(this.prerelease, identifier)) {
+            const prereleaseBase = this.prerelease[identifier.split('.').length]
+            if (isNaN(prereleaseBase)) {
+              this.prerelease = prerelease
             }
           } else {
-            this.prerelease = [identifier, 0]
+            this.prerelease = prerelease
           }
         }
         break
-
+      }
       default:
         throw new Error(`invalid increment argument: ${release}`)
     }
-    this.format()
-    this.raw = this.version
+    this.raw = this.format()
+    if (this.build.length) {
+      this.raw += `+${this.build.join('.')}`
+    }
     return this
   }
 }
@@ -8658,6 +8576,9 @@ module.exports = SemVer
 
 /***/ 8848:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const parse = __nccwpck_require__(5925)
 const clean = (version, options) => {
@@ -8672,6 +8593,9 @@ module.exports = clean
 /***/ 5098:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const eq = __nccwpck_require__(1898)
 const neq = __nccwpck_require__(6017)
 const gt = __nccwpck_require__(4123)
@@ -8682,17 +8606,21 @@ const lte = __nccwpck_require__(7520)
 const cmp = (a, op, b, loose) => {
   switch (op) {
     case '===':
-      if (typeof a === 'object')
+      if (typeof a === 'object') {
         a = a.version
-      if (typeof b === 'object')
+      }
+      if (typeof b === 'object') {
         b = b.version
+      }
       return a === b
 
     case '!==':
-      if (typeof a === 'object')
+      if (typeof a === 'object') {
         a = a.version
-      if (typeof b === 'object')
+      }
+      if (typeof b === 'object') {
         b = b.version
+      }
       return a !== b
 
     case '':
@@ -8727,9 +8655,12 @@ module.exports = cmp
 /***/ 3466:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const parse = __nccwpck_require__(5925)
-const {re, t} = __nccwpck_require__(9523)
+const { safeRe: re, t } = __nccwpck_require__(9523)
 
 const coerce = (version, options) => {
   if (version instanceof SemVer) {
@@ -8748,34 +8679,43 @@ const coerce = (version, options) => {
 
   let match = null
   if (!options.rtl) {
-    match = version.match(re[t.COERCE])
+    match = version.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE])
   } else {
     // Find the right-most coercible string that does not share
     // a terminus with a more left-ward coercible string.
     // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+    // With includePrerelease option set, '1.2.3.4-rc' wants to coerce '2.3.4-rc', not '2.3.4'
     //
     // Walk through the string checking with a /g regexp
     // Manually set the index so as to pick up overlapping matches.
     // Stop when we get a match that ends at the string end, since no
     // coercible string can be more right-ward without the same terminus.
+    const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL]
     let next
-    while ((next = re[t.COERCERTL].exec(version)) &&
+    while ((next = coerceRtlRegex.exec(version)) &&
         (!match || match.index + match[0].length !== version.length)
     ) {
       if (!match ||
             next.index + next[0].length !== match.index + match[0].length) {
         match = next
       }
-      re[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
+      coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length
     }
     // leave it in a clean state
-    re[t.COERCERTL].lastIndex = -1
+    coerceRtlRegex.lastIndex = -1
   }
 
-  if (match === null)
+  if (match === null) {
     return null
+  }
 
-  return parse(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
+  const major = match[2]
+  const minor = match[3] || '0'
+  const patch = match[4] || '0'
+  const prerelease = options.includePrerelease && match[5] ? `-${match[5]}` : ''
+  const build = options.includePrerelease && match[6] ? `+${match[6]}` : ''
+
+  return parse(`${major}.${minor}.${patch}${prerelease}${build}`, options)
 }
 module.exports = coerce
 
@@ -8784,6 +8724,9 @@ module.exports = coerce
 
 /***/ 2156:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const SemVer = __nccwpck_require__(8088)
 const compareBuild = (a, b, loose) => {
@@ -8799,6 +8742,9 @@ module.exports = compareBuild
 /***/ 2804:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compare = __nccwpck_require__(4309)
 const compareLoose = (a, b) => compare(a, b, true)
 module.exports = compareLoose
@@ -8808,6 +8754,9 @@ module.exports = compareLoose
 
 /***/ 4309:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const SemVer = __nccwpck_require__(8088)
 const compare = (a, b, loose) =>
@@ -8821,28 +8770,66 @@ module.exports = compare
 /***/ 4297:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const parse = __nccwpck_require__(5925)
-const eq = __nccwpck_require__(1898)
 
 const diff = (version1, version2) => {
-  if (eq(version1, version2)) {
+  const v1 = parse(version1, null, true)
+  const v2 = parse(version2, null, true)
+  const comparison = v1.compare(v2)
+
+  if (comparison === 0) {
     return null
-  } else {
-    const v1 = parse(version1)
-    const v2 = parse(version2)
-    const hasPre = v1.prerelease.length || v2.prerelease.length
-    const prefix = hasPre ? 'pre' : ''
-    const defaultResult = hasPre ? 'prerelease' : ''
-    for (const key in v1) {
-      if (key === 'major' || key === 'minor' || key === 'patch') {
-        if (v1[key] !== v2[key]) {
-          return prefix + key
-        }
-      }
-    }
-    return defaultResult // may be undefined
   }
+
+  const v1Higher = comparison > 0
+  const highVersion = v1Higher ? v1 : v2
+  const lowVersion = v1Higher ? v2 : v1
+  const highHasPre = !!highVersion.prerelease.length
+  const lowHasPre = !!lowVersion.prerelease.length
+
+  if (lowHasPre && !highHasPre) {
+    // Going from prerelease -> no prerelease requires some special casing
+
+    // If the low version has only a major, then it will always be a major
+    // Some examples:
+    // 1.0.0-1 -> 1.0.0
+    // 1.0.0-1 -> 1.1.1
+    // 1.0.0-1 -> 2.0.0
+    if (!lowVersion.patch && !lowVersion.minor) {
+      return 'major'
+    }
+
+    // If the main part has no difference
+    if (lowVersion.compareMain(highVersion) === 0) {
+      if (lowVersion.minor && !lowVersion.patch) {
+        return 'minor'
+      }
+      return 'patch'
+    }
+  }
+
+  // add the `pre` prefix if we are going to a prerelease version
+  const prefix = highHasPre ? 'pre' : ''
+
+  if (v1.major !== v2.major) {
+    return prefix + 'major'
+  }
+
+  if (v1.minor !== v2.minor) {
+    return prefix + 'minor'
+  }
+
+  if (v1.patch !== v2.patch) {
+    return prefix + 'patch'
+  }
+
+  // high and low are prereleases
+  return 'prerelease'
 }
+
 module.exports = diff
 
 
@@ -8850,6 +8837,9 @@ module.exports = diff
 
 /***/ 1898:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const compare = __nccwpck_require__(4309)
 const eq = (a, b, loose) => compare(a, b, loose) === 0
@@ -8861,6 +8851,9 @@ module.exports = eq
 /***/ 4123:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compare = __nccwpck_require__(4309)
 const gt = (a, b, loose) => compare(a, b, loose) > 0
 module.exports = gt
@@ -8870,6 +8863,9 @@ module.exports = gt
 
 /***/ 5522:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const compare = __nccwpck_require__(4309)
 const gte = (a, b, loose) => compare(a, b, loose) >= 0
@@ -8881,16 +8877,23 @@ module.exports = gte
 /***/ 900:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 
-const inc = (version, release, options, identifier) => {
+const inc = (version, release, options, identifier, identifierBase) => {
   if (typeof (options) === 'string') {
+    identifierBase = identifier
     identifier = options
     options = undefined
   }
 
   try {
-    return new SemVer(version, options).inc(release, identifier).version
+    return new SemVer(
+      version instanceof SemVer ? version.version : version,
+      options
+    ).inc(release, identifier, identifierBase).version
   } catch (er) {
     return null
   }
@@ -8903,6 +8906,9 @@ module.exports = inc
 /***/ 194:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compare = __nccwpck_require__(4309)
 const lt = (a, b, loose) => compare(a, b, loose) < 0
 module.exports = lt
@@ -8912,6 +8918,9 @@ module.exports = lt
 
 /***/ 7520:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const compare = __nccwpck_require__(4309)
 const lte = (a, b, loose) => compare(a, b, loose) <= 0
@@ -8923,6 +8932,9 @@ module.exports = lte
 /***/ 6688:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const major = (a, loose) => new SemVer(a, loose).major
 module.exports = major
@@ -8932,6 +8944,9 @@ module.exports = major
 
 /***/ 8447:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const SemVer = __nccwpck_require__(8088)
 const minor = (a, loose) => new SemVer(a, loose).minor
@@ -8943,6 +8958,9 @@ module.exports = minor
 /***/ 6017:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compare = __nccwpck_require__(4309)
 const neq = (a, b, loose) => compare(a, b, loose) !== 0
 module.exports = neq
@@ -8953,35 +8971,21 @@ module.exports = neq
 /***/ 5925:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const {MAX_LENGTH} = __nccwpck_require__(2293)
-const { re, t } = __nccwpck_require__(9523)
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
-
-const parseOptions = __nccwpck_require__(785)
-const parse = (version, options) => {
-  options = parseOptions(options)
-
+const parse = (version, options, throwErrors = false) => {
   if (version instanceof SemVer) {
     return version
   }
-
-  if (typeof version !== 'string') {
-    return null
-  }
-
-  if (version.length > MAX_LENGTH) {
-    return null
-  }
-
-  const r = options.loose ? re[t.LOOSE] : re[t.FULL]
-  if (!r.test(version)) {
-    return null
-  }
-
   try {
     return new SemVer(version, options)
   } catch (er) {
-    return null
+    if (!throwErrors) {
+      return null
+    }
+    throw er
   }
 }
 
@@ -8993,6 +8997,9 @@ module.exports = parse
 /***/ 2866:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const patch = (a, loose) => new SemVer(a, loose).patch
 module.exports = patch
@@ -9002,6 +9009,9 @@ module.exports = patch
 
 /***/ 4016:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const parse = __nccwpck_require__(5925)
 const prerelease = (version, options) => {
@@ -9016,6 +9026,9 @@ module.exports = prerelease
 /***/ 6417:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compare = __nccwpck_require__(4309)
 const rcompare = (a, b, loose) => compare(b, a, loose)
 module.exports = rcompare
@@ -9026,6 +9039,9 @@ module.exports = rcompare
 /***/ 8701:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compareBuild = __nccwpck_require__(2156)
 const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
 module.exports = rsort
@@ -9035,6 +9051,9 @@ module.exports = rsort
 
 /***/ 6055:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const Range = __nccwpck_require__(9828)
 const satisfies = (version, range, options) => {
@@ -9053,6 +9072,9 @@ module.exports = satisfies
 /***/ 1426:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const compareBuild = __nccwpck_require__(2156)
 const sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose))
 module.exports = sort
@@ -9060,8 +9082,67 @@ module.exports = sort
 
 /***/ }),
 
+/***/ 5937:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const parse = __nccwpck_require__(5925)
+const constants = __nccwpck_require__(2293)
+const SemVer = __nccwpck_require__(8088)
+
+const truncate = (version, truncation, options) => {
+  if (!constants.RELEASE_TYPES.includes(truncation)) {
+    return null
+  }
+
+  const clonedVersion = cloneInputVersion(version, options)
+  return clonedVersion && doTruncation(clonedVersion, truncation)
+}
+
+const cloneInputVersion = (version, options) => {
+  const versionStringToParse = (
+    version instanceof SemVer ? version.version : version
+  )
+
+  return parse(versionStringToParse, options)
+}
+
+const doTruncation = (version, truncation) => {
+  if (isPrerelease(truncation)) {
+    return version.version
+  }
+
+  version.prerelease = []
+
+  switch (truncation) {
+    case 'major':
+      version.minor = 0
+      version.patch = 0
+      break
+    case 'minor':
+      version.patch = 0
+      break
+  }
+
+  return version.format()
+}
+
+const isPrerelease = (type) => {
+  return type.startsWith('pre')
+}
+
+module.exports = truncate
+
+
+/***/ }),
+
 /***/ 9601:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const parse = __nccwpck_require__(5925)
 const valid = (version, options) => {
@@ -9076,53 +9157,99 @@ module.exports = valid
 /***/ 1383:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 // just pre-load all the stuff that index.js lazily exports
 const internalRe = __nccwpck_require__(9523)
+const constants = __nccwpck_require__(2293)
+const SemVer = __nccwpck_require__(8088)
+const identifiers = __nccwpck_require__(2463)
+const parse = __nccwpck_require__(5925)
+const valid = __nccwpck_require__(9601)
+const clean = __nccwpck_require__(8848)
+const inc = __nccwpck_require__(900)
+const diff = __nccwpck_require__(4297)
+const major = __nccwpck_require__(6688)
+const minor = __nccwpck_require__(8447)
+const patch = __nccwpck_require__(2866)
+const prerelease = __nccwpck_require__(4016)
+const compare = __nccwpck_require__(4309)
+const rcompare = __nccwpck_require__(6417)
+const compareLoose = __nccwpck_require__(2804)
+const compareBuild = __nccwpck_require__(2156)
+const sort = __nccwpck_require__(1426)
+const rsort = __nccwpck_require__(8701)
+const gt = __nccwpck_require__(4123)
+const lt = __nccwpck_require__(194)
+const eq = __nccwpck_require__(1898)
+const neq = __nccwpck_require__(6017)
+const gte = __nccwpck_require__(5522)
+const lte = __nccwpck_require__(7520)
+const cmp = __nccwpck_require__(5098)
+const coerce = __nccwpck_require__(3466)
+const truncate = __nccwpck_require__(5937)
+const Comparator = __nccwpck_require__(1532)
+const Range = __nccwpck_require__(9828)
+const satisfies = __nccwpck_require__(6055)
+const toComparators = __nccwpck_require__(2706)
+const maxSatisfying = __nccwpck_require__(579)
+const minSatisfying = __nccwpck_require__(832)
+const minVersion = __nccwpck_require__(4179)
+const validRange = __nccwpck_require__(2098)
+const outside = __nccwpck_require__(420)
+const gtr = __nccwpck_require__(9380)
+const ltr = __nccwpck_require__(3323)
+const intersects = __nccwpck_require__(7008)
+const simplifyRange = __nccwpck_require__(5297)
+const subset = __nccwpck_require__(7863)
 module.exports = {
+  parse,
+  valid,
+  clean,
+  inc,
+  diff,
+  major,
+  minor,
+  patch,
+  prerelease,
+  compare,
+  rcompare,
+  compareLoose,
+  compareBuild,
+  sort,
+  rsort,
+  gt,
+  lt,
+  eq,
+  neq,
+  gte,
+  lte,
+  cmp,
+  coerce,
+  truncate,
+  Comparator,
+  Range,
+  satisfies,
+  toComparators,
+  maxSatisfying,
+  minSatisfying,
+  minVersion,
+  validRange,
+  outside,
+  gtr,
+  ltr,
+  intersects,
+  simplifyRange,
+  subset,
+  SemVer,
   re: internalRe.re,
   src: internalRe.src,
   tokens: internalRe.t,
-  SEMVER_SPEC_VERSION: (__nccwpck_require__(2293).SEMVER_SPEC_VERSION),
-  SemVer: __nccwpck_require__(8088),
-  compareIdentifiers: (__nccwpck_require__(2463).compareIdentifiers),
-  rcompareIdentifiers: (__nccwpck_require__(2463).rcompareIdentifiers),
-  parse: __nccwpck_require__(5925),
-  valid: __nccwpck_require__(9601),
-  clean: __nccwpck_require__(8848),
-  inc: __nccwpck_require__(900),
-  diff: __nccwpck_require__(4297),
-  major: __nccwpck_require__(6688),
-  minor: __nccwpck_require__(8447),
-  patch: __nccwpck_require__(2866),
-  prerelease: __nccwpck_require__(4016),
-  compare: __nccwpck_require__(4309),
-  rcompare: __nccwpck_require__(6417),
-  compareLoose: __nccwpck_require__(2804),
-  compareBuild: __nccwpck_require__(2156),
-  sort: __nccwpck_require__(1426),
-  rsort: __nccwpck_require__(8701),
-  gt: __nccwpck_require__(4123),
-  lt: __nccwpck_require__(194),
-  eq: __nccwpck_require__(1898),
-  neq: __nccwpck_require__(6017),
-  gte: __nccwpck_require__(5522),
-  lte: __nccwpck_require__(7520),
-  cmp: __nccwpck_require__(5098),
-  coerce: __nccwpck_require__(3466),
-  Comparator: __nccwpck_require__(1532),
-  Range: __nccwpck_require__(9828),
-  satisfies: __nccwpck_require__(6055),
-  toComparators: __nccwpck_require__(2706),
-  maxSatisfying: __nccwpck_require__(579),
-  minSatisfying: __nccwpck_require__(832),
-  minVersion: __nccwpck_require__(4179),
-  validRange: __nccwpck_require__(2098),
-  outside: __nccwpck_require__(420),
-  gtr: __nccwpck_require__(9380),
-  ltr: __nccwpck_require__(3323),
-  intersects: __nccwpck_require__(7008),
-  simplifyRange: __nccwpck_require__(5297),
-  subset: __nccwpck_require__(7863),
+  SEMVER_SPEC_VERSION: constants.SEMVER_SPEC_VERSION,
+  RELEASE_TYPES: constants.RELEASE_TYPES,
+  compareIdentifiers: identifiers.compareIdentifiers,
+  rcompareIdentifiers: identifiers.rcompareIdentifiers,
 }
 
 
@@ -9131,22 +9258,43 @@ module.exports = {
 /***/ 2293:
 /***/ ((module) => {
 
+"use strict";
+
+
 // Note: this is the semver.org version of the spec that it implements
 // Not necessarily the package version of this code.
 const SEMVER_SPEC_VERSION = '2.0.0'
 
 const MAX_LENGTH = 256
 const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER ||
-  /* istanbul ignore next */ 9007199254740991
+/* istanbul ignore next */ 9007199254740991
 
 // Max safe segment length for coercion.
 const MAX_SAFE_COMPONENT_LENGTH = 16
 
+// Max safe length for a build identifier. The max length minus 6 characters for
+// the shortest version with a build 0.0.0+BUILD.
+const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
+
+const RELEASE_TYPES = [
+  'major',
+  'premajor',
+  'minor',
+  'preminor',
+  'patch',
+  'prepatch',
+  'prerelease',
+]
+
 module.exports = {
-  SEMVER_SPEC_VERSION,
   MAX_LENGTH,
+  MAX_SAFE_COMPONENT_LENGTH,
+  MAX_SAFE_BUILD_LENGTH,
   MAX_SAFE_INTEGER,
-  MAX_SAFE_COMPONENT_LENGTH
+  RELEASE_TYPES,
+  SEMVER_SPEC_VERSION,
+  FLAG_INCLUDE_PRERELEASE: 0b001,
+  FLAG_LOOSE: 0b010,
 }
 
 
@@ -9154,6 +9302,9 @@ module.exports = {
 
 /***/ 427:
 /***/ ((module) => {
+
+"use strict";
+
 
 const debug = (
   typeof process === 'object' &&
@@ -9171,8 +9322,15 @@ module.exports = debug
 /***/ 2463:
 /***/ ((module) => {
 
+"use strict";
+
+
 const numeric = /^[0-9]+$/
 const compareIdentifiers = (a, b) => {
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a === b ? 0 : a < b ? -1 : 1
+  }
+
   const anum = numeric.test(a)
   const bnum = numeric.test(b)
 
@@ -9192,8 +9350,58 @@ const rcompareIdentifiers = (a, b) => compareIdentifiers(b, a)
 
 module.exports = {
   compareIdentifiers,
-  rcompareIdentifiers
+  rcompareIdentifiers,
 }
+
+
+/***/ }),
+
+/***/ 5339:
+/***/ ((module) => {
+
+"use strict";
+
+
+class LRUCache {
+  constructor () {
+    this.max = 1000
+    this.map = new Map()
+  }
+
+  get (key) {
+    const value = this.map.get(key)
+    if (value === undefined) {
+      return undefined
+    } else {
+      // Remove the key from the map and add it to the end
+      this.map.delete(key)
+      this.map.set(key, value)
+      return value
+    }
+  }
+
+  delete (key) {
+    return this.map.delete(key)
+  }
+
+  set (key, value) {
+    const deleted = this.delete(key)
+
+    if (!deleted && value !== undefined) {
+      // If cache is full, delete the least recently used item
+      if (this.map.size >= this.max) {
+        const firstKey = this.map.keys().next().value
+        this.delete(firstKey)
+      }
+
+      this.map.set(key, value)
+    }
+
+    return this
+  }
+}
+
+module.exports = LRUCache
 
 
 /***/ }),
@@ -9201,16 +9409,23 @@ module.exports = {
 /***/ 785:
 /***/ ((module) => {
 
-// parse out just the options we care about so we always get a consistent
-// obj with keys in a consistent order.
-const opts = ['includePrerelease', 'loose', 'rtl']
-const parseOptions = options =>
-  !options ? {}
-  : typeof options !== 'object' ? { loose: true }
-  : opts.filter(k => options[k]).reduce((options, k) => {
-    options[k] = true
-    return options
-  }, {})
+"use strict";
+
+
+// parse out just the options we care about
+const looseOption = Object.freeze({ loose: true })
+const emptyOpts = Object.freeze({ })
+const parseOptions = options => {
+  if (!options) {
+    return emptyOpts
+  }
+
+  if (typeof options !== 'object') {
+    return looseOption
+  }
+
+  return options
+}
 module.exports = parseOptions
 
 
@@ -9219,22 +9434,57 @@ module.exports = parseOptions
 /***/ 9523:
 /***/ ((module, exports, __nccwpck_require__) => {
 
-const { MAX_SAFE_COMPONENT_LENGTH } = __nccwpck_require__(2293)
+"use strict";
+
+
+const {
+  MAX_SAFE_COMPONENT_LENGTH,
+  MAX_SAFE_BUILD_LENGTH,
+  MAX_LENGTH,
+} = __nccwpck_require__(2293)
 const debug = __nccwpck_require__(427)
 exports = module.exports = {}
 
 // The actual regexps go on exports.re
 const re = exports.re = []
+const safeRe = exports.safeRe = []
 const src = exports.src = []
+const safeSrc = exports.safeSrc = []
 const t = exports.t = {}
 let R = 0
 
+const LETTERDASHNUMBER = '[a-zA-Z0-9-]'
+
+// Replace some greedy regex tokens to prevent regex dos issues. These regex are
+// used internally via the safeRe object since all inputs in this library get
+// normalized first to trim and collapse all extra whitespace. The original
+// regexes are exported for userland consumption and lower level usage. A
+// future breaking change could export the safer regex only with a note that
+// all input should have extra whitespace removed.
+const safeRegexReplacements = [
+  ['\\s', 1],
+  ['\\d', MAX_LENGTH],
+  [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH],
+]
+
+const makeSafeRegex = (value) => {
+  for (const [token, max] of safeRegexReplacements) {
+    value = value
+      .split(`${token}*`).join(`${token}{0,${max}}`)
+      .split(`${token}+`).join(`${token}{1,${max}}`)
+  }
+  return value
+}
+
 const createToken = (name, value, isGlobal) => {
+  const safe = makeSafeRegex(value)
   const index = R++
-  debug(index, value)
+  debug(name, index, value)
   t[name] = index
   src[index] = value
+  safeSrc[index] = safe
   re[index] = new RegExp(value, isGlobal ? 'g' : undefined)
+  safeRe[index] = new RegExp(safe, isGlobal ? 'g' : undefined)
 }
 
 // The following Regular Expressions can be used for tokenizing,
@@ -9244,13 +9494,13 @@ const createToken = (name, value, isGlobal) => {
 // A single `0`, or a non-zero digit followed by zero or more digits.
 
 createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*')
-createToken('NUMERICIDENTIFIERLOOSE', '[0-9]+')
+createToken('NUMERICIDENTIFIERLOOSE', '\\d+')
 
 // ## Non-numeric Identifier
 // Zero or more digits, followed by a letter or hyphen, and then zero or
 // more letters, digits, or hyphens.
 
-createToken('NONNUMERICIDENTIFIER', '\\d*[a-zA-Z-][a-zA-Z0-9-]*')
+createToken('NONNUMERICIDENTIFIER', `\\d*[a-zA-Z-]${LETTERDASHNUMBER}*`)
 
 // ## Main Version
 // Three dot-separated numeric identifiers.
@@ -9265,12 +9515,14 @@ createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
 
 // ## Pre-release Version Identifier
 // A numeric identifier, or a non-numeric identifier.
+// Non-numeric identifiers include numeric identifiers but can be longer.
+// Therefore non-numeric identifiers must go first.
 
-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
-}|${src[t.NONNUMERICIDENTIFIER]})`)
+createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
+}|${src[t.NUMERICIDENTIFIER]})`)
 
-createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
-}|${src[t.NONNUMERICIDENTIFIER]})`)
+createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NONNUMERICIDENTIFIER]
+}|${src[t.NUMERICIDENTIFIERLOOSE]})`)
 
 // ## Pre-release Version
 // Hyphen, followed by one or more dot-separated pre-release version
@@ -9285,7 +9537,7 @@ createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
 // ## Build Metadata Identifier
 // Any combination of digits, letters, or hyphens.
 
-createToken('BUILDIDENTIFIER', '[0-9A-Za-z-]+')
+createToken('BUILDIDENTIFIER', `${LETTERDASHNUMBER}+`)
 
 // ## Build Metadata
 // Plus sign, followed by one or more period-separated build metadata
@@ -9321,7 +9573,7 @@ createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`)
 createToken('GTLT', '((?:<|>)?=?)')
 
 // Something like "2.*" or "1.2.x".
-// Note that "x.x" is a valid xRange identifer, meaning "any version"
+// Note that "x.x" is a valid xRange identifier, meaning "any version"
 // Only the first item is strictly required.
 createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`)
 createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`)
@@ -9345,12 +9597,17 @@ createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`)
 
 // Coercion.
 // Extract anything that could conceivably be a part of a valid semver
-createToken('COERCE', `${'(^|[^\\d])' +
+createToken('COERCEPLAIN', `${'(^|[^\\d])' +
               '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
               `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
-              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?`)
+createToken('COERCE', `${src[t.COERCEPLAIN]}(?:$|[^\\d])`)
+createToken('COERCEFULL', src[t.COERCEPLAIN] +
+              `(?:${src[t.PRERELEASE]})?` +
+              `(?:${src[t.BUILD]})?` +
               `(?:$|[^\\d])`)
 createToken('COERCERTL', src[t.COERCE], true)
+createToken('COERCERTLFULL', src[t.COERCEFULL], true)
 
 // Tilde ranges.
 // Meaning is "reasonably at or greater than"
@@ -9399,14 +9656,17 @@ createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
 // Star ranges basically just allow anything at all.
 createToken('STAR', '(<|>)?=?\\s*\\*')
 // >=0.0.0 is like a star
-createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$')
-createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$')
+createToken('GTE0', '^\\s*>=\\s*0\\.0\\.0\\s*$')
+createToken('GTE0PRE', '^\\s*>=\\s*0\\.0\\.0-0\\s*$')
 
 
 /***/ }),
 
 /***/ 9380:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 // Determine if version is greater than all the versions possible in the range.
 const outside = __nccwpck_require__(420)
@@ -9419,11 +9679,14 @@ module.exports = gtr
 /***/ 7008:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const Range = __nccwpck_require__(9828)
 const intersects = (r1, r2, options) => {
   r1 = new Range(r1, options)
   r2 = new Range(r2, options)
-  return r1.intersects(r2)
+  return r1.intersects(r2, options)
 }
 module.exports = intersects
 
@@ -9432,6 +9695,9 @@ module.exports = intersects
 
 /***/ 3323:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const outside = __nccwpck_require__(420)
 // Determine if version is less than all the versions possible in the range
@@ -9443,6 +9709,9 @@ module.exports = ltr
 
 /***/ 579:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const SemVer = __nccwpck_require__(8088)
 const Range = __nccwpck_require__(9828)
@@ -9476,6 +9745,9 @@ module.exports = maxSatisfying
 /***/ 832:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const Range = __nccwpck_require__(9828)
 const minSatisfying = (versions, range, options) => {
@@ -9506,6 +9778,9 @@ module.exports = minSatisfying
 
 /***/ 4179:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const SemVer = __nccwpck_require__(8088)
 const Range = __nccwpck_require__(9828)
@@ -9556,8 +9831,9 @@ const minVersion = (range, loose) => {
           throw new Error(`Unexpected operation: ${comparator.operator}`)
       }
     })
-    if (setMin && (!minver || gt(minver, setMin)))
+    if (setMin && (!minver || gt(minver, setMin))) {
       minver = setMin
+    }
   }
 
   if (minver && range.test(minver)) {
@@ -9574,9 +9850,12 @@ module.exports = minVersion
 /***/ 420:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const Comparator = __nccwpck_require__(1532)
-const {ANY} = Comparator
+const { ANY } = Comparator
 const Range = __nccwpck_require__(9828)
 const satisfies = __nccwpck_require__(6055)
 const gt = __nccwpck_require__(4123)
@@ -9661,6 +9940,9 @@ module.exports = outside
 /***/ 5297:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 // given a set of versions and a range, create a "simplified" range
 // that includes the same versions that the original range does
 // If the original range is shorter than the simplified one, return that.
@@ -9668,38 +9950,41 @@ const satisfies = __nccwpck_require__(6055)
 const compare = __nccwpck_require__(4309)
 module.exports = (versions, range, options) => {
   const set = []
-  let min = null
+  let first = null
   let prev = null
   const v = versions.sort((a, b) => compare(a, b, options))
   for (const version of v) {
     const included = satisfies(version, range, options)
     if (included) {
       prev = version
-      if (!min)
-        min = version
+      if (!first) {
+        first = version
+      }
     } else {
       if (prev) {
-        set.push([min, prev])
+        set.push([first, prev])
       }
       prev = null
-      min = null
+      first = null
     }
   }
-  if (min)
-    set.push([min, null])
+  if (first) {
+    set.push([first, null])
+  }
 
   const ranges = []
   for (const [min, max] of set) {
-    if (min === max)
+    if (min === max) {
       ranges.push(min)
-    else if (!max && min === v[0])
+    } else if (!max && min === v[0]) {
       ranges.push('*')
-    else if (!max)
+    } else if (!max) {
       ranges.push(`>=${min}`)
-    else if (min === v[0])
+    } else if (min === v[0]) {
       ranges.push(`<=${max}`)
-    else
+    } else {
       ranges.push(`${min} - ${max}`)
+    }
   }
   const simplified = ranges.join(' || ')
   const original = typeof range.raw === 'string' ? range.raw : String(range)
@@ -9711,6 +9996,9 @@ module.exports = (versions, range, options) => {
 
 /***/ 7863:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const Range = __nccwpck_require__(9828)
 const Comparator = __nccwpck_require__(1532)
@@ -9750,13 +10038,14 @@ const compare = __nccwpck_require__(4309)
 // - If LT
 //   - If LT.semver is greater than any < or <= comp in C, return false
 //   - If LT is <=, and LT.semver does not satisfy every C, return false
-//   - If GT.semver has a prerelease, and not in prerelease mode
+//   - If LT.semver has a prerelease, and not in prerelease mode
 //     - If no C has a prerelease and the LT.semver tuple, return false
 // - Else return true
 
 const subset = (sub, dom, options = {}) => {
-  if (sub === dom)
+  if (sub === dom) {
     return true
+  }
 
   sub = new Range(sub, options)
   dom = new Range(dom, options)
@@ -9766,73 +10055,87 @@ const subset = (sub, dom, options = {}) => {
     for (const simpleDom of dom.set) {
       const isSub = simpleSubset(simpleSub, simpleDom, options)
       sawNonNull = sawNonNull || isSub !== null
-      if (isSub)
+      if (isSub) {
         continue OUTER
+      }
     }
     // the null set is a subset of everything, but null simple ranges in
     // a complex range should be ignored.  so if we saw a non-null range,
     // then we know this isn't a subset, but if EVERY simple range was null,
     // then it is a subset.
-    if (sawNonNull)
+    if (sawNonNull) {
       return false
+    }
   }
   return true
 }
 
+const minimumVersionWithPreRelease = [new Comparator('>=0.0.0-0')]
+const minimumVersion = [new Comparator('>=0.0.0')]
+
 const simpleSubset = (sub, dom, options) => {
-  if (sub === dom)
+  if (sub === dom) {
     return true
+  }
 
   if (sub.length === 1 && sub[0].semver === ANY) {
-    if (dom.length === 1 && dom[0].semver === ANY)
+    if (dom.length === 1 && dom[0].semver === ANY) {
       return true
-    else if (options.includePrerelease)
-      sub = [ new Comparator('>=0.0.0-0') ]
-    else
-      sub = [ new Comparator('>=0.0.0') ]
+    } else if (options.includePrerelease) {
+      sub = minimumVersionWithPreRelease
+    } else {
+      sub = minimumVersion
+    }
   }
 
   if (dom.length === 1 && dom[0].semver === ANY) {
-    if (options.includePrerelease)
+    if (options.includePrerelease) {
       return true
-    else
-      dom = [ new Comparator('>=0.0.0') ]
+    } else {
+      dom = minimumVersion
+    }
   }
 
   const eqSet = new Set()
   let gt, lt
   for (const c of sub) {
-    if (c.operator === '>' || c.operator === '>=')
+    if (c.operator === '>' || c.operator === '>=') {
       gt = higherGT(gt, c, options)
-    else if (c.operator === '<' || c.operator === '<=')
+    } else if (c.operator === '<' || c.operator === '<=') {
       lt = lowerLT(lt, c, options)
-    else
+    } else {
       eqSet.add(c.semver)
+    }
   }
 
-  if (eqSet.size > 1)
+  if (eqSet.size > 1) {
     return null
+  }
 
   let gtltComp
   if (gt && lt) {
     gtltComp = compare(gt.semver, lt.semver, options)
-    if (gtltComp > 0)
+    if (gtltComp > 0) {
       return null
-    else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<='))
+    } else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<=')) {
       return null
+    }
   }
 
   // will iterate one or zero times
   for (const eq of eqSet) {
-    if (gt && !satisfies(eq, String(gt), options))
+    if (gt && !satisfies(eq, String(gt), options)) {
       return null
+    }
 
-    if (lt && !satisfies(eq, String(lt), options))
+    if (lt && !satisfies(eq, String(lt), options)) {
       return null
+    }
 
     for (const c of dom) {
-      if (!satisfies(eq, String(c), options))
+      if (!satisfies(eq, String(c), options)) {
         return false
+      }
     }
 
     return true
@@ -9868,10 +10171,12 @@ const simpleSubset = (sub, dom, options) => {
       }
       if (c.operator === '>' || c.operator === '>=') {
         higher = higherGT(gt, c, options)
-        if (higher === c && higher !== gt)
+        if (higher === c && higher !== gt) {
           return false
-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options))
+        }
+      } else if (gt.operator === '>=' && !c.test(gt.semver)) {
         return false
+      }
     }
     if (lt) {
       if (needDomLTPre) {
@@ -9884,37 +10189,44 @@ const simpleSubset = (sub, dom, options) => {
       }
       if (c.operator === '<' || c.operator === '<=') {
         lower = lowerLT(lt, c, options)
-        if (lower === c && lower !== lt)
+        if (lower === c && lower !== lt) {
           return false
-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options))
+        }
+      } else if (lt.operator === '<=' && !c.test(lt.semver)) {
         return false
+      }
     }
-    if (!c.operator && (lt || gt) && gtltComp !== 0)
+    if (!c.operator && (lt || gt) && gtltComp !== 0) {
       return false
+    }
   }
 
   // if there was a < or >, and nothing in the dom, then must be false
   // UNLESS it was limited by another range in the other direction.
   // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
-  if (gt && hasDomLT && !lt && gtltComp !== 0)
+  if (gt && hasDomLT && !lt && gtltComp !== 0) {
     return false
+  }
 
-  if (lt && hasDomGT && !gt && gtltComp !== 0)
+  if (lt && hasDomGT && !gt && gtltComp !== 0) {
     return false
+  }
 
   // we needed a prerelease range in a specific tuple, but didn't get one
   // then this isn't a subset.  eg >=1.2.3-pre is not a subset of >=1.0.0,
   // because it includes prereleases in the 1.2.3 tuple
-  if (needDomGTPre || needDomLTPre)
+  if (needDomGTPre || needDomLTPre) {
     return false
+  }
 
   return true
 }
 
 // >=1.2.3 is lower than >1.2.3
 const higherGT = (a, b, options) => {
-  if (!a)
+  if (!a) {
     return b
+  }
   const comp = compare(a.semver, b.semver, options)
   return comp > 0 ? a
     : comp < 0 ? b
@@ -9924,8 +10236,9 @@ const higherGT = (a, b, options) => {
 
 // <=1.2.3 is higher than <1.2.3
 const lowerLT = (a, b, options) => {
-  if (!a)
+  if (!a) {
     return b
+  }
   const comp = compare(a.semver, b.semver, options)
   return comp < 0 ? a
     : comp > 0 ? b
@@ -9941,6 +10254,9 @@ module.exports = subset
 /***/ 2706:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const Range = __nccwpck_require__(9828)
 
 // Mostly just for testing and legacy API reasons
@@ -9955,6 +10271,9 @@ module.exports = toComparators
 
 /***/ 2098:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const Range = __nccwpck_require__(9828)
 const validRange = (range, options) => {
@@ -10014,164 +10333,203 @@ module.exports = /^#!(.*)/;
 // Note: since nyc uses this module to output coverage, any lines
 // that are in the direct sync flow of nyc's outputCoverage are
 // ignored, since we can never get coverage for them.
-var assert = __nccwpck_require__(9491)
-var signals = __nccwpck_require__(3710)
-var isWin = /^win/i.test(process.platform)
+// grab a reference to node's real process object right away
+var process = global.process
 
-var EE = __nccwpck_require__(2361)
+const processOk = function (process) {
+  return process &&
+    typeof process === 'object' &&
+    typeof process.removeListener === 'function' &&
+    typeof process.emit === 'function' &&
+    typeof process.reallyExit === 'function' &&
+    typeof process.listeners === 'function' &&
+    typeof process.kill === 'function' &&
+    typeof process.pid === 'number' &&
+    typeof process.on === 'function'
+}
+
+// some kind of non-node environment, just no-op
 /* istanbul ignore if */
-if (typeof EE !== 'function') {
-  EE = EE.EventEmitter
-}
-
-var emitter
-if (process.__signal_exit_emitter__) {
-  emitter = process.__signal_exit_emitter__
+if (!processOk(process)) {
+  module.exports = function () {
+    return function () {}
+  }
 } else {
-  emitter = process.__signal_exit_emitter__ = new EE()
-  emitter.count = 0
-  emitter.emitted = {}
-}
+  var assert = __nccwpck_require__(9491)
+  var signals = __nccwpck_require__(3710)
+  var isWin = /^win/i.test(process.platform)
 
-// Because this emitter is a global, we have to check to see if a
-// previous version of this library failed to enable infinite listeners.
-// I know what you're about to say.  But literally everything about
-// signal-exit is a compromise with evil.  Get used to it.
-if (!emitter.infinite) {
-  emitter.setMaxListeners(Infinity)
-  emitter.infinite = true
-}
-
-module.exports = function (cb, opts) {
-  assert.equal(typeof cb, 'function', 'a callback must be provided for exit handler')
-
-  if (loaded === false) {
-    load()
+  var EE = __nccwpck_require__(2361)
+  /* istanbul ignore if */
+  if (typeof EE !== 'function') {
+    EE = EE.EventEmitter
   }
 
-  var ev = 'exit'
-  if (opts && opts.alwaysLast) {
-    ev = 'afterexit'
+  var emitter
+  if (process.__signal_exit_emitter__) {
+    emitter = process.__signal_exit_emitter__
+  } else {
+    emitter = process.__signal_exit_emitter__ = new EE()
+    emitter.count = 0
+    emitter.emitted = {}
   }
 
-  var remove = function () {
-    emitter.removeListener(ev, cb)
-    if (emitter.listeners('exit').length === 0 &&
-        emitter.listeners('afterexit').length === 0) {
-      unload()
+  // Because this emitter is a global, we have to check to see if a
+  // previous version of this library failed to enable infinite listeners.
+  // I know what you're about to say.  But literally everything about
+  // signal-exit is a compromise with evil.  Get used to it.
+  if (!emitter.infinite) {
+    emitter.setMaxListeners(Infinity)
+    emitter.infinite = true
+  }
+
+  module.exports = function (cb, opts) {
+    /* istanbul ignore if */
+    if (!processOk(global.process)) {
+      return function () {}
     }
-  }
-  emitter.on(ev, cb)
+    assert.equal(typeof cb, 'function', 'a callback must be provided for exit handler')
 
-  return remove
-}
+    if (loaded === false) {
+      load()
+    }
 
-module.exports.unload = unload
-function unload () {
-  if (!loaded) {
-    return
-  }
-  loaded = false
+    var ev = 'exit'
+    if (opts && opts.alwaysLast) {
+      ev = 'afterexit'
+    }
 
-  signals.forEach(function (sig) {
-    try {
-      process.removeListener(sig, sigListeners[sig])
-    } catch (er) {}
-  })
-  process.emit = originalProcessEmit
-  process.reallyExit = originalProcessReallyExit
-  emitter.count -= 1
-}
-
-function emit (event, code, signal) {
-  if (emitter.emitted[event]) {
-    return
-  }
-  emitter.emitted[event] = true
-  emitter.emit(event, code, signal)
-}
-
-// { <signal>: <listener fn>, ... }
-var sigListeners = {}
-signals.forEach(function (sig) {
-  sigListeners[sig] = function listener () {
-    // If there are no other listeners, an exit is coming!
-    // Simplest way: remove us and then re-send the signal.
-    // We know that this will kill the process, so we can
-    // safely emit now.
-    var listeners = process.listeners(sig)
-    if (listeners.length === emitter.count) {
-      unload()
-      emit('exit', null, sig)
-      /* istanbul ignore next */
-      emit('afterexit', null, sig)
-      /* istanbul ignore next */
-      if (isWin && sig === 'SIGHUP') {
-        // "SIGHUP" throws an `ENOSYS` error on Windows,
-        // so use a supported signal instead
-        sig = 'SIGINT'
+    var remove = function () {
+      emitter.removeListener(ev, cb)
+      if (emitter.listeners('exit').length === 0 &&
+          emitter.listeners('afterexit').length === 0) {
+        unload()
       }
-      process.kill(process.pid, sig)
     }
+    emitter.on(ev, cb)
+
+    return remove
   }
-})
 
-module.exports.signals = function () {
-  return signals
-}
+  var unload = function unload () {
+    if (!loaded || !processOk(global.process)) {
+      return
+    }
+    loaded = false
 
-module.exports.load = load
-
-var loaded = false
-
-function load () {
-  if (loaded) {
-    return
+    signals.forEach(function (sig) {
+      try {
+        process.removeListener(sig, sigListeners[sig])
+      } catch (er) {}
+    })
+    process.emit = originalProcessEmit
+    process.reallyExit = originalProcessReallyExit
+    emitter.count -= 1
   }
-  loaded = true
+  module.exports.unload = unload
 
-  // This is the number of onSignalExit's that are in play.
-  // It's important so that we can count the correct number of
-  // listeners on signals, and don't wait for the other one to
-  // handle it instead of us.
-  emitter.count += 1
+  var emit = function emit (event, code, signal) {
+    /* istanbul ignore if */
+    if (emitter.emitted[event]) {
+      return
+    }
+    emitter.emitted[event] = true
+    emitter.emit(event, code, signal)
+  }
 
-  signals = signals.filter(function (sig) {
-    try {
-      process.on(sig, sigListeners[sig])
-      return true
-    } catch (er) {
-      return false
+  // { <signal>: <listener fn>, ... }
+  var sigListeners = {}
+  signals.forEach(function (sig) {
+    sigListeners[sig] = function listener () {
+      /* istanbul ignore if */
+      if (!processOk(global.process)) {
+        return
+      }
+      // If there are no other listeners, an exit is coming!
+      // Simplest way: remove us and then re-send the signal.
+      // We know that this will kill the process, so we can
+      // safely emit now.
+      var listeners = process.listeners(sig)
+      if (listeners.length === emitter.count) {
+        unload()
+        emit('exit', null, sig)
+        /* istanbul ignore next */
+        emit('afterexit', null, sig)
+        /* istanbul ignore next */
+        if (isWin && sig === 'SIGHUP') {
+          // "SIGHUP" throws an `ENOSYS` error on Windows,
+          // so use a supported signal instead
+          sig = 'SIGINT'
+        }
+        /* istanbul ignore next */
+        process.kill(process.pid, sig)
+      }
     }
   })
 
-  process.emit = processEmit
-  process.reallyExit = processReallyExit
-}
+  module.exports.signals = function () {
+    return signals
+  }
 
-var originalProcessReallyExit = process.reallyExit
-function processReallyExit (code) {
-  process.exitCode = code || 0
-  emit('exit', process.exitCode, null)
-  /* istanbul ignore next */
-  emit('afterexit', process.exitCode, null)
-  /* istanbul ignore next */
-  originalProcessReallyExit.call(process, process.exitCode)
-}
+  var loaded = false
 
-var originalProcessEmit = process.emit
-function processEmit (ev, arg) {
-  if (ev === 'exit') {
-    if (arg !== undefined) {
-      process.exitCode = arg
+  var load = function load () {
+    if (loaded || !processOk(global.process)) {
+      return
     }
-    var ret = originalProcessEmit.apply(this, arguments)
+    loaded = true
+
+    // This is the number of onSignalExit's that are in play.
+    // It's important so that we can count the correct number of
+    // listeners on signals, and don't wait for the other one to
+    // handle it instead of us.
+    emitter.count += 1
+
+    signals = signals.filter(function (sig) {
+      try {
+        process.on(sig, sigListeners[sig])
+        return true
+      } catch (er) {
+        return false
+      }
+    })
+
+    process.emit = processEmit
+    process.reallyExit = processReallyExit
+  }
+  module.exports.load = load
+
+  var originalProcessReallyExit = process.reallyExit
+  var processReallyExit = function processReallyExit (code) {
+    /* istanbul ignore if */
+    if (!processOk(global.process)) {
+      return
+    }
+    process.exitCode = code || /* istanbul ignore next */ 0
     emit('exit', process.exitCode, null)
     /* istanbul ignore next */
     emit('afterexit', process.exitCode, null)
-    return ret
-  } else {
-    return originalProcessEmit.apply(this, arguments)
+    /* istanbul ignore next */
+    originalProcessReallyExit.call(process, process.exitCode)
+  }
+
+  var originalProcessEmit = process.emit
+  var processEmit = function processEmit (ev, arg) {
+    if (ev === 'exit' && processOk(global.process)) {
+      /* istanbul ignore else */
+      if (arg !== undefined) {
+        process.exitCode = arg
+      }
+      var ret = originalProcessEmit.apply(this, arguments)
+      /* istanbul ignore next */
+      emit('exit', process.exitCode, null)
+      /* istanbul ignore next */
+      emit('afterexit', process.exitCode, null)
+      /* istanbul ignore next */
+      return ret
+    } else {
+      return originalProcessEmit.apply(this, arguments)
+    }
   }
 }
 
@@ -10262,138 +10620,6 @@ module.exports = input => {
 
 /***/ }),
 
-/***/ 4207:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const isWindows = process.platform === 'win32' ||
-    process.env.OSTYPE === 'cygwin' ||
-    process.env.OSTYPE === 'msys'
-
-const path = __nccwpck_require__(1017)
-const COLON = isWindows ? ';' : ':'
-const isexe = __nccwpck_require__(7126)
-
-const getNotFoundError = (cmd) =>
-  Object.assign(new Error(`not found: ${cmd}`), { code: 'ENOENT' })
-
-const getPathInfo = (cmd, opt) => {
-  const colon = opt.colon || COLON
-
-  // If it has a slash, then we don't bother searching the pathenv.
-  // just check the file itself, and that's it.
-  const pathEnv = cmd.match(/\//) || isWindows && cmd.match(/\\/) ? ['']
-    : (
-      [
-        // windows always checks the cwd first
-        ...(isWindows ? [process.cwd()] : []),
-        ...(opt.path || process.env.PATH ||
-          /* istanbul ignore next: very unusual */ '').split(colon),
-      ]
-    )
-  const pathExtExe = isWindows
-    ? opt.pathExt || process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM'
-    : ''
-  const pathExt = isWindows ? pathExtExe.split(colon) : ['']
-
-  if (isWindows) {
-    if (cmd.indexOf('.') !== -1 && pathExt[0] !== '')
-      pathExt.unshift('')
-  }
-
-  return {
-    pathEnv,
-    pathExt,
-    pathExtExe,
-  }
-}
-
-const which = (cmd, opt, cb) => {
-  if (typeof opt === 'function') {
-    cb = opt
-    opt = {}
-  }
-  if (!opt)
-    opt = {}
-
-  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
-  const found = []
-
-  const step = i => new Promise((resolve, reject) => {
-    if (i === pathEnv.length)
-      return opt.all && found.length ? resolve(found)
-        : reject(getNotFoundError(cmd))
-
-    const ppRaw = pathEnv[i]
-    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
-
-    const pCmd = path.join(pathPart, cmd)
-    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
-      : pCmd
-
-    resolve(subStep(p, i, 0))
-  })
-
-  const subStep = (p, i, ii) => new Promise((resolve, reject) => {
-    if (ii === pathExt.length)
-      return resolve(step(i + 1))
-    const ext = pathExt[ii]
-    isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
-      if (!er && is) {
-        if (opt.all)
-          found.push(p + ext)
-        else
-          return resolve(p + ext)
-      }
-      return resolve(subStep(p, i, ii + 1))
-    })
-  })
-
-  return cb ? step(0).then(res => cb(null, res), cb) : step(0)
-}
-
-const whichSync = (cmd, opt) => {
-  opt = opt || {}
-
-  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
-  const found = []
-
-  for (let i = 0; i < pathEnv.length; i ++) {
-    const ppRaw = pathEnv[i]
-    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
-
-    const pCmd = path.join(pathPart, cmd)
-    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
-      : pCmd
-
-    for (let j = 0; j < pathExt.length; j ++) {
-      const cur = p + pathExt[j]
-      try {
-        const is = isexe.sync(cur, { pathExt: pathExtExe })
-        if (is) {
-          if (opt.all)
-            found.push(cur)
-          else
-            return cur
-        }
-      } catch (ex) {}
-    }
-  }
-
-  if (opt.all && found.length)
-    return found
-
-  if (opt.nothrow)
-    return null
-
-  throw getNotFoundError(cmd)
-}
-
-module.exports = which
-which.sync = whichSync
-
-
-/***/ }),
-
 /***/ 2940:
 /***/ ((module) => {
 
@@ -10430,456 +10656,6 @@ function wrappy (fn, cb) {
     return ret
   }
 }
-
-
-/***/ }),
-
-/***/ 4091:
-/***/ ((module) => {
-
-"use strict";
-
-module.exports = function (Yallist) {
-  Yallist.prototype[Symbol.iterator] = function* () {
-    for (let walker = this.head; walker; walker = walker.next) {
-      yield walker.value
-    }
-  }
-}
-
-
-/***/ }),
-
-/***/ 665:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-module.exports = Yallist
-
-Yallist.Node = Node
-Yallist.create = Yallist
-
-function Yallist (list) {
-  var self = this
-  if (!(self instanceof Yallist)) {
-    self = new Yallist()
-  }
-
-  self.tail = null
-  self.head = null
-  self.length = 0
-
-  if (list && typeof list.forEach === 'function') {
-    list.forEach(function (item) {
-      self.push(item)
-    })
-  } else if (arguments.length > 0) {
-    for (var i = 0, l = arguments.length; i < l; i++) {
-      self.push(arguments[i])
-    }
-  }
-
-  return self
-}
-
-Yallist.prototype.removeNode = function (node) {
-  if (node.list !== this) {
-    throw new Error('removing node which does not belong to this list')
-  }
-
-  var next = node.next
-  var prev = node.prev
-
-  if (next) {
-    next.prev = prev
-  }
-
-  if (prev) {
-    prev.next = next
-  }
-
-  if (node === this.head) {
-    this.head = next
-  }
-  if (node === this.tail) {
-    this.tail = prev
-  }
-
-  node.list.length--
-  node.next = null
-  node.prev = null
-  node.list = null
-
-  return next
-}
-
-Yallist.prototype.unshiftNode = function (node) {
-  if (node === this.head) {
-    return
-  }
-
-  if (node.list) {
-    node.list.removeNode(node)
-  }
-
-  var head = this.head
-  node.list = this
-  node.next = head
-  if (head) {
-    head.prev = node
-  }
-
-  this.head = node
-  if (!this.tail) {
-    this.tail = node
-  }
-  this.length++
-}
-
-Yallist.prototype.pushNode = function (node) {
-  if (node === this.tail) {
-    return
-  }
-
-  if (node.list) {
-    node.list.removeNode(node)
-  }
-
-  var tail = this.tail
-  node.list = this
-  node.prev = tail
-  if (tail) {
-    tail.next = node
-  }
-
-  this.tail = node
-  if (!this.head) {
-    this.head = node
-  }
-  this.length++
-}
-
-Yallist.prototype.push = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    push(this, arguments[i])
-  }
-  return this.length
-}
-
-Yallist.prototype.unshift = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    unshift(this, arguments[i])
-  }
-  return this.length
-}
-
-Yallist.prototype.pop = function () {
-  if (!this.tail) {
-    return undefined
-  }
-
-  var res = this.tail.value
-  this.tail = this.tail.prev
-  if (this.tail) {
-    this.tail.next = null
-  } else {
-    this.head = null
-  }
-  this.length--
-  return res
-}
-
-Yallist.prototype.shift = function () {
-  if (!this.head) {
-    return undefined
-  }
-
-  var res = this.head.value
-  this.head = this.head.next
-  if (this.head) {
-    this.head.prev = null
-  } else {
-    this.tail = null
-  }
-  this.length--
-  return res
-}
-
-Yallist.prototype.forEach = function (fn, thisp) {
-  thisp = thisp || this
-  for (var walker = this.head, i = 0; walker !== null; i++) {
-    fn.call(thisp, walker.value, i, this)
-    walker = walker.next
-  }
-}
-
-Yallist.prototype.forEachReverse = function (fn, thisp) {
-  thisp = thisp || this
-  for (var walker = this.tail, i = this.length - 1; walker !== null; i--) {
-    fn.call(thisp, walker.value, i, this)
-    walker = walker.prev
-  }
-}
-
-Yallist.prototype.get = function (n) {
-  for (var i = 0, walker = this.head; walker !== null && i < n; i++) {
-    // abort out of the list early if we hit a cycle
-    walker = walker.next
-  }
-  if (i === n && walker !== null) {
-    return walker.value
-  }
-}
-
-Yallist.prototype.getReverse = function (n) {
-  for (var i = 0, walker = this.tail; walker !== null && i < n; i++) {
-    // abort out of the list early if we hit a cycle
-    walker = walker.prev
-  }
-  if (i === n && walker !== null) {
-    return walker.value
-  }
-}
-
-Yallist.prototype.map = function (fn, thisp) {
-  thisp = thisp || this
-  var res = new Yallist()
-  for (var walker = this.head; walker !== null;) {
-    res.push(fn.call(thisp, walker.value, this))
-    walker = walker.next
-  }
-  return res
-}
-
-Yallist.prototype.mapReverse = function (fn, thisp) {
-  thisp = thisp || this
-  var res = new Yallist()
-  for (var walker = this.tail; walker !== null;) {
-    res.push(fn.call(thisp, walker.value, this))
-    walker = walker.prev
-  }
-  return res
-}
-
-Yallist.prototype.reduce = function (fn, initial) {
-  var acc
-  var walker = this.head
-  if (arguments.length > 1) {
-    acc = initial
-  } else if (this.head) {
-    walker = this.head.next
-    acc = this.head.value
-  } else {
-    throw new TypeError('Reduce of empty list with no initial value')
-  }
-
-  for (var i = 0; walker !== null; i++) {
-    acc = fn(acc, walker.value, i)
-    walker = walker.next
-  }
-
-  return acc
-}
-
-Yallist.prototype.reduceReverse = function (fn, initial) {
-  var acc
-  var walker = this.tail
-  if (arguments.length > 1) {
-    acc = initial
-  } else if (this.tail) {
-    walker = this.tail.prev
-    acc = this.tail.value
-  } else {
-    throw new TypeError('Reduce of empty list with no initial value')
-  }
-
-  for (var i = this.length - 1; walker !== null; i--) {
-    acc = fn(acc, walker.value, i)
-    walker = walker.prev
-  }
-
-  return acc
-}
-
-Yallist.prototype.toArray = function () {
-  var arr = new Array(this.length)
-  for (var i = 0, walker = this.head; walker !== null; i++) {
-    arr[i] = walker.value
-    walker = walker.next
-  }
-  return arr
-}
-
-Yallist.prototype.toArrayReverse = function () {
-  var arr = new Array(this.length)
-  for (var i = 0, walker = this.tail; walker !== null; i++) {
-    arr[i] = walker.value
-    walker = walker.prev
-  }
-  return arr
-}
-
-Yallist.prototype.slice = function (from, to) {
-  to = to || this.length
-  if (to < 0) {
-    to += this.length
-  }
-  from = from || 0
-  if (from < 0) {
-    from += this.length
-  }
-  var ret = new Yallist()
-  if (to < from || to < 0) {
-    return ret
-  }
-  if (from < 0) {
-    from = 0
-  }
-  if (to > this.length) {
-    to = this.length
-  }
-  for (var i = 0, walker = this.head; walker !== null && i < from; i++) {
-    walker = walker.next
-  }
-  for (; walker !== null && i < to; i++, walker = walker.next) {
-    ret.push(walker.value)
-  }
-  return ret
-}
-
-Yallist.prototype.sliceReverse = function (from, to) {
-  to = to || this.length
-  if (to < 0) {
-    to += this.length
-  }
-  from = from || 0
-  if (from < 0) {
-    from += this.length
-  }
-  var ret = new Yallist()
-  if (to < from || to < 0) {
-    return ret
-  }
-  if (from < 0) {
-    from = 0
-  }
-  if (to > this.length) {
-    to = this.length
-  }
-  for (var i = this.length, walker = this.tail; walker !== null && i > to; i--) {
-    walker = walker.prev
-  }
-  for (; walker !== null && i > from; i--, walker = walker.prev) {
-    ret.push(walker.value)
-  }
-  return ret
-}
-
-Yallist.prototype.splice = function (start, deleteCount, ...nodes) {
-  if (start > this.length) {
-    start = this.length - 1
-  }
-  if (start < 0) {
-    start = this.length + start;
-  }
-
-  for (var i = 0, walker = this.head; walker !== null && i < start; i++) {
-    walker = walker.next
-  }
-
-  var ret = []
-  for (var i = 0; walker && i < deleteCount; i++) {
-    ret.push(walker.value)
-    walker = this.removeNode(walker)
-  }
-  if (walker === null) {
-    walker = this.tail
-  }
-
-  if (walker !== this.head && walker !== this.tail) {
-    walker = walker.prev
-  }
-
-  for (var i = 0; i < nodes.length; i++) {
-    walker = insert(this, walker, nodes[i])
-  }
-  return ret;
-}
-
-Yallist.prototype.reverse = function () {
-  var head = this.head
-  var tail = this.tail
-  for (var walker = head; walker !== null; walker = walker.prev) {
-    var p = walker.prev
-    walker.prev = walker.next
-    walker.next = p
-  }
-  this.head = tail
-  this.tail = head
-  return this
-}
-
-function insert (self, node, value) {
-  var inserted = node === self.head ?
-    new Node(value, null, node, self) :
-    new Node(value, node, node.next, self)
-
-  if (inserted.next === null) {
-    self.tail = inserted
-  }
-  if (inserted.prev === null) {
-    self.head = inserted
-  }
-
-  self.length++
-
-  return inserted
-}
-
-function push (self, item) {
-  self.tail = new Node(item, self.tail, null, self)
-  if (!self.head) {
-    self.head = self.tail
-  }
-  self.length++
-}
-
-function unshift (self, item) {
-  self.head = new Node(item, null, self.head, self)
-  if (!self.tail) {
-    self.tail = self.head
-  }
-  self.length++
-}
-
-function Node (value, prev, next, list) {
-  if (!(this instanceof Node)) {
-    return new Node(value, prev, next, list)
-  }
-
-  this.list = list
-  this.value = value
-
-  if (prev) {
-    prev.next = this
-    this.prev = prev
-  } else {
-    this.prev = null
-  }
-
-  if (next) {
-    next.prev = this
-    this.next = next
-  } else {
-    this.next = null
-  }
-}
-
-try {
-  // add if support for Symbol.iterator is present
-  __nccwpck_require__(4091)(Yallist)
-} catch (er) {}
 
 
 /***/ }),
