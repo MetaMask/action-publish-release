@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.3]
+### Fixed
+- Determine release packages by tag existence on GitHub instead of NPM ([#116](https://github.com/MetaMask/action-publish-release/pull/116))
+  - This fixes a bug where the action may fail if packages are published to NPM ahead of running the action.
+
 ## [3.2.2]
 ### Fixed
 - Pin the Git tag created in the action to the commit that ran the action, not `main` ([#96](https://github.com/MetaMask/action-publish-release/pull/96))
@@ -115,7 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.2...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.3...HEAD
+[3.2.3]: https://github.com/MetaMask/action-publish-release/compare/v3.2.2...v3.2.3
 [3.2.2]: https://github.com/MetaMask/action-publish-release/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/MetaMask/action-publish-release/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/MetaMask/action-publish-release/compare/v3.1.0...v3.2.0
