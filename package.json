@@ -10,7 +10,6 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "setup": "yarn install && yarn allow-scripts",
     "lint:eslint": "yarn eslint . --cache --ext js,ts",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
@@ -46,8 +45,8 @@
     "@metamask/auto-changelog": "^3.1.0"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "^1.0.6",
-    "@lavamoat/preinstall-always-fail": "^1.0.0",
+    "@lavamoat/allow-scripts": "^3.0.4",
+    "@lavamoat/preinstall-always-fail": "^2.0.0",
     "@metamask/eslint-config": "^7.0.1",
     "@metamask/eslint-config-jest": "^7.0.0",
     "@metamask/eslint-config-nodejs": "^7.0.1",
@@ -68,6 +67,13 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^29.1.0",
     "typescript": "~5.7.3"
+  },
+  "packageManager": "yarn@4.16.0",
+  "resolutions": {
+    "baseline-browser-mapping": "2.10.34",
+    "caniuse-lite": "1.0.30001797",
+    "electron-to-chromium": "1.5.368",
+    "semver": "7.8.3"
   },
   "lavamoat": {
     "allowScripts": {
