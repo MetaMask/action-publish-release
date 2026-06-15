@@ -3,10 +3,11 @@ import {
   isTruthyString,
   isValidSemver,
 } from '@metamask/action-utils';
+import process from 'node:process';
 
 import { FIXED, INDEPENDENT } from './constants';
 
-interface ExpectedProcessEnv extends Partial<Record<string, string>> {
+type ExpectedProcessEnv = {
   // The root of the workspace running this action
   GITHUB_WORKSPACE?: string;
   // This is set from the repository `package.json` key: .repository.url
@@ -19,7 +20,7 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
   RELEASE_STRATEGY?: string;
   // this is a json list of the updated packages
   RELEASE_PACKAGES?: string;
-}
+} & Partial<Record<string, string>>;
 
 /**
  * Add missing properties to "process.env" interface.
@@ -27,25 +28,27 @@ interface ExpectedProcessEnv extends Partial<Record<string, string>> {
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    // The module-augmentation pattern requires an interface here, even though
+    // the body is empty.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions, @typescript-eslint/no-empty-object-type
     interface ProcessEnv extends ExpectedProcessEnv {}
   }
 }
 
-interface ParsedEnvironmentVariables {
+type ParsedEnvironmentVariables = {
   releaseVersion: string;
   repoUrl: string;
   workspaceRoot: string;
   releaseStrategy: string;
   releasePackages: string | undefined;
-}
+};
 
 const isValidUrl = (str: string): boolean => {
   let url;
 
   try {
     url = new URL(str);
-  } catch (_) {
+  } catch {
     return false;
   }
 
