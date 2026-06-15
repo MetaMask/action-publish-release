@@ -1,4 +1,5 @@
 import * as actionsCore from '@actions/core';
+
 import * as actionModule from './getReleaseNotes';
 
 jest.mock('@actions/core', () => {
@@ -24,6 +25,10 @@ describe('main entry file', () => {
     const logErrorMock = jest.spyOn(actionsCore, 'error');
     const setFailedMock = jest.spyOn(actionsCore, 'setFailed');
 
+    // The module body invokes `getReleaseNotes().catch(...)` as a side
+    // effect; we intentionally do not await it so the rejection can settle
+    // on the next tick (captured by the setImmediate below).
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     import('.');
     await new Promise<void>((resolve) => {
       setImmediate(() => {

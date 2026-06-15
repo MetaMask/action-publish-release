@@ -2,6 +2,7 @@ import {
   error as logError,
   setFailed as setActionToFailed,
 } from '@actions/core';
+
 import { getReleaseNotes } from './getReleaseNotes';
 
 getReleaseNotes().catch((error) => {

@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-import pathUtils from 'path';
 import { exportVariable as exportActionVariable } from '@actions/core';
 import {
   getPackageManifest,
@@ -11,8 +9,11 @@ import {
   validatePolyrepoPackageManifest,
 } from '@metamask/action-utils';
 import { parseChangelog } from '@metamask/auto-changelog';
-import { parseEnvironmentVariables } from './utils';
+import { promises as fs } from 'node:fs';
+import pathUtils from 'node:path';
+
 import { INDEPENDENT, PackageRecord } from './constants';
+import { parseEnvironmentVariables } from './utils';
 
 export const getReleasePackages = (): Record<string, PackageRecord> => {
   const { releasePackages } = parseEnvironmentVariables();

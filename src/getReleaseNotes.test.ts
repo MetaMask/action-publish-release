@@ -1,13 +1,14 @@
-import assert from 'assert';
-import fs from 'fs';
 import * as actionsCore from '@actions/core';
-import * as autoChangelog from '@metamask/auto-changelog';
 import * as actionUtils from '@metamask/action-utils';
-import * as localUtils from './utils';
-import * as releaseNotesUtils from './getReleaseNotes';
-import { PackageRecord } from './constants';
+import * as autoChangelog from '@metamask/auto-changelog';
+import assert from 'node:assert';
+import fs from 'node:fs';
 
-jest.mock('fs', () => {
+import { PackageRecord } from './constants';
+import * as releaseNotesUtils from './getReleaseNotes';
+import * as localUtils from './utils';
+
+jest.mock('node:fs', () => {
   return {
     promises: {
       readFile: jest.fn(),
