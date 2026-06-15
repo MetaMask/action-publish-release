@@ -1,31 +1,45 @@
 name: Build, Lint, and Test
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_call:
 
 jobs:
   build-lint-test:
+    name: Build, lint, and test (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: corepack enable
       - run: yarn install --immutable
       - run: yarn build
-      - run: git diff --exit-code --name-status || { echo 'working directory dirty after "yarn build"'; exit 1; }
+      - name: Require clean working directory
+        shell: bash
+        run: |
+          if ! git diff --exit-code; then
+            echo "Working tree dirty at end of job"
+            exit 1
+          fi
       - run: yarn lint
       - run: yarn test
-  # tests to ensure get-release-packages.sh functions as expected
+
+  # Tests that ensure get-release-packages.sh works against a real monorepo
+  # by running it over a pinned snapshot of MetaMask/snaps.
   updated-packages-test:
+    name: Updated packages test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           repository: MetaMask/snaps
           ref: v120.0.0
           path: snaps
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           path: action-publish-release
       - run: corepack enable
@@ -125,9 +139,3 @@ jobs:
             echo "modified RELEASE_PACKAGES has length '${LENGTH}', expected length '${EXPECTED_LENGTH}'"
             exit 1
           fi;
-
-  all-tests-pass:
-    runs-on: ubuntu-latest
-    needs: [build-lint-test, updated-packages-test]
-    steps:
-      - run: echo "Great success"

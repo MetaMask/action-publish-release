@@ -1,35 +1,88 @@
 name: Publish Release
 
 on:
-  pull_request:
-    types: [closed]
+  workflow_call:
+    inputs:
+      slack-icon-url:
+        required: false
+        type: string
+        default: 'https://raw.githubusercontent.com/MetaMask/action-npm-publish/main/robo.png'
+      slack-subteam:
+        required: false
+        type: string
+        default: S042S7RE4AE # @metamask-npm-publishers
+      slack-username:
+        required: false
+        type: string
+        default: 'MetaMask bot'
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
 
 jobs:
-  publish-release:
-    permissions:
-      contents: write
-    if: |
-      github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/')
+  announce-release:
+    name: Announce release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+      - id: name-hash
+        name: Get Slack name and hash
+        shell: bash
+        if: inputs.slack-subteam != ''
+        run: |
+          NAME_VERSION_TEXT=$(jq --raw-output '.name + "@" + .version' package.json )
+          NAME_VERSION_TEXT_STRIPPED="${NAME_VERSION_TEXT#@}"
+          echo "NAME_VERSION=$NAME_VERSION_TEXT_STRIPPED" >> "$GITHUB_OUTPUT"
+      - id: final-text
+        name: Get Slack final text
+        shell: bash
+        if: inputs.slack-subteam != ''
+        run: |
+          DEFAULT_TEXT="\`${{ steps.name-hash.outputs.NAME_VERSION }}\` is awaiting deployment :rocket: \n <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/|→ Click here to review deployment>"
+          SUBTEAM_TEXT="${{ inputs.slack-subteam }}"
+          FINAL_TEXT="$DEFAULT_TEXT"
+          if [[ ! "$SUBTEAM_TEXT" == "" ]]; then
+            FINAL_TEXT="<!subteam^$SUBTEAM_TEXT> $DEFAULT_TEXT"
+          fi
+          echo "FINAL_TEXT=$FINAL_TEXT" >> "$GITHUB_OUTPUT"
+      - name: Post to a Slack channel
+        if: inputs.slack-subteam != ''
+        uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844
         with:
-          # This is to guarantee that the most recent tag is fetched,
-          # which we need for updating the shorthand major version tag.
+          payload: |
+            {
+              "text": "${{ steps.final-text.outputs.FINAL_TEXT }}",
+              "icon_url": "${{ inputs.slack-icon-url }}",
+              "username": "${{ inputs.slack-username }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        continue-on-error: true
+
+  publish-release:
+    name: Publish release
+    environment: action-publish
+    needs: announce-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # This is to guarantee that the most recent tag is fetched, which we
+          # need for updating the shorthand major version tag.
           fetch-depth: 0
-          # We check out the release pull request's base branch, which will be
-          # used as the base branch for all git operations.
-          ref: ${{ github.event.pull_request.base.ref }}
-      - name: Get Node.js version
-        id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: ./
+          ref: ${{ github.sha }}
+      - name: Publish release
+        # We can't use the action by its public name here because this repo
+        # *is* that action. Use the local checkout instead.
+        uses: ./
         id: publish-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update shorthand major version tag
-        run: ./scripts/update-major-version-tag.sh ${{ steps.publish-release.outputs.release-version }}
+        run: |
+          ./.github/workflows/scripts/update-major-version-tag.sh \
+            ${{ steps.publish-release.outputs.release-version }}
