@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   publish-release:
+    environment: action-publish
     permissions:
       contents: read
       id-token: write
