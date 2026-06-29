@@ -4,16 +4,21 @@ on:
   pull_request:
     types: [closed]
 
+permissions:
+  contents: read
+
 jobs:
   publish-release:
     permissions:
-      contents: write
+      contents: read
+      id-token: write
     if: |
       github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
           # This is to guarantee that the most recent tag is fetched,
           # which we need for updating the shorthand major version tag.
@@ -27,9 +32,22 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+
+      - name: Get token
+        id: get-token
+        uses: MetaMask/github-tools/.github/actions/get-token@v1
+        with:
+          token-exchange-url: ${{ vars.TOKEN_EXCHANGE_URL }}
+          permissions: |
+            contents: write
+
       - uses: ./
         id: publish-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+
       - name: Update shorthand major version tag
-        run: ./scripts/update-major-version-tag.sh ${{ steps.publish-release.outputs.release-version }}
+        uses: MetaMask/github-tools/.github/actions/update-major-version-tag@v1
+        with:
+          release-version: ${{ steps.publish-release.outputs.release-version }}
+          github-token: ${{ steps.get-token.outputs.token }}
