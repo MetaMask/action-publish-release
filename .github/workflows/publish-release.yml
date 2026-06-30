@@ -96,7 +96,7 @@ jobs:
             contents: write
 
       - name: Publish release
-        uses: MetaMask/action-publish-release@v3
+        uses: ./
         id: publish-release
         env:
           GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
