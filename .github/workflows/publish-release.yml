@@ -19,12 +19,18 @@ on:
       SLACK_WEBHOOK_URL:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   announce-release:
     name: Announce release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - id: name-hash
         name: Get Slack name and hash
         shell: bash
@@ -37,12 +43,16 @@ jobs:
         name: Get Slack final text
         shell: bash
         if: inputs.slack-subteam != ''
+        env:
+          NAME_VERSION: ${{ steps.name-hash.outputs.NAME_VERSION }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SUBTEAM: ${{ inputs.slack-subteam }}
         run: |
-          DEFAULT_TEXT="\`${{ steps.name-hash.outputs.NAME_VERSION }}\` is awaiting deployment :rocket: \n <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/|→ Click here to review deployment>"
-          SUBTEAM_TEXT="${{ inputs.slack-subteam }}"
+          DEFAULT_TEXT="\`${NAME_VERSION}\` is awaiting deployment :rocket: \n <https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}/|→ Click here to review deployment>"
           FINAL_TEXT="$DEFAULT_TEXT"
-          if [[ ! "$SUBTEAM_TEXT" == "" ]]; then
-            FINAL_TEXT="<!subteam^$SUBTEAM_TEXT> $DEFAULT_TEXT"
+          if [[ -n "$SUBTEAM" ]]; then
+            FINAL_TEXT="<!subteam^${SUBTEAM}> $DEFAULT_TEXT"
           fi
           echo "FINAL_TEXT=$FINAL_TEXT" >> "$GITHUB_OUTPUT"
       - name: Post to a Slack channel
@@ -65,24 +75,34 @@ jobs:
     environment: action-publish
     needs: announce-release
     permissions:
-      contents: write
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
         with:
-          # This is to guarantee that the most recent tag is fetched, which we
-          # need for updating the shorthand major version tag.
-          fetch-depth: 0
+          is-high-risk-environment: true
+          persist-credentials: false
           ref: ${{ github.sha }}
+          skip-install: true
+
+      - name: Get token
+        id: get-token
+        uses: MetaMask/github-tools/.github/actions/get-token@v1
+        with:
+          token-exchange-url: ${{ vars.TOKEN_EXCHANGE_URL }}
+          permissions: |
+            contents: write
+
       - name: Publish release
-        # We can't use the action by its public name here because this repo
-        # *is* that action. Use the local checkout instead.
-        uses: ./
+        uses: MetaMask/action-publish-release@v3
         id: publish-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+
       - name: Update shorthand major version tag
-        run: |
-          ./.github/workflows/scripts/update-major-version-tag.sh \
-            ${{ steps.publish-release.outputs.release-version }}
+        uses: MetaMask/github-tools/.github/actions/update-major-version-tag@v1
+        with:
+          release-version: ${{ steps.publish-release.outputs.release-version }}
+          github-token: ${{ steps.get-token.outputs.token }}
