@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -6,121 +7,192 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.2.3]
+## [3.3.0]
+
+### Uncategorized
+
+- Bump actions/checkout from 6 to 7 ([#138](https://github.com/MetaMask/action-publish-release/pull/138))
+- chore: refactor workflows to align with the module template ([#136](https://github.com/MetaMask/action-publish-release/pull/136))
+- chore: migrate ESLint to v9 flat config ([#134](https://github.com/MetaMask/action-publish-release/pull/134))
+- chore: upgrade Yarn to 4.16.0 ([#128](https://github.com/MetaMask/action-publish-release/pull/128))
+- chore: modernise tsconfig and required toolchain ([#126](https://github.com/MetaMask/action-publish-release/pull/126))
+- chore: add workflow scaffolding from the module template ([#122](https://github.com/MetaMask/action-publish-release/pull/122))
+- chore: align dependabot config with the module template ([#121](https://github.com/MetaMask/action-publish-release/pull/121))
+- chore: align config files with the module template ([#120](https://github.com/MetaMask/action-publish-release/pull/120))
+
+### Added
+
+- feat: make `set -x` conditional on `RUNNER_DEBUG` in shell scripts ([#142](https://github.com/MetaMask/action-publish-release/pull/142))
+
 ### Fixed
+
+- fix: fix monorepo tag push when `persist-credentials` is false ([#141](https://github.com/MetaMask/action-publish-release/pull/141))
+
+## [3.2.3]
+
+### Fixed
+
 - Determine release packages by tag existence on GitHub instead of NPM ([#116](https://github.com/MetaMask/action-publish-release/pull/116))
   - This fixes a bug where the action may fail if packages are published to NPM ahead of running the action.
 
 ## [3.2.2]
+
 ### Fixed
+
 - Pin the Git tag created in the action to the commit that ran the action, not `main` ([#96](https://github.com/MetaMask/action-publish-release/pull/96))
 
 ## [3.2.1]
+
 ### Fixed
+
 - Skip packages with version 0.0.0 ([#89](https://github.com/MetaMask/action-publish-release/pull/89))
 - Don't attempt publishing published versions ([#91](https://github.com/MetaMask/action-publish-release/pull/91))
   - Previously it would only compare the current package version with the `latest` version. It would incorrectly attempt publishing already-published non-`latest` versions
 
 ## [3.2.0]
+
 ### Added
+
 - Add optional `npm-tag` input to use when checking latest version ([#82](https://github.com/MetaMask/action-publish-release/pull/82), [#83](https://github.com/MetaMask/action-publish-release/pull/83))
 
 ## [3.1.0]
+
 ### Added
+
 - List package versions in releases for monorepos with independent versioning ([#79](https://github.com/MetaMask/action-publish-release/pull/79))
 
 ## [3.0.0]
+
 ### Changed
+
 - **BREAKING**: Bump minimum Node.js version to 14 ([#64](https://github.com/MetaMask/action-publish-release/pull/64))
 
 ### Fixed
+
 - Handle undefined `versioningStrategy` ([#60](https://github.com/MetaMask/action-publish-release/pull/60))
 
 ## [2.1.0]
+
 ### Added
+
 - Support monorepos with independent versions ([#51](https://github.com/MetaMask/action-publish-release/pull/51))
 
 ## [2.0.2]
+
 ### Changed
+
 - Resolve GitHub action deprecation warnings ([#55](https://github.com/MetaMask/action-publish-release/pull/55))
 
 ## [2.0.1]
+
 ### Changed
+
 - Bump actions, removing deprecation warning ([#53](https://github.com/MetaMask/action-publish-release/pull/53))
 - Get version and repository info from package.json, improving compatibility with forked repositories. ([#49](https://github.com/MetaMask/action-publish-release/pull/49))
 
 ## [2.0.0]
+
 ### Changed
+
 - **BREAKING:** Use the version in `package.json` to determine the release version instead of the name of the release branch ([#46](https://github.com/MetaMask/action-publish-release/pull/46))
   - Projects that use this action should no longer pass a `release-branch-prefix` input. Additionally, they should make sure that when a release branch is merged, the version of the package (or root package in the case of a monorepo) is updated to the desired release version.
 
 ## [1.0.3]
+
 ### Changed
+
 - Bump `@metamask/auto-changelog` from `2.3.0` to `2.4.0` ([#34](https://github.com/MetaMask/action-publish-release/pull/34))
 
 ## [1.0.2]
+
 ### Changed
+
 - Improve usage documentation ([#30](https://github.com/MetaMask/action-publish-release/pull/30))
 
 ### Fixed
+
 - Error logging on Action failure ([#31](https://github.com/MetaMask/action-publish-release/pull/31))
 
 ## [1.0.1]
+
 ### Added
+
 - `release-version` output ([#28](https://github.com/MetaMask/action-publish-release/pull/28))
   - This outputs the version of the GitHub release, once it has been created.
 
 ## [1.0.0]
+
 ### Uncategorized
+
 - First stable release
 
 ### Changed
+
 - Default release branch prefix ([#22](https://github.com/MetaMask/action-publish-release/pull/22))
   - The default prefix is now `release/`, matching [`action-create-release-pr@v1`](https://github.com/MetaMask/action-create-release-pr).
 
 ### Fixed
+
 - Faulty usage instructions in readme ([#21](https://github.com/MetaMask/action-publish-release/pull/21))
 
 ## [0.1.0]
+
 ### Changed
+
 - **(BREAKING)** Rename `branch-prefix` input to `release-branch-prefix` ([#15](https://github.com/MetaMask/action-publish-release/pull/15))
   - This matches the name of the corresponding input to [MetaMask/action-create-release-pr@v0.1.0](https://github.com/MetaMask/action-create-release-pr).
 
 ## [0.0.7]
+
 ### Changed
+
 - **(BREAKING)** Change release branch prefix from 'release-v' to 'automation_release-' ([#12](https://github.com/MetaMask/action-publish-release/pull/12))
 - Use `@lavamoat/allow-scripts` for dependency lifecycle scripts ([#11](https://github.com/MetaMask/action-publish-release/pull/11))
 
 ### Fixed
+
 - Changelog updating in monorepos and repositories with merge commits ([#10](https://github.com/MetaMask/action-publish-release/pull/10))
   - Done by updating `@metamask/auto-changelog` to `2.3.0`. See [MetaMask/auto-changelog#87](https://github.com/MetaMask/auto-changelog/pull/87) for details.
 
 ## [0.0.6]
+
 ### Changed
+
 - Strip changelog release headers from release notes ([#8](https://github.com/MetaMask/action-publish-release/pull/8))
 
 ## [0.0.5]
+
 ### Changed
+
 - **(BREAKING)** Output release notes to an environment variable ([#6](https://github.com/MetaMask/action-publish-release/pull/6))
   - They were previously output to an Action output.
 
 ## [0.0.4]
+
 ### Changed
+
 - **(BREAKING)** Re-implement in TypeScript, add monorepo support ([#4](https://github.com/MetaMask/action-publish-release/pull/4))
 
 ## [0.0.3]
+
 ### Changed
+
 - Update repository git tags
 
 ## [0.0.2]
+
 ### Changed
+
 - Add path as argument to `run.sh`
 
 ## [0.0.1]
+
 ### Uncategorized
+
 - Initial release
 
-[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.2.3...HEAD
+[Unreleased]: https://github.com/MetaMask/action-publish-release/compare/v3.3.0...HEAD
+[3.3.0]: https://github.com/MetaMask/action-publish-release/compare/v3.2.3...v3.3.0
 [3.2.3]: https://github.com/MetaMask/action-publish-release/compare/v3.2.2...v3.2.3
 [3.2.2]: https://github.com/MetaMask/action-publish-release/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/MetaMask/action-publish-release/compare/v3.2.0...v3.2.1
