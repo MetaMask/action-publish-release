@@ -49,6 +49,6 @@ if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS ]]; then
 
   while read -r name version; do
     git tag "${name}@${version}" HEAD
-    git push --tags
   done< <(echo "$RELEASE_PACKAGES" | jq --raw-output '.packages[] | "\(.name) \(.version)"')
+  git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --tags
 fi

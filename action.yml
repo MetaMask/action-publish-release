@@ -48,6 +48,7 @@ runs:
       run: |
         ${{ github.action_path }}/scripts/create-github-release.sh
       env:
+        GH_TOKEN: ${{ env.GITHUB_TOKEN || github.token }}
         RELEASE_COMMIT_ID: ${{ github.sha }}
         RELEASE_STRATEGY: ${{ steps.get-version-strategy.outputs.RELEASE_STRATEGY }}
         RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
