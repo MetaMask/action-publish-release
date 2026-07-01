@@ -45,7 +45,7 @@ gh release create \
   --target "$RELEASE_COMMIT_ID"
 
 if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS ]]; then
-  echo "independent versioning strategy"
+  echo "Notice: Using independent versioning strategy."
 
   git config user.name github-actions
   git config user.email github-actions@github.com
