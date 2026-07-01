@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-set -x
 set -e
 set -u
 set -o pipefail
+
+if [ "$RUNNER_DEBUG" = "1" ]; then
+  set -x
+fi
 
 # ============================================================================
 # This script determines which packages are part of the current release in a

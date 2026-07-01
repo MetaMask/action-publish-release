@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
-set -x
 set -e
 set -o pipefail
+
+if [ "$RUNNER_DEBUG" = "1" ]; then
+  set -x
+fi
 
 if [[ -z $RELEASE_COMMIT_ID ]]; then
   echo "Error: No release commit ID specified."
