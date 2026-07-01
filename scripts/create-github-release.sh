@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
-set -x
 set -e
 set -o pipefail
+
+if [ "${RUNNER_DEBUG:-}" = "1" ]; then
+  set -x
+fi
 
 if [[ -z $RELEASE_COMMIT_ID ]]; then
   echo "Error: No release commit ID specified."
@@ -42,7 +45,7 @@ gh release create \
   --target "$RELEASE_COMMIT_ID"
 
 if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS ]]; then
-  echo "independent versioning strategy"
+  echo "Notice: Using independent versioning strategy."
 
   git config user.name github-actions
   git config user.email github-actions@github.com
