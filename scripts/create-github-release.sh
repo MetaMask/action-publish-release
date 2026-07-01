@@ -44,7 +44,7 @@ gh release create \
   --notes "$RELEASE_NOTES" \
   --target "$RELEASE_COMMIT_ID"
 
-if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS ]]; then
+if [[ $IS_MONOREPO_WITH_INDEPENDENT_VERSIONS -eq 1 ]]; then
   echo "Notice: Using independent versioning strategy."
 
   git config user.name github-actions
