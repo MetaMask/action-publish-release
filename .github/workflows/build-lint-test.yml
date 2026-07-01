@@ -75,6 +75,7 @@ jobs:
           # history) rather than this repo. GITHUB_REPOSITORY itself can't
           # be overridden at the step level, hence the dedicated var.
           RELEASE_TAGS_REPOSITORY: MetaMask/snaps
+          RUNNER_DEBUG: 0
         run: |
           # Update the version in a package.json manifest file
           #
