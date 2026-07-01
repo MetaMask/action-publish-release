@@ -4,7 +4,7 @@ set -e
 set -u
 set -o pipefail
 
-if [ "$RUNNER_DEBUG" = "1" ]; then
+if [ "${RUNNER_DEBUG:-}" = "1" ]; then
   set -x
 fi
 
