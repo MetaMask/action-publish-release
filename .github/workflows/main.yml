@@ -33,7 +33,7 @@ jobs:
   analyse-code:
     name: Analyse code
     needs: check-workflows
-    uses: MetaMask/action-security-code-scanner/.github/workflows/security-scan.yml@v2
+    uses: MetaMask/action-security-code-scanner/.github/workflows/security-scan.yml@v2.1.0
     with:
       scanner-ref: v2
       paths-ignored: |
