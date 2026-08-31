@@ -869,14 +869,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/action-utils@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@metamask/action-utils@npm:1.0.0"
+"@metamask/action-utils@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@metamask/action-utils@npm:2.0.0"
   dependencies:
     "@types/semver": "npm:^7.3.6"
     glob: "npm:^7.1.7"
     semver: "npm:^7.3.5"
-  checksum: 10/215ea1ddbc52e3b6d6a0b54346df94acc75a617a73eba456959273bc603ffaa5f651c0637ea3b280d2707c42db4bc3f544eaee3ab10c0bb016c1a9e00489a4ca
+  checksum: 10/9d0ef99cf7be9314a4996108760acb30071dff9e14f090ff6b8c1a1996effb9b9ef1ba5238dc5cd9c0c5396830a66b60621ef9213457606dc011822154188708
   languageName: node
   linkType: hard
 
@@ -1560,7 +1560,7 @@ __metadata:
     "@actions/core": "npm:^1.2.7"
     "@lavamoat/allow-scripts": "npm:^3.0.4"
     "@lavamoat/preinstall-always-fail": "npm:^2.0.0"
-    "@metamask/action-utils": "npm:^1.0.0"
+    "@metamask/action-utils": "npm:^2.0.0"
     "@metamask/auto-changelog": "npm:^3.1.0"
     "@metamask/eslint-config": "npm:^15.0.0"
     "@metamask/eslint-config-jest": "npm:^15.0.0"
