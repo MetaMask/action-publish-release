@@ -29,7 +29,10 @@ runs:
     - id: get-workspaces
       if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
       shell: bash
-      run: yarn workspaces list --verbose --json > "$WORKSPACES_FILE"
+      # This intentionally does not call Yarn, since that would run
+      # repository-controlled code (e.g., Yarn plugins) in a job that has
+      # access to the GitHub token in later steps.
+      run: node ${{ github.action_path }}/dist/workspaces/index.js > "$WORKSPACES_FILE"
       env:
         WORKSPACES_FILE: ${{ runner.temp }}/workspaces.json
     - id: get-release-packages
