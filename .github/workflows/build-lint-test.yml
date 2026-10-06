@@ -47,7 +47,9 @@ jobs:
         id: get-packages
         run: |
           cd snaps || exit
-          WORKSPACES=$(yarn workspaces list --verbose --json)
+          WORKSPACES_FILE="${RUNNER_TEMP}/workspaces.json"
+          yarn workspaces list --verbose --json > "$WORKSPACES_FILE"
+          echo "WORKSPACES_FILE=$WORKSPACES_FILE" >> "$GITHUB_OUTPUT"
           PUBLIC_PACKAGES=()
           PRIVATE_PACKAGE=()
 
@@ -61,7 +63,7 @@ jobs:
                 PRIVATE_PACKAGE+=("$location")
               fi
             fi
-          done< <(echo "$WORKSPACES" | jq --raw-output '"\(.location) \(.name)"')
+          done< <(jq --raw-output '"\(.location) \(.name)"' "$WORKSPACES_FILE")
 
           RELEASE_PACKAGES=("${PUBLIC_PACKAGES[@]}" "${PRIVATE_PACKAGE[@]}")
           IFS="," RELEASE_PACKAGES_FORMATTED="${RELEASE_PACKAGES[*]}"
@@ -75,6 +77,7 @@ jobs:
           # history) rather than this repo. GITHUB_REPOSITORY itself can't
           # be overridden at the step level, hence the dedicated var.
           RELEASE_TAGS_REPOSITORY: MetaMask/snaps
+          WORKSPACES_FILE: ${{ steps.get-packages.outputs.WORKSPACES_FILE }}
         run: |
           # Update the version in a package.json manifest file
           #

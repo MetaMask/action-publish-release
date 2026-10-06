@@ -38,7 +38,20 @@ toPublish="{\"packages\":{"
 # store initial length of toPublish
 len="${#toPublish}"
 
-workspaces=$(yarn workspaces list --verbose --json)
+# Path to a file containing the output of
+# `yarn workspaces list --verbose --json` (one JSON object per line). It is
+# produced by a separate step, so this script does not need to call Yarn.
+if [ -z "${WORKSPACES_FILE:-}" ]; then
+  echo "::error::WORKSPACES_FILE must be set to the path of the workspaces JSON file."
+  exit 1
+fi
+
+if [ ! -f "$WORKSPACES_FILE" ]; then
+  echo "::error::Workspaces file not found: $WORKSPACES_FILE"
+  exit 1
+fi
+
+workspaces=$(<"$WORKSPACES_FILE")
 
 # Repository to look up release tags in. Defaults to the current workflow's
 # repository; can be overridden via the RELEASE_TAGS_REPOSITORY env var
