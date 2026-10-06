@@ -26,13 +26,22 @@ runs:
     - id: get-repository-url
       shell: bash
       run: echo "REPOSITORY_URL=$(jq --raw-output '.repository.url' package.json)" >> "$GITHUB_OUTPUT"
+    - id: get-workspaces
+      if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
+      shell: bash
+      # This intentionally does not call Yarn, since that would run
+      # repository-controlled code (e.g., Yarn plugins) in a job that has
+      # access to the GitHub token in later steps.
+      run: node ${{ github.action_path }}/dist/workspaces/index.js > "$WORKSPACES_FILE"
+      env:
+        WORKSPACES_FILE: ${{ runner.temp }}/workspaces.json
     - id: get-release-packages
       if: steps.get-version-strategy.outputs.RELEASE_STRATEGY == 'independent'
       shell: bash
-      run: |
-        ${{ github.action_path }}/scripts/get-release-packages.sh
+      run: ${{ github.action_path }}/scripts/get-release-packages.sh
       env:
         GH_TOKEN: ${{ env.GITHUB_TOKEN || github.token }}
+        WORKSPACES_FILE: ${{ runner.temp }}/workspaces.json
     # This sets RELEASE_NOTES as an environment variable, which is expected
     # by the create-github-release step.
     - id: get-release-notes
