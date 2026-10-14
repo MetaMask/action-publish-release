@@ -1,4 +1,3 @@
-import { error as logError, setFailed } from '@actions/core';
 import process from 'process';
 
 import { getWorkspaces } from './get-workspaces';
@@ -14,14 +13,11 @@ async function main() {
     .map(({ location, name }) => JSON.stringify({ location, name }))
     .join('\n');
 
-  process.stdout.write(`${output}\n`);
+  console.log(output);
 }
 
 main().catch((error) => {
-  // istanbul ignore else
-  if (error.stack) {
-    logError(error.stack);
-  }
-
-  setFailed(error);
+  // istanbul ignore next
+  console.error(error.stack ?? error);
+  process.exitCode = 1;
 });

@@ -1,10 +1,3 @@
-jest.mock('@actions/core', () => {
-  return {
-    error: jest.fn(),
-    setFailed: jest.fn(),
-  };
-});
-
 jest.mock('./get-workspaces', () => {
   return {
     getWorkspaces: jest.fn(),
@@ -21,11 +14,9 @@ jest.mock('./get-workspaces', () => {
 async function loadEntryFile() {
   jest.resetModules();
 
-  const actionsCore = await import('@actions/core');
   const workspacesModule = await import('./get-workspaces');
 
   return {
-    actionsCore,
     workspacesModule,
     run: async () => {
       await import('./workspaces-cli');
@@ -41,29 +32,35 @@ describe('get workspaces entry file', () => {
       { location: '.', name: 'root' },
       { location: 'packages/a', name: null },
     ]);
-    const writeMock = jest
-      .spyOn(process.stdout, 'write')
-      .mockImplementationOnce(() => true);
+    const logMock = jest
+      .spyOn(console, 'log')
+      .mockImplementationOnce(() => undefined);
 
     await run();
 
-    expect(writeMock).toHaveBeenCalledWith(
-      '{"location":".","name":"root"}\n{"location":"packages/a","name":null}\n',
+    expect(logMock).toHaveBeenCalledWith(
+      '{"location":".","name":"root"}\n{"location":"packages/a","name":null}',
     );
   });
 
-  it('catches thrown errors', async () => {
-    const { actionsCore, workspacesModule, run } = await loadEntryFile();
-    jest
-      .spyOn(workspacesModule, 'getWorkspaces')
-      .mockRejectedValueOnce(new Error('error'));
-    const logErrorMock = jest.spyOn(actionsCore, 'error');
-    const setFailedMock = jest.spyOn(actionsCore, 'setFailed');
+  it('writes thrown errors to stderr and sets a failing exit code', async () => {
+    const { workspacesModule, run } = await loadEntryFile();
+    const error = new Error('error');
+    jest.spyOn(workspacesModule, 'getWorkspaces').mockRejectedValueOnce(error);
+    const logMock = jest.spyOn(console, 'log');
+    const consoleErrorMock = jest
+      .spyOn(console, 'error')
+      .mockImplementationOnce(() => undefined);
+    const originalExitCode = process.exitCode;
 
-    await run();
+    try {
+      await run();
 
-    expect(logErrorMock).toHaveBeenCalledTimes(1);
-    expect(setFailedMock).toHaveBeenCalledTimes(1);
-    expect(setFailedMock).toHaveBeenCalledWith(new Error('error'));
+      expect(consoleErrorMock).toHaveBeenCalledWith(error.stack);
+      expect(logMock).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = originalExitCode;
+    }
   });
 });
