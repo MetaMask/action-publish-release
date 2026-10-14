@@ -43,11 +43,20 @@ jobs:
         with:
           path: action-publish-release
       - run: corepack enable
+      - name: Get workspaces
+        working-directory: snaps
+        env:
+          WORKSPACES_FILE: ${{ runner.temp }}/workspaces.json
+        run: |
+          node ../action-publish-release/dist/workspaces/index.js > "$WORKSPACES_FILE"
+          yarn workspaces list --json | jq --compact-output '{location, name}' > "${RUNNER_TEMP}/yarn-workspaces.json"
+          diff "${RUNNER_TEMP}/yarn-workspaces.json" "$WORKSPACES_FILE"
       - name: Get Packages
         id: get-packages
+        env:
+          WORKSPACES_FILE: ${{ runner.temp }}/workspaces.json
         run: |
           cd snaps || exit
-          WORKSPACES=$(yarn workspaces list --verbose --json)
           PUBLIC_PACKAGES=()
           PRIVATE_PACKAGE=()
 
@@ -61,7 +70,7 @@ jobs:
                 PRIVATE_PACKAGE+=("$location")
               fi
             fi
-          done< <(echo "$WORKSPACES" | jq --raw-output '"\(.location) \(.name)"')
+          done< <(jq --raw-output '"\(.location) \(.name)"' "$WORKSPACES_FILE")
 
           RELEASE_PACKAGES=("${PUBLIC_PACKAGES[@]}" "${PRIVATE_PACKAGE[@]}")
           IFS="," RELEASE_PACKAGES_FORMATTED="${RELEASE_PACKAGES[*]}"
@@ -75,6 +84,7 @@ jobs:
           # history) rather than this repo. GITHUB_REPOSITORY itself can't
           # be overridden at the step level, hence the dedicated var.
           RELEASE_TAGS_REPOSITORY: MetaMask/snaps
+          WORKSPACES_FILE: ${{ runner.temp }}/workspaces.json
         run: |
           # Update the version in a package.json manifest file
           #
